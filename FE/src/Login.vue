@@ -103,12 +103,12 @@ console.log('Available routes:', router.getRoutes().map(r => r.name))
       case 3:
         await router.push({ name: 'PathSelect' })// ชื่อ route ต้องตรงกับ router/index.js
         break
-      // case 2:
-      //   await router.push({ name: 'StaffDashboard' })
-      //   break
-      // case 1:
-      //   await router.push({ name: 'AdminControl' })
-      //   break
+      case 2:
+        await router.push({ name: 'Dashboard' })
+        break
+      case 1:
+        await router.push({ name: 'Dashboard' })
+        break
       default:
         await router.push({ name: 'Login' })
     }
@@ -137,12 +137,12 @@ onMounted(async () => {
       case 3:
         await router.push({ name: 'PathSelect' })
         break
-      // case 2:
-      //   await router.push({ name: 'StaffDashboard' })
-      //   break
-      // case 1:
-      //   await router.push({ name: 'AdminControl' })
-      //   break
+      case 2:
+        await router.push({ name: 'Dashboard' })
+        break
+      case 1:
+        await router.push({ name: 'Dashboard' })
+        break
       default:
         await router.push({ name: 'Login' })
     }
