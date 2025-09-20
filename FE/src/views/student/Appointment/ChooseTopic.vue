@@ -36,7 +36,7 @@ import girl from '@/assets/girl.png'
 import boy from '@/assets/boy.png'
 import unicorn from '@/assets/unicorn.png'
 import user from '@/assets/user.png'
-// import { apiFetch } from '@/utils/api'
+import { apiFetch } from '@/utils/api'
 
 const router = useRouter()
 const userId = localStorage.getItem('userId')

@@ -104,7 +104,7 @@ console.log('Available routes:', router.getRoutes().map(r => r.name))
         await router.push({ name: 'PathSelect' })// ชื่อ route ต้องตรงกับ router/index.js
         break
       case 2:
-        await router.push({ name: 'Dashboard' })
+        await router.push({ name: 'DashboardSE' })
         break
       case 1:
         await router.push({ name: 'Dashboard' })
@@ -138,7 +138,7 @@ onMounted(async () => {
         await router.push({ name: 'PathSelect' })
         break
       case 2:
-        await router.push({ name: 'Dashboard' })
+        await router.push({ name: 'DashboardSE' })
         break
       case 1:
         await router.push({ name: 'Dashboard' })
