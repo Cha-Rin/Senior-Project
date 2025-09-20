@@ -19,30 +19,7 @@
         :rating="staff.rating"
       />
     </div>
-     <!-- 🔹 ขวา: Language Switch + Login Icon -->
-    <div class="flex items-center space-x-3">
-      <button @click="toggleLang" class="text-xs font-bold">
-        {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
-      </button>
-     <button
-  @click="logout"
-  class="w-10 h-10 flex items-center justify-center rounded hover:bg-white hover:text-[#003366] transition"
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    stroke-width="2"
-    stroke-linecap="round"
-    stroke-linejoin="round"
-    class="w-6 h-6 block"
-  >
-    <path d="M13.5 7.5L10.5 10.75M13.5 7.5L10.5 4.5M13.5 7.5L4 7.5M8 13.5H1.5L1.5 1.5L8 1.5" />
-  </svg>
-</button>
-
-    </div>
+    
   </div>
 </template>
 
