@@ -27,7 +27,7 @@ function goToAppointment() {
   router.push('/secretary/appointment/appointment')
 }
 
-function goToTracking() {
+function goToRequestDocument() {
   router.push('/secretary/document/request')
 }
 </script>
