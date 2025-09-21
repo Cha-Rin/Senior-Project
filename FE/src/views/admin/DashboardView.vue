@@ -6,9 +6,12 @@
         <h2 class="text-xl font-semibold">Dashboard</h2>
         <WeekPicker @weekSelected="onWeekChange" />
       </div>
+      <navbar/>
       <WeeklyUsersChart :chartData="chartData1" />
       <WeeklyUsersChart :chartData="chartData2" />
     </div>
+
+    
     <div class="w-80 space-y-4">
       <StaffCard
         v-for="staff in staffList"
@@ -25,6 +28,10 @@
 
 <script setup>
 import { reactive, computed } from 'vue'
+
+
+
+import Navbar from '@/components/together/Navbar.vue'
 import { useStaffStore } from './stores/staffStore'
 import WeekPicker from '@/components/admin/dashboard/WeekPicker.vue'
 import WeeklyUsersChart from '@/components/admin/dashboard/WeeklyUsersChart.vue'
