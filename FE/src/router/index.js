@@ -33,7 +33,7 @@ router.beforeEach((to, from, next) => {
   // ถ้า login แล้ว จะเข้า login ซ้ำ → ไปยังหน้า role แทน
   if (role && to.name === 'Login') {
     if (role == 3) return next({ name: 'PathSelect' })
-     if (role == 2) return next({ name: 'DashboardSE' })
+     if (role == 2) return next({ name: 'Appointment' })
      if (role == 1) return next({ name: 'Dashboard' })
     return next('/') // fallback
   }
