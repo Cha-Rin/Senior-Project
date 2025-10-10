@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar.vue'
 import Navbar from '../components/Navbar.vue'
 
 const route = useRoute()
-const isLoginPage = route.path === '/login'
+const isLoginPage = route.name === 'Login';
 </script>
 
 <template>

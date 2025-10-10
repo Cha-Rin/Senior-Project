@@ -89,9 +89,8 @@ router.get('/history', authMiddleware, (req, res) => {
   });
 });
 //-------------------------------------- Student Documents ----------------------------------------
-router.post('/api/documents', (req, res) => {
-  const userId = req.user.id;
-  console.log('📩 Hit /api/documents')
+router.post('/documents', authMiddleware, (req, res) => {
+  console.log('📩 Hit /documents')
   console.log('✅ Received body:', req.body)
   const {
     user_id,
@@ -120,7 +119,7 @@ if (!req.body) {
       return res.status(500).json({ error: 'Database insert failed' })
     }
 
-    res.json({ success: true, appointmentId: result.insertId })
+    res.json({ success: true, message: 'Document created', data: { user_id } })
   });
 });
 //----------------------------------- chack status of documents ----------------------------------------

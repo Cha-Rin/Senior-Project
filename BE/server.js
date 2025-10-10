@@ -70,7 +70,7 @@ app.post('/api/login', (req, res) => {
 
     // ✅ สร้าง token โดยใส่ user.id + role
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: Number(user.role) },
+      { user_id: user.id, email: user.email, role: Number(user.role) },
       SECRET_KEY,
       { expiresIn: '1h' } // หมดอายุใน 1 ชั่วโมง
     );

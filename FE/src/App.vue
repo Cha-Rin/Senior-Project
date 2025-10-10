@@ -1,7 +1,29 @@
 <script setup>
+import jwt_decode from "jwt-decode"
+import { useRouter } from 'vue-router'
 import { RouterView } from 'vue-router'
+const router = useRouter()
+setInterval(() => {
+  const token = localStorage.getItem("authToken")
+  if (!token) return
+
+  try {
+    const decoded = jwt_decode(token)
+    const now = Date.now() / 1000
+    if (decoded.exp && decoded.exp < now) {
+      localStorage.removeItem("authToken")
+      localStorage.removeItem("userRole")
+      router.push({ name: "Login" })
+    }
+  } catch {
+    localStorage.removeItem("authToken")
+    localStorage.removeItem("userRole")
+    router.push({ name: "Login" })
+  }
+}, 60 * 1000) // ตรวจทุก 1 นาที
 </script>
 
 <template>
   <RouterView />
+  
 </template>

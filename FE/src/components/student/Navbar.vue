@@ -57,7 +57,6 @@
         <SidebarItem icon="check-circle" label="Check Status" to="/student/appointment/check" />
         <SidebarItem icon="clock" label="History" to="/student/appointment/history" />
         <SidebarItem icon="message-square" label="Feedback" to="/student/feedback" />
-        <SidebarItem icon="log-out" label="Log out" to="/student/login" />
 
 
       </nav>

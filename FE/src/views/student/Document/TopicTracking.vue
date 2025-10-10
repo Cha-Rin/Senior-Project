@@ -44,44 +44,34 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from "@/components/student/NavbarDoc.vue";
-import girl from '@/assets/girl.png'
-import boy from '@/assets/boy.png'
-import unicorn from '@/assets/unicorn.png'
 
-const token = localStorage.getItem("token");
 const router = useRouter()
 const categories = ref([])
 const note = ref('')
 const selectedCategoryId = ref('')
-
-const staffList = [
-  { name: 'Porntip Panya', avatar: girl },
-  { name: 'Somsak Kittisak', avatar: boy },
-  { name: 'Money', avatar: unicorn }
-]
-
 const studentEmail = ref('')
-const studentNote = ref('')
-const submitDate = ref(new Date().toISOString().split('T')[0]) // yyyy-mm-dd
-const finishDate = ref('') 
+const submitDate = ref(new Date().toISOString().slice(0, 19).replace('T', ' '))
+const finishDate = ref('')
 const status = ref('Pending')
 const errorMessage = ref('')
 
-const sidebarOpen = ref(false)
+// ✅ ดึง userId และ email จาก localStorage
+const userId = localStorage.getItem('userId')
+const email = localStorage.getItem('email')
 
-// 🔹 ดึงข้อมูลหมวดหมู่จาก API
+// 🔹 โหลด categories
 onMounted(async () => {
   try {
-    const token = localStorage.getItem('authToken')
+    const token = localStorage.getItem('authToken') // ✅ ใช้ key เดียวกันทุกไฟล์
     if (!token) {
       errorMessage.value = 'Please login again.'
-      router.push('/login')
+      router.push({ name: 'Login' })
       return
     }
 
     const res = await fetch('http://localhost:3000/api/categories', {
       headers: {
-        Authorization: `Bearer ${token}` // ✅ ส่ง token ไปด้วย
+        Authorization: `Bearer ${token}`
       }
     })
     const data = await res.json()
@@ -91,35 +81,41 @@ onMounted(async () => {
   }
 })
 
+// ✅ ส่งข้อมูลเอกสาร
 const goNext = async () => {
   try {
     const token = localStorage.getItem('authToken')
 
-    if (!token) {
-      console.warn('❗ Token not found in localStorage')
+    if (!token || !userId) {
       errorMessage.value = 'Please login again.'
-      router.push('/login')
+      router.push({ name: 'Login' })
       return
     }
+
     if (!selectedCategoryId.value) {
       errorMessage.value = 'Please select a topic.'
       return
     }
 
-    const res = await fetch('http://localhost:3000/student/api/documents', {
+    const payload = {
+      user_id: userId, // ✅ เพิ่ม user_id เหมือนอีกระบบ
+      category_id: selectedCategoryId.value,
+      student_email: email,
+      submit_date: submitDate.value,
+      finish_date: finishDate.value,
+      student_note: note.value,
+      status: 'pending'
+    }
+
+    console.log('📦 Sending payload:', payload)
+
+    const res = await fetch('http://localhost:3000/student/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // ✅ แนบ token
+        'Authorization': `Bearer ${token}`
       },
-      body: JSON.stringify({
-        category_id: selectedCategoryId.value,
-        student_email: studentEmail.value,
-        submit_date: submitDate.value,
-        finish_date: finishDate.value,
-        student_note: note.value,
-        status: 'pending'
-      })
+      body: JSON.stringify(payload)
     })
 
     const data = await res.json()
@@ -143,6 +139,7 @@ const goNext = async () => {
   }
 }
 </script>
+
 
 <style scoped>
 /* Optional: force mobile max width */
