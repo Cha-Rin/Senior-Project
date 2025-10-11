@@ -102,8 +102,9 @@ function mapTopicToCategory(topic) {
   switch (topic) {
     case 'Student_Activities': return 1
     case 'Cooperative_Education': return 2
-    case 'Relaxation': return 3
+    case 'Installment_Payment': return 3
     case 'Registration_work': return 4
+    case 'Graduate_studies': return 5
     default: return null
   }
 }

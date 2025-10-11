@@ -32,11 +32,7 @@
 import { ref, onMounted  } from 'vue'
 import { useRouter} from 'vue-router'
 import Navbar from '@/components/student/Navbar.vue'
-import girl from '@/assets/girl.png'
-import boy from '@/assets/boy.png'
-import unicorn from '@/assets/unicorn.png'
-import user from '@/assets/user.png'
-import { apiFetch } from '@/utils/api'
+
 
 const router = useRouter()
 const userId = localStorage.getItem('userId')
@@ -56,15 +52,6 @@ onMounted(async () => {
     console.error('Failed to load categories:', err)
   }
 })
-
-const staffList = [
-  { name: 'Porntip Panya', avatar: girl },
-  { name: 'Somsak Kittisak', avatar: boy },
-  { name: 'Money', avatar: unicorn },
-  { name: 'user', avatar: user },
-  
-]
-
 
 
 // 🔹 ไปหน้าถัดไปพร้อมส่ง query

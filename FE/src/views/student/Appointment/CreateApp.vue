@@ -39,9 +39,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import Navbar from '@/components/student/Navbar.vue'
-import girl from '@/assets/girl.png'
 import boy from '@/assets/boy.png'
-import unicorn from '@/assets/unicorn.png'
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
@@ -126,13 +124,13 @@ onMounted(() => {
       break
     case '4':
     case 4:
-      selectedTopic.value = 'Graduate Studies'
+      selectedTopic.value = 'Registration_work'
       displayName.value = 'Porntip Panya'
       imageSrc.value = Aoi
       break
       case '5':
      case 5:
-       selectedTopic.value = 'Registration_work'
+       selectedTopic.value = 'Graduate_studies'
        displayName.value = 'Rattikarn Nanglae'
        imageSrc.value = Lek
        break
