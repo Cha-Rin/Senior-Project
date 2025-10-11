@@ -67,13 +67,13 @@ router.get('/appointments/id/:id', (req, res) => {
 
 // history 
 router.get('/history', authMiddleware, (req, res) => {
-  const studentId = req.user.id; // ✅ ดึงจาก token แทน req.params
+  const studentId = req.user.user_id; // ✅ ต้องตรงกับตอน sign token
   console.log('📥 Student ID from token:', studentId);
 
   const sql = `
     SELECT a.appointment_date, a.category_id, c.type AS topic
     FROM appointment AS a
-    JOIN categories AS c ON a.category_id = c.id
+    JOIN categories AS c ON a.category_id = c.category_id
     WHERE a.user_id = ?
     ORDER BY a.appointment_date DESC
   `;
@@ -88,6 +88,7 @@ router.get('/history', authMiddleware, (req, res) => {
     res.json({ success: true, historyItems: results });
   });
 });
+
 //-------------------------------------- Student Documents ----------------------------------------
 router.post('/documents', authMiddleware, (req, res) => {
   console.log('📩 Hit /documents')
@@ -152,8 +153,9 @@ router.get('/api/documents/:studentId', (req, res) => {
 })
 
 // ----------------------------------------- history document-----------------------------------------
-router.get('/api/document/history/:studentId', (req, res) => {
-  const studentId = req.params.studentId;
+router.get('/document/history', authMiddleware, (req, res) => {
+  const studentId = req.user.user_id
+  console.log('📥 Student ID from token:', studentId)
 
   const sql = `
     SELECT d.*, c.type AS category_name

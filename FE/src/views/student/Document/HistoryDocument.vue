@@ -57,7 +57,7 @@
     <div v-else class="max-w-md mx-auto mt-2 bg-white rounded shadow text-xs">
       <v-calendar
         is-expanded
-        first-day-of-week="0"
+        :first-day-of-week="0"
         :attributes="calendarAttrs"
         @dayclick="selectDateFromCalendar"
         @update:page="updateMonthYear"
@@ -74,90 +74,95 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
-import Navbar from "@/components/student/NavbarDoc.vue";
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import Navbar from '@/components/student/NavbarDoc.vue'
 
-// 📌 Toggle full vs week
+// -------------------- State --------------------
 const isExpanded = ref(false)
 const today = new Date()
 const currentPageDate = ref(today)
-const route = useRoute()
 const historyDocs = ref([])
-const userId = localStorage.getItem('userId')
+const events = ref([])
+const selectedDate = ref({ full: '', date: '' })
+const router = useRouter()
 
-
-// ✅ ตรวจสอบแหล่งที่มาให้ครบทุกแหล่ง
-const paramId = route.params.studentId
-const localId = localStorage.getItem('student_id')
-const localEmail = localStorage.getItem('student_email')
-
-// ✅ ใช้ค่าที่หาได้จริง
-const studentId = paramId || localEmail || localId
-
-console.log('🧪 route.params.studentId:', paramId)
-console.log('🧪 localStorage student_id:', localId)
-console.log('🧪 localStorage student_email:', localEmail)
-console.log('📦 FINAL studentId used in fetch:', studentId)
-
-const fetchDocumentHistory = async () => {
-  if (!userId || userId === 'undefined') {
-    console.error('❌ ไม่มี userId ที่จะใช้ดึงข้อมูล')
+// -------------------- Mounted --------------------
+onMounted(async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) {
+    console.warn('⚠️ No token found in localStorage')
     return
   }
 
   try {
-    const res = await fetch(`http://localhost:3000/api/document/history/${userId}`)
-    const data = await res.json()
+    const res = await fetch('http://localhost:3000/student/document/history', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // ✅ ส่ง token
+      }
+    })
 
-    if (data.success) {
-      historyDocs.value = data.documents
+    const data = await res.json()
+    console.log('📥 Document history response:', data)
+
+    if (data.success && Array.isArray(data.historyDocs)) {
+      historyDocs.value = data.historyDocs.map(item => ({
+        date: formatYMDFromSQLString(item.submit_date),
+        title: item.title || 'Untitled',
+        status: item.status || 0 // 0 = pending, 1 = approved
+      }))
+
+      // ✅ ใช้สำหรับมาร์คบนปฏิทิน
+      events.value = historyDocs.value.map(item => ({
+        date: item.date,
+        color: item.status === 1 ? 'green' : 'blue'
+      }))
     } else {
-      console.warn('⚠️ No documents found:', data.message)
+      console.warn('⚠️ No document history found.')
     }
   } catch (err) {
-    console.error('❌ Failed to fetch document history:', err)
+    console.error('❌ Fetch error:', err)
   }
+
+  selectedDate.value = {
+    full: formatLocalYMD(today),
+    date: today.getDate(),
+  }
+})
+
+// -------------------- Utilities --------------------
+function formatYMDFromSQLString(s) {
+  if (!s) return ''
+  const t = s.includes('T') ? s.split('T')[0] : s.split(' ')[0]
+  return t
 }
 
-onMounted(() => {
-  fetchDocumentHistory()
-})
+function formatLocalYMD(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
-// const fetchDocumentHistory = async () => {
-//   try {
-//     console.log('📦 studentId used in fetch:', studentId)
-//     const res = await fetch(`http://localhost:3000/api/document/history/${studentId}`)
-//     const data = await res.json()
-//     if (data.success) {
-//       historyDocs.value = data.documents
-//     } else {
-//       console.warn('⚠️ No documents found:', data.message)
-//     }
-//   } catch (err) {
-//     console.error('❌ Failed to fetch document history:', err)
-//   }
-// }
-onMounted(() => {
-  if (userId) {
-    fetchDocumentHistory()
-  } else {
-    console.error('❌ No student ID provided')
-  }
-})
-// 🗓️ Month & Year
+function parseLocalYMD(s) {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d, 12, 0, 0)
+}
+
+function hasEvent(day) {
+  return events.value.some(e => e.date === day.full)
+}
+
+// -------------------- Calendar --------------------
 const currentMonthYear = computed(() =>
-  currentPageDate.value.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
-  })
+  currentPageDate.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
 )
 
 function updateMonthYear({ year, month }) {
   currentPageDate.value = new Date(year, month - 1, 1)
 }
 
-// 📆 สร้างสัปดาห์นี้ (Sunday เริ่ม)
 const sunday = new Date(today)
 sunday.setDate(today.getDate() - sunday.getDay())
 
@@ -167,17 +172,10 @@ const weekDays = Array.from({ length: 7 }, (_, i) => {
   return {
     short: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2),
     date: d.getDate(),
-    month: d.getMonth(),
-    full: d.toISOString().split('T')[0], // "YYYY-MM-DD"
+    full: formatLocalYMD(d),
     raw: d
   }
 })
-
-// 🔘 Selected Date
-const selectedDate = ref(
-  weekDays.find(day => isToday(day)) || weekDays[0]
-)
-
 
 function selectDate(day) {
   selectedDate.value = day
@@ -186,44 +184,51 @@ function selectDate(day) {
 function selectDateFromCalendar(day) {
   const d = day.date
   selectedDate.value = {
-    short: d.toLocaleDateString('en-US', { weekday: 'short' }),
     date: d.getDate(),
-    month: d.getMonth(),
-    full: d.toISOString().split('T')[0],
+    full: formatLocalYMD(d),
     raw: d
   }
 }
 
-// 🔵 Event dots
-const events = ref([
-  // { date: weekDays[1].full },
-  // { date: weekDays[3].full }
-])
+// -------------------- Match title --------------------
+const selectedDoc = computed(() => {
+  if (!selectedDate.value) return 'No date selected'
+  const match = historyDocs.value.find(item => item.date === selectedDate.value.full)
+  return match ? match.title : 'No document'
+})
 
-function hasEvent(day) {
-  return events.value.some(e => e.date === day.full)
-}
+// -------------------- Calendar Colors --------------------
+const calendarAttrs = ref([])
 
-// 🎯 Highlight Today on Calendar
-const calendarAttrs = ref([
-  {
-    key: 'today',
-    highlight: true,
-    dates: new Date()
-  }
-])
+watch(events, () => {
+  calendarAttrs.value = [
+    {
+      key: 'today',
+      highlight: true,
+      dates: new Date(),
+    },
+    {
+      key: 'pending',
+      dot: true,
+      popover: { label: 'Pending document' },
+      highlight: { color: 'blue' },
+      dates: events.value
+        .filter(e => e.color === 'blue')
+        .map(e => parseLocalYMD(e.date))
+    },
+    {
+      key: 'approved',
+      dot: true,
+      popover: { label: 'Approved document' },
+      highlight: { color: 'green' },
+      dates: events.value
+        .filter(e => e.color === 'green')
+        .map(e => parseLocalYMD(e.date))
+    }
+  ]
+}, { immediate: true })
+
 function isToday(day) {
-  const todayDate = new Date()
-  const todayStr = todayDate.toISOString().split('T')[0]
-  return day.full === todayStr
+  return day.full === formatLocalYMD(new Date())
 }
-// const studentId = localStorage.getItem('student_id') // ยังต้องใช้เพื่อบอก backend ว่าข้อมูลของใคร
-
-const fetchDocuments = async () => {
-  const res = await fetch(`http://localhost:3000/api/student/documents/${userId}`)
-  const data = await res.json()
-  console.log('📄 Document list:', data)
-}
-
-
 </script>
