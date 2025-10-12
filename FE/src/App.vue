@@ -27,3 +27,10 @@ setInterval(() => {
   <RouterView />
   
 </template>
+<!-- <template>
+  <AppointmentsFeedback />
+</template>
+
+<script setup>
+import AppointmentsFeedback from '@/pages/student/AppointmentsFeedback.vue'
+</script> -->

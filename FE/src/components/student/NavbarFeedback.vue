@@ -53,7 +53,7 @@
         @click.stop
       >
         <SidebarItem icon="home" label="Homepage" to="/student/path" />
-        <SidebarItem icon="log-out" label="Log out" to="/student/login" />
+        <SidebarItem icon="log-out" label="Log out" to="/login" /> 
 
 
       </nav>

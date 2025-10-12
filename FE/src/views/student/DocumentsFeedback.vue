@@ -1,42 +1,108 @@
 <script setup>
-import { ref, onMounted } from 'vue'
-import Feedback from "@/components/student/Feedback.vue";
+import { ref, computed, onMounted } from 'vue'
+import Feedback from "@/components/student/Feedback.vue"
+import axios from 'axios'
 
+console.log('🧩 DocumentsFeedback component loaded')
+
+// -------------------- State --------------------
 const documents = ref([])
 const topics = ref([])
-onMounted(async () => {
-  console.log("Effective User ID:", effectiveUserId.value)
+const selectedTopic = ref('')
+const token = localStorage.getItem('authToken')
 
-  if (effectiveUserId.value) {
-    await Promise.all([
-      loadAppointmentsByUser(effectiveUserId.value),
-      loadTopicsByUser(effectiveUserId.value)
-    ])
-  } else {
-    console.warn("No userId found, loading all appointments only")
-    await loadAllAppointments()
+// -------------------- onMounted --------------------
+onMounted(async () => {
+  console.log('🧩 DocumentsFeedback.vue mounted running')
+
+  if (!token) {
+    console.error('❌ No authToken found in localStorage')
+    return
   }
+
+  try {
+    console.log("🔑 Fetching approved document topics")
+    const res = await fetch('http://localhost:3000/student/document-topics', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await res.json()
+    console.log('📥 Document topics response:', data)
+
+    if (data.success) {
+      topics.value = Array.isArray(data.topics) ? data.topics : []
+      console.log("✅ topics.value =", topics.value)
+    } else {
+      console.warn("⚠️ API returned no success flag:", data)
+    }
+  } catch (err) {
+    console.error('❌ Error fetching document topics:', err)
+  }
+
+  await loadDocuments()
 })
 
+// -------------------- Load Documents --------------------
+async function loadDocuments() {
+  try {
+    console.log("🔑 Fetching documents for feedback")
+    const res = await fetch('http://localhost:3000/student/documents/for-feedback', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+    const data = await res.json()
+    console.log("📥 Documents response:", data)
 
-onMounted(async () => {
-  const [r1, r2] = await Promise.all([
-    fetch('http://localhost:3000/student/documents?scope=pending&approved_set=1'),
-    fetch('http://localhost:3000/categories/topics')
-  ])
-  documents.value = await r1.json()
-  const data2 = await r2.json()
-  topics.value = Array.isArray(data2?.topics) ? data2.topics : []
-})
-
-async function handleSubmit(payload) {
-  // ส่งไป backend ฝั่ง documents
-  await fetch('http://localhost:3000/feedback/documents', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  })
+    documents.value = Array.isArray(data?.items) ? data.items : []
+  } catch (e) {
+    console.error("❌ loadDocuments error:", e)
+    documents.value = []
+  }
 }
+
+// -------------------- Computed --------------------
+const filteredTopics = computed(() => topics.value)
+const filteredItems = computed(() => {
+  if (!selectedTopic.value) return documents.value
+  return documents.value.filter(d => d.topic === selectedTopic.value)
+})
+
+// -------------------- Submit Feedback --------------------
+async function handleSubmit(payload) {
+  try {
+    console.log("🧩 handleSubmit payload:", payload);
+
+    const res = await fetch('http://localhost:3000/student/feedback/documents', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        document_id: payload.itemId,    // ✅ ต้องมี
+        ratings: payload.ratings,       // ✅ ต้องเป็น array
+        comment: payload.note || ''     // ✅ optional
+      })
+    });
+
+    const result = await res.json();
+    console.log("📥 Feedback submit response:", result);
+
+    if (result.success) {
+      alert('ส่งความคิดเห็นเรียบร้อย ✅');
+    } else {
+      alert(result.message || 'เกิดข้อผิดพลาด');
+    }
+  } catch (e) {
+    console.error('❌ handleSubmit error:', e);
+    alert('เกิดข้อผิดพลาดในการส่ง feedback');
+  }
+}
+
 </script>
 
 <template>
