@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 //-------------------------------- Student --------------------------------
-import Login from '../Login.vue'
 // Layouts
 import AppointmentLayout from '../layouts/student/AppointmentLayout.vue'
 import FeedbackLayout from '../layouts/student/FeedbackLayout.vue'

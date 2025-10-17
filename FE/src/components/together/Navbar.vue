@@ -53,10 +53,11 @@
         @click.stop
       >
         <SidebarItem icon="home" label="Homepage" to="/student/path" />
-        <SidebarItem icon="user" label="Choose Topic" to="/student/document/topictrack" />
-        <SidebarItem icon="check-circle" label="Check Status" to="/student/document/check" />
-        <SidebarItem icon="clock" label="History" to="/student/document/history" />
-        <SidebarItem icon="message-square" label="Feedback" to="/student/feedback/documents" />
+        <SidebarItem icon="user" label="Choose Topic" to="/student/appointment/topic" />
+        <SidebarItem icon="check-circle" label="Check Status" to="/student/appointment/check" />
+        <SidebarItem icon="clock" label="History" to="/student/appointment/history" />
+        <SidebarItem icon="message-square" label="Feedback" to="/student/feedback" />
+        <SidebarItem icon="log-out" label="Log out" to="/student/login" />
 
 
       </nav>
@@ -77,11 +78,11 @@ const currentLang = ref('th')
 function toggleLang() {
   currentLang.value = currentLang.value === 'th' ? 'en' : 'th'
 }
-
 const logout = () => {
   localStorage.removeItem('userRole')
   router.push({ name: 'Login' })
 }
+
 
 </script>
 

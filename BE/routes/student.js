@@ -67,13 +67,13 @@ router.get('/appointments/id/:id', (req, res) => {
 
 // history 
 router.get('/history', authMiddleware, (req, res) => {
-  const studentId = req.user.id; // ✅ ดึงจาก token แทน req.params
+  const studentId = req.user.user_id; // ✅ ต้องตรงกับตอน sign token
   console.log('📥 Student ID from token:', studentId);
 
   const sql = `
     SELECT a.appointment_date, a.category_id, c.type AS topic
     FROM appointment AS a
-    JOIN categories AS c ON a.category_id = c.id
+    JOIN categories AS c ON a.category_id = c.category_id
     WHERE a.user_id = ?
     ORDER BY a.appointment_date DESC
   `;
@@ -88,10 +88,10 @@ router.get('/history', authMiddleware, (req, res) => {
     res.json({ success: true, historyItems: results });
   });
 });
+
 //-------------------------------------- Student Documents ----------------------------------------
-router.post('/api/documents', (req, res) => {
-  const userId = req.user.id;
-  console.log('📩 Hit /api/documents')
+router.post('/documents', authMiddleware, (req, res) => {
+  console.log('📩 Hit /documents')
   console.log('✅ Received body:', req.body)
   const {
     user_id,
@@ -120,7 +120,7 @@ if (!req.body) {
       return res.status(500).json({ error: 'Database insert failed' })
     }
 
-    res.json({ success: true, appointmentId: result.insertId })
+    res.json({ success: true, message: 'Document created', data: { user_id } })
   });
 });
 //----------------------------------- chack status of documents ----------------------------------------
@@ -153,8 +153,9 @@ router.get('/api/documents/:studentId', (req, res) => {
 })
 
 // ----------------------------------------- history document-----------------------------------------
-router.get('/api/document/history/:studentId', (req, res) => {
-  const studentId = req.params.studentId;
+router.get('/document/history', authMiddleware, (req, res) => {
+  const studentId = req.user.user_id
+  console.log('📥 Student ID from token:', studentId)
 
   const sql = `
     SELECT d.*, c.type AS category_name
@@ -217,68 +218,70 @@ router.get('/appointments_ALL', (req, res) => {
     res.json(results)
   })
 })
+// ส่งข้อมูล feedback
+router.post('/feedback/appointments', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'invalid_user_id' });
+  }
 
-router.post('/feedback/appointments', (req, res) => {
-  const { appointment_id, ratings, comment } = req.body
+  const { appointment_id, ratings, comment } = req.body;
+
   if (!appointment_id || !Array.isArray(ratings) || ratings.length < 3) {
-    return res.status(400).json({ success: false, message: 'Invalid payload' })
+    return res.status(400).json({ success: false, message: 'Invalid payload' });
   }
 
   const sql = `
     INSERT INTO feedback_appointment
       (appointment_id, score_count1, score_count2, score_count3, comment, created_at)
-    VALUES (?, ?, ?, ?, ?, NOW())
-  `
-  const params = [appointment_id, ratings[0], ratings[1], ratings[2], comment || null]
+    VALUES (?, ?, ?, ?, '', NOW())
+  `;
+
+  const params = [appointment_id, ratings[0], ratings[1], ratings[2], comment || null];
 
   db.query(sql, params, (err, result) => {
     if (err) {
-      // ถ้าใส่ซ้ำเพราะ UNIQUE
       if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ success: false, message: 'Feedback already exists' })
+        return res.status(409).json({ success: false, message: 'Feedback already exists' });
       }
-      console.error('❌ Error inserting feedback:', err)
-      return res.status(500).json({ success: false, message: 'Database error' })
+      console.error('❌ Error inserting feedback:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
-    res.json({ success: true, id: result.insertId })
-  })
-})
+
+    res.json({ success: true, id: result.insertId });
+  });
+});
+
 
 // 🔎 ดึงรายการเดียวเพื่อให้คะแนน (ต้อง Approve และยังไม่มี feedback)
 // FE: GET /student/users/10/appointments/for-feedback?approved_set=1
-router.get('/users/:userId/appointments/for-feedback', (req, res) => {
-  const userId = Number(req.params.userId);
-  if (!userId) return res.status(400).json({ success: false, message: 'invalid_user_id' });
-
-  const approvedSet = parseApprovedSet(req); // รองรับ ?approved_set=1,2
-  const placeholders = buildInPlaceholders(approvedSet);
+router.get('/appointments/for-feedback', authMiddleware, (req, res) => { 
+  const userId = req.user.id;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'invalid_user_id' });
+  }
 
   const sql = `
     SELECT 
-      a.appointment_id AS id,
-      DATE(a.appointment_date) AS date,
-      TIME(a.appointment_date) AS time,
-      a.student_note AS note,
-      c.type AS topic,
-      'Appointments' AS category,
-      a.status
+      a.appointment_id AS id, 
+      a.appointment_date AS date, 
+      COALESCE(c.type, 'Unknown') AS topic, 
+      a.student_note AS note
     FROM appointment a
     LEFT JOIN categories c ON c.category_id = a.category_id
-    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
     WHERE a.user_id = ?
-      AND f.appointment_id IS NULL
-      AND a.status IN (${placeholders})
+      AND a.status = 1
     ORDER BY a.appointment_date DESC
   `;
-  db.query(sql, [userId, ...approvedSet], (err, rows) => {
+
+  db.query(sql, [userId], (err, rows) => {
     if (err) {
-      console.error('❌ fetch user appointments error:', err);
+      console.error('❌ fetch appointments error:', err);
       return res.status(500).json({ success: false, message: 'db_error' });
     }
     res.json({ success: true, items: rows });
   });
 });
-
 
 
 // GET /api/appointment/:id/for-feedback
@@ -336,72 +339,71 @@ router.get('/appointment/:id/for-feedback', (req, res) => {
   });
 });
 
-
 // ✅ GET: ดึงหัวข้อของ user
-// /api/users/:userId/appointment-topics
-// - default: scope=all (ดึงทุกหัวข้อของ user)
-// - optional: scope=pending (เฉพาะนัดที่อนุมัติ+ยังไม่มี feedback)
-router.get('/users/:userId/appointment-topics', (req, res) => {
-  const userId = Number(req.params.userId);
-  if (!userId) return res.status(400).json({ success:false, message:'invalid_user_id' });
-
-  const scope = (req.query.scope || 'all').toString().toLowerCase();
-  const approvedSet = parseApprovedSet(req);
-  const placeholders = buildInPlaceholders(approvedSet);
-
-  const base = `
-    FROM appointment a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    ${scope === 'pending' ? 'LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id' : ''}
-    WHERE a.user_id = ?
-    ${scope === 'pending' ? `AND f.appointment_id IS NULL AND a.status IN (${placeholders})` : ''}
-  `;
+router.get('/appointment-topics', authMiddleware, (req, res) => {
+  const userId = req.user.id; // อ่านจาก token ที่ authMiddleware ถอดออกมา
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'invalid_user_id' });
+  }
 
   const sql = `
     SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
-    ${base}
+    FROM appointment a
+    LEFT JOIN categories c ON c.category_id = a.category_id
+    WHERE a.user_id = ?
+      AND a.status = 1   -- ✅ เฉพาะที่อนุมัติแล้ว
     ORDER BY topic
   `;
 
-  const params = scope === 'pending' ? [userId, ...approvedSet] : [userId];
-
-  db.query(sql, params, (err, rows) => {
+  db.query(sql, [userId], (err, rows) => {
     if (err) {
       console.error('❌ fetch topics error:', err);
-      return res.status(500).json({ success:false, message:'db_error' });
+      return res.status(500).json({ success: false, message: 'db_error' });
     }
-    res.json({ success:true, topics: rows.map(r => r.topic).filter(Boolean) });
+    if (!rows.length) {
+      return res.json({ success: false, message: 'Not found' });
+    }
+    res.json({
+      success: true,
+      topics: rows.map(r => r.topic).filter(Boolean),
+    });
   });
 });
 
 // -----------------------------------Feedback Document -----------------------------------------
-router.post('/feedback/documents', (req, res) => {
-const sql = `
+// GET: ดึงเอกสารทั้งหมดที่ยังไม่มี feedback และอนุมัติแล้ว
+router.get('/documents_ALL', authMiddleware, (req, res) => {
+  const sql = `
     SELECT 
-      a.document_id AS id,
-      a.student_note AS note,
-      a.finish_date AS date,
+      d.document_id AS id,
+      DATE(d.finish_date) AS date,
+      d.student_note AS note,
       c.type AS topic,
       'Documents' AS category,
-      a.status
-    FROM document_tracking a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = a.document_id
+      d.status
+    FROM document_tracking d
+    LEFT JOIN categories c ON c.category_id = d.category_id
+    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
     WHERE f.document_id IS NULL
-      AND UPPER(TRIM(a.status)) IN ('APPROVE','APPROVED','อนุมัติ')
-      ORDER BY a.finish_date DESC
-  `
+      AND UPPER(TRIM(d.status)) IN ('APPROVE','APPROVED','อนุมัติ')
+    ORDER BY d.finish_date DESC
+  `;
+
   db.query(sql, (err, results) => {
     if (err) {
-      console.error('❌ Error fetching document:', err)
+      console.error('❌ Error fetching documents:', err)
       return res.status(500).json({ error: 'Database error' })
     }
     res.json(results)
   })
 })
 
-router.post('/feedback/documents', (req, res) => {
-  const { document_id, ratings, comment } = req.body
+// POST: ส่ง feedback สำหรับเอกสาร
+router.post('/feedback/documents', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  if (!userId) return res.status(400).json({ success: false, message: 'invalid_user_id' });
+
+  const { document_id, ratings, comment } = req.body;
   if (!document_id || !Array.isArray(ratings) || ratings.length < 3) {
     return res.status(400).json({ success: false, message: 'Invalid payload' })
   }
@@ -411,11 +413,11 @@ router.post('/feedback/documents', (req, res) => {
       (document_id, score_count1, score_count2, score_count3, comment, created_at)
     VALUES (?, ?, ?, ?, ?, NOW())
   `
-  const params = [document_id, ratings[0], ratings[1], ratings[2], comment || null]
+
+  const params = [document_id, ratings[0], ratings[1], ratings[2], comment || '']
 
   db.query(sql, params, (err, result) => {
     if (err) {
-      // ถ้าใส่ซ้ำเพราะ UNIQUE
       if (err.code === 'ER_DUP_ENTRY') {
         return res.status(409).json({ success: false, message: 'Feedback already exists' })
       }
@@ -426,74 +428,67 @@ router.post('/feedback/documents', (req, res) => {
   })
 })
 
-
-// 🔎 ดึงรายการเดียวเพื่อให้คะแนน (ต้อง Approve และยังไม่มี feedback)
-// FE: GET /student/users/${userId}/document/for-feedback?approved_set=1
-router.get('/users/:userId/documents/for-feedback', (req, res) => {
-  const userId = Number(req.params.userId);
-  if (!userId) return res.status(400).json({ success: false, message: 'invalid_user_id' });
-
-  const approvedSet = parseApprovedSet(req); // รองรับ ?approved_set=1,2
-  const placeholders = buildInPlaceholders(approvedSet);
+// GET: ดึงเอกสารของ user สำหรับให้ feedback (เฉพาะที่อนุมัติและยังไม่มี feedback)
+// GET /student/documents/for-feedback
+router.get('/documents/for-feedback', authMiddleware, (req, res) => { 
+  const userId = req.user.id;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'invalid_user_id' });
+  }
 
   const sql = `
     SELECT 
-      a.document_id AS id,
-      DATE(a.finish_date) AS date,
-      a.student_note AS note,
-      c.type AS topic,
-      'Documents' AS category,
-      a.status
-    FROM document_tracking a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = a.document_id
-    WHERE a.user_id = ?
-      AND f.document_id IS NULL
-      AND a.status IN (${placeholders})
-    ORDER BY a.finish_date DESC
+      d.document_id AS id, 
+      DATE(d.finish_date) AS date, 
+      COALESCE(c.type, 'Unknown') AS topic, 
+      d.student_note AS note
+    FROM document_tracking d
+    LEFT JOIN categories c ON c.category_id = d.category_id
+    WHERE d.user_id = ?
+      AND d.status = 2  -- เฉพาะเอกสารอนุมัติ
+    ORDER BY d.finish_date DESC
   `;
-  db.query(sql, [userId, ...approvedSet], (err, rows) => {
+
+  db.query(sql, [userId], (err, rows) => {
     if (err) {
-      console.error('❌ fetch user documents error:', err);
+      console.error('❌ fetch documents error:', err);
       return res.status(500).json({ success: false, message: 'db_error' });
     }
+
     res.json({ success: true, items: rows });
   });
 });
 
-// GET /api/document/:id/for-feedback
-router.get('/document/:id/for-feedback', (req, res) => {
+// GET: ดึงเอกสารโดย id สำหรับให้ feedback
+router.get('/documents/:id/for-feedback', authMiddleware, (req, res) => {
   const id = Number(req.params.id);
   if (!id) return res.status(400).json({ found: false, reason: 'invalid_id' });
 
   const sql = `
     SELECT 
-      a.document_id AS id,
-      DATE(a.finish_date) AS date,
-      a.student_note AS note,
+      d.document_id AS id,
+      DATE(d.finish_date) AS date,
+      d.student_note AS note,
       c.type AS topic,
       'Documents' AS category,
-      a.status,
-      CASE WHEN f.document_id IS NULL THEN 0 ELSE 1 END AS has_feedback
-    FROM document_tracking a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = a.document_id
-    WHERE a.document_id = ?
+      d.status,
+      CASE WHEN f.document_id IS NULL THEN 0 ELSE 2 END AS has_feedback
+    FROM document_tracking d
+    LEFT JOIN categories c ON c.category_id = d.category_id
+    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+    WHERE d.document_id = ?
     LIMIT 1
   `;
+
   db.query(sql, [id], (err, rows) => {
     if (err) {
       console.error('❌ Error fetching document by id:', err);
       return res.status(500).json({ found: false, reason: 'db_error' });
     }
-    if (!rows || rows.length === 0) {
-      return res.json({ found: false, reason: 'not_found' });
-    }
+    if (!rows || rows.length === 0) return res.json({ found: false, reason: 'not_found' });
 
     const row = rows[0];
-    if (Number(row.has_feedback) === 1) {
-      return res.json({ found: false, reason: 'already_feedback' });
-    }
+    if (Number(row.has_feedback) === 1) return res.json({ found: false, reason: 'already_feedback' });
 
     const approvedSet = parseApprovedSet(req);
     if (!approvedSet.includes(Number(row.status))) {
@@ -514,41 +509,41 @@ router.get('/document/:id/for-feedback', (req, res) => {
   });
 });
 
-// ✅ GET: ดึงหัวข้อของ user
-// - default: scope=all (ดึงทุกหัวข้อของ user)
-// - optional: scope=pending (เฉพาะนัดที่อนุมัติ+ยังไม่มี feedback)
-router.get('/users/:userId/document-topics', (req, res) => {
-  const userId = Number(req.params.userId);
-  if (!userId) return res.status(400).json({ success:false, message:'invalid_user_id' });
-
-  const scope = (req.query.scope || 'all').toString().toLowerCase();
-  const approvedSet = parseApprovedSet(req);
-  const placeholders = buildInPlaceholders(approvedSet);
-
-  const base = `
-    FROM document_tracking a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    ${scope === 'pending' ? 'LEFT JOIN feedback_document_tracking f ON f.document_id = a.document_id' : ''}
-    WHERE a.user_id = ?
-    ${scope === 'pending' ? `AND f.document_id IS NULL AND a.status IN (${placeholders})` : ''}
-  `;
+// GET: ดึงหัวข้อของ user สำหรับเอกสาร
+// GET /student/document-topics
+router.get('/document-topics', authMiddleware, (req, res) => {
+  const userId = req.user.id;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'invalid_user_id' });
+  }
 
   const sql = `
     SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
-    ${base}
+    FROM document_tracking d
+    LEFT JOIN categories c ON c.category_id = d.category_id
+    WHERE d.user_id = ?
+      AND d.status = 2  -- ✅ เฉพาะเอกสารอนุมัติแล้ว
     ORDER BY topic
   `;
 
-  const params = scope === 'pending' ? [userId, ...approvedSet] : [userId];
-
-  db.query(sql, params, (err, rows) => {
+  db.query(sql, [userId], (err, rows) => {
     if (err) {
-      console.error('❌ fetch topics error:', err);
-      return res.status(500).json({ success:false, message:'db_error' });
+      console.error('❌ fetch document topics error:', err);
+      return res.status(500).json({ success: false, message: 'db_error' });
     }
-    res.json({ success:true, topics: rows.map(r => r.topic).filter(Boolean) });
+
+    if (!rows.length) {
+      return res.json({ success: false, message: 'Not found' });
+    }
+
+    res.json({
+      success: true,
+      topics: rows.map(r => r.topic).filter(Boolean),
+    });
   });
 });
+
+
 
 return router
 }

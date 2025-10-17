@@ -35,7 +35,9 @@
         <div class="flex items-center text-left">
           <!-- <input type="checkbox" id="remember" v-model="rememberMe" class="mr-2" /> -->
           <!-- <label for="remember" class="text-sm">Remember me</label> -->
-          เผื่อใครมาดู Username: anan.yod@example.com, รหัส:  123456
+          นักศึกษา Username: anan.yod@example.com, รหัส:  123456 <br>
+          แอดมิน Username: worasak.rue@mfu.ac.th, รหัส: 1234 <br>
+          เลขา Username: porntip.pan@mfu.ac.th, รหัส: 2222
         </div>
          <!-- 🔺 Error message -->
         <p v-if="errorMessage" class="text-red-500 text-sm">{{ errorMessage }}</p>

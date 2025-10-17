@@ -36,7 +36,7 @@
           <div
           :class="[
             'w-8 h-8 mx-auto flex items-center justify-center rounded-full',
-            selectedDate.full === day.full
+            selectedDate?.full === day.full
               ? 'bg-indigo-500 text-white'
               : isToday(day)
               ? 'bg-purple-500 text-white'
@@ -57,7 +57,7 @@
     <div v-else class="max-w-md mx-auto mt-2 bg-white rounded shadow text-xs">
       <v-calendar
         is-expanded
-        first-day-of-week="0"
+        :first-day-of-week="0"
         :attributes="calendarAttrs"
         @dayclick="selectDateFromCalendar"
         @update:page="updateMonthYear"
@@ -77,77 +77,91 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Navbar from '@/components/student/Navbar.vue'
-import { apiFetch } from '@/utils/api'
-// 📌 Toggle full vs week
+
+// -------------------- State --------------------
 const isExpanded = ref(false)
 const today = new Date()
 const currentPageDate = ref(today)
-const historyItems = ref([]);
-const events = ref([]); 
+const historyItems = ref([])
+const events = ref([])
+const selectedDate = ref({ full: '', date: '' })
+const router = useRouter()
 
+// -------------------- Mounted --------------------
 onMounted(async () => {
-const userId = localStorage.getItem('userId')
+   const token = localStorage.getItem('authToken')
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    console.warn('⚠️ userId not found in localStorage')
+    return
+  }
 
-  console.log('📦 userId from localStorage:', userId)
-  
-  try {
-    console.log('📦 userId from localStorage:', userId)
+ try {
+    const res = await fetch('http://localhost:3000/student/history', {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}` // ✅ ส่ง token
+      }
+    })
+    const data = await res.json()
+    console.log('📥 API response:', data)
 
-    if (!userId) {
-      console.warn('❗ userId is not set in localStorage')
-      return
-    }
-    const res = await fetch(`/student/api/history`);
-    historyItems.value = data.historyItems
-    const data = await res.json();
-    console.log('📥 API response data:', data);
     if (data.success && Array.isArray(data.historyItems)) {
       historyItems.value = data.historyItems.map(item => ({
-        date: formatYMDFromSQLString(item.appointment_date),  
-        topic: item.topic
-      }));
+        date: formatYMDFromSQLString(item.appointment_date),
+        topic: item.topic || 'No topic',
+        status: item.status || 0 // 0 = รออนุมัติ, 1 = ได้รับนัดแล้ว
+      }))
 
-      // ✅ ใช้สำหรับ event dot (optional)
+      // ✅ ใช้สำหรับมาร์คบนปฏิทิน
       events.value = historyItems.value.map(item => ({
-        date: item.date
-      }));
+        date: item.date,
+        color: item.status === 1 ? 'green' : 'blue'
+      }))
     } else {
-      console.warn('No history items found');
+      console.warn('No history items found.')
     }
   } catch (err) {
-    console.error('❌ Fetch error:', err);
+    console.error('❌ Fetch error:', err)
   }
-});
 
-// 🗓️ Month & Year
-const currentMonthYear = computed(() =>
-  currentPageDate.value.toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
-  })
-)
+  // ตั้งค่าวันที่วันนี้เป็นค่าเริ่มต้น
+  selectedDate.value = {
+    full: formatLocalYMD(today),
+    date: today.getDate(),
+  }
+})
 
-const selectedTopic = computed(() => {
-  const match = historyItems.value.find(
-    item => item.date === selectedDate.value.full
-  );
-  return match ? match.topic : 'No topic';
-});
-
+// -------------------- Utilities --------------------
 function formatYMDFromSQLString(s) {
   if (!s) return ''
-  // รองรับทั้ง 'YYYY-MM-DDTHH:mm:ssZ' และ 'YYYY-MM-DD HH:mm'
   const t = s.includes('T') ? s.split('T')[0] : s.split(' ')[0]
-  return t
+  return t // YYYY-MM-DD
 }
 
+function formatLocalYMD(d) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
+function parseLocalYMD(s) {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d, 12, 0, 0)
+}
+function hasEvent(day) {
+  return events.value.some(e => e.date === day.full)
+}
+// -------------------- Calendar --------------------
+const currentMonthYear = computed(() =>
+  currentPageDate.value.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+)
 
 function updateMonthYear({ year, month }) {
   currentPageDate.value = new Date(year, month - 1, 1)
 }
 
-// 📆 สร้างสัปดาห์นี้ (Sunday เริ่ม)
 const sunday = new Date(today)
 sunday.setDate(today.getDate() - sunday.getDay())
 
@@ -157,17 +171,10 @@ const weekDays = Array.from({ length: 7 }, (_, i) => {
   return {
     short: d.toLocaleDateString('en-US', { weekday: 'short' }).slice(0, 2),
     date: d.getDate(),
-    month: d.getMonth(),
-    full: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'), // "YYYY-MM-DD"
+    full: formatLocalYMD(d),
     raw: d
   }
 })
-
-// 🔘 Selected Date
-const selectedDate = ref(
-  weekDays.find(day => isToday(day)) || weekDays[0]
-)
-
 
 function selectDate(day) {
   selectedDate.value = day
@@ -176,73 +183,51 @@ function selectDate(day) {
 function selectDateFromCalendar(day) {
   const d = day.date
   selectedDate.value = {
-    short: d.toLocaleDateString('en-US', { weekday: 'short' }),
     date: d.getDate(),
-    month: d.getMonth(),
-    full: formatLocalYMD(d),   // ❗ ใช้ local ไม่ใช้ toISOString
+    full: formatLocalYMD(d),
     raw: d
   }
 }
 
-
-function hasEvent(day) {
-  const has = events.value.some(e => e.date === day.full);
-  console.log(`Check hasEvent for ${day.full}:`, has);
-  return has;
-}
-
-function formatLocalYMD(d) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`               // local YYYY-MM-DD
-}
-
-// สร้าง Date แบบ local และ fix เวลาให้ 12:00 กันเลื่อนวัน
-function parseLocalYMD(s) {
-  const [y, m, d] = s.split('-').map(Number)
-  return new Date(y, m - 1, d, 12, 0, 0) // noon
-}
-
-
-// 🎯 Highlight Today on Calendar
-const calendarAttrs = ref([
-  { key: 'today', highlight: true, dates: new Date() },
-  {
-    key: 'appointments',
-    dot: true,
-    dates: events.value.map(e => parseLocalYMD(e.date)) // ❗ ใช้ Date กลางวัน
-  }
-])
-
-watch(events, () => {
-  calendarAttrs.value = [
-    { key: 'today', highlight: true, dates: new Date() },
-    { key: 'appointments', dot: true, dates: events.value.map(e => parseLocalYMD(e.date)) }
-  ]
+// -------------------- Match topic --------------------
+const selectedTopic = computed(() => {
+  if (!selectedDate.value) return 'No date selected'
+  const match = historyItems.value.find(item => item.date === selectedDate.value.full)
+  return match ? match.topic : 'No topic'
 })
 
-
-function isToday(day) {
-  return day.full === formatLocalYMD(new Date()) // ❗ local
-}
-
+// -------------------- Calendar Colors --------------------
+const calendarAttrs = ref([])
 
 watch(events, () => {
   calendarAttrs.value = [
     {
       key: 'today',
       highlight: true,
-      dates: new Date()
+      dates: new Date(),
     },
     {
-      key: 'appointments',
+      key: 'pending',
       dot: true,
-      dates: events.value.map(e => e.date)
+      popover: { label: 'Pending appointment' },
+      highlight: { color: 'blue' },
+      dates: events.value
+        .filter(e => e.color === 'blue')
+        .map(e => parseLocalYMD(e.date))
+    },
+    {
+      key: 'confirmed',
+      dot: true,
+      popover: { label: 'Confirmed appointment' },
+      highlight: { color: 'green' },
+      dates: events.value
+        .filter(e => e.color === 'green')
+        .map(e => parseLocalYMD(e.date))
     }
   ]
-})
+}, { immediate: true })
 
-const router = useRouter()
-
+function isToday(day) {
+  return day.full === formatLocalYMD(new Date())
+}
 </script>

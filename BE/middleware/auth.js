@@ -14,7 +14,12 @@ function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, SECRET_KEY)
-    req.user = decoded // ✅ เก็บข้อมูล user จาก token
+    console.log('🧩 Decoded JWT:', decoded);
+    req.user = {
+  id: decoded.user_id || decoded.id,
+  email: decoded.email,
+  role: decoded.role
+}; // ✅ เก็บข้อมูล user จาก token
     next()
   } catch (err) {
     return res.status(403).json({ success: false, message: 'Invalid or expired token' })
