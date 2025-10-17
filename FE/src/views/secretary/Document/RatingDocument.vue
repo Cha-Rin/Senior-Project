@@ -1,151 +1,281 @@
-<!-- src/view/Document/RatingDocument.vue -->
+<!-- 📁 src/views/secretary/Document/RatingDocument.vue -->
 <template>
-  <div class="flex min-h-screen bg-white">
-    <!-- 🔹 Sidebar -->
-    <aside class="w-64 bg-[#0B3C6A] text-white p-4 space-y-6">
-      <!-- <img src="/logo.png" class="h-16 mx-auto mb-4" alt="Logo" /> -->
-      <nav class="space-y-4 text-sm">
-        <p>Homepage</p>
-        <p>Request Document</p>
-        <p>Document Status</p>
-        <p>History</p>
-        <p class="bg-blue-900 rounded px-2 py-1">Feedback</p>
-      </nav>
-      <button class="mt-auto text-left text-red-200 hover:text-red-400">Log out</button>
-    </aside>
+  <div class="rating-document-container">
+    <h1 class="title">รายงานคะแนนการให้บริการเอกสาร</h1>
 
-    <!-- 🔸 Main Content -->
-    <div class="flex-1 p-6">
-      <!-- 🔹 Topbar -->
-      <div class="flex justify-end mb-4">
-        <span class="text-sm text-blue-900 font-bold">EN</span>
-        <span class="mx-1 text-gray-400">/</span>
-        <span class="text-sm text-purple-500 font-bold">TH</span>
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-value">{{ totalRatings }}</div>
+        <div class="stat-label">จำนวนการให้คะแนนทั้งหมด</div>
       </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ averageRating.toFixed(1) }} <span class="star">★</span></div>
+        <div class="stat-label">คะแนนเฉลี่ย</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value">{{ fiveStarCount }}</div>
+        <div class="stat-label">5 ดาว</div>
+      </div>
+    </div>
 
-      <!-- 🔹 Header -->
-      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div class="flex items-center gap-4">
-          <img :src="currentStaff.img" class="w-16 h-16 rounded-full object-cover" alt="Staff Avatar" />
-          <h2 class="text-xl font-bold">Name&nbsp;&nbsp;{{ currentStaff.name }}</h2>
-        </div>
+    <div class="chart-section">
+      <h2 class="subtitle">กราฟการกระจายคะแนน</h2>
+      <div v-if="hasData" class="chart-wrapper">
+        <BarChart :chart-data="chartData" :chart-options="chartOptions" />
+      </div>
+      <div v-else class="no-data">
+        <p>ยังไม่มีข้อมูลการให้คะแนน</p>
+      </div>
+    </div>
 
-        <div class="flex flex-wrap items-center gap-3">
-          <!-- ตัวเลือกพนักงาน -->
-          <select v-model="selectedStaffId" class="border rounded px-3 py-1 text-sm">
-            <option v-for="s in staffList" :key="s.id" :value="s.id">{{ s.name }}</option>
-          </select>
-
-          <select v-model="semester" class="border rounded px-3 py-1 text-sm">
-            <option value="1">Semester 1</option>
-            <option value="2">Semester 2</option>
-          </select>
-
-          <select v-model="year" class="border rounded px-3 py-1 text-sm">
-            <option>2025</option>
-            <option>2024</option>
-          </select>
+    <div class="recent-reviews">
+      <h2 class="subtitle">รีวิวล่าสุด</h2>
+      <div v-if="recentReviews.length > 0" class="reviews-list">
+        <div v-for="(review, index) in recentReviews" :key="index" class="review-card">
+          <div class="review-header">
+            <div class="review-title">{{ review.documentType }}</div>
+            <div class="review-date">{{ review.date }}</div>
+          </div>
+          <div class="review-stars">
+            <span v-for="star in 5" :key="star" class="star" :class="{ active: star <= review.rating }">★</span>
+          </div>
+          <div v-if="review.comment" class="review-comment">
+            "{{ review.comment }}"
+          </div>
+          <div class="review-author">- {{ review.studentName }}</div>
         </div>
       </div>
-
-      <!-- 🔹 Feedback Box -->
-      <div class="bg-[#908DFF] rounded-xl p-6 flex flex-wrap gap-6 text-white">
-        <!-- Rating Section -->
-        <div class="flex-1 min-w-[300px]">
-          <h3 class="text-4xl font-bold mb-2">3.9 ★★★★☆</h3>
-          <BarChart :chart-data="chartData" :chart-options="chartOptions" />
-          <button class="mt-4 px-4 py-1 bg-purple-800 text-white rounded">Export</button>
-        </div>
-
-        <!-- Comment Section -->
-        <div class="flex-1 min-w-[300px] bg-gray-100 text-black rounded-lg p-4 overflow-y-auto max-h-80">
-          <div class="flex justify-between items-center mb-3">
-            <h3 class="font-semibold text-lg">comment</h3>
-            <select class="border rounded px-2 py-1 text-sm">
-              <option>Course registration</option>
-              <option>Internship</option>
-            </select>
-          </div>
-
-          <div v-for="(comment, i) in comments" :key="i" class="mb-4 border-b pb-2">
-            <div class="flex items-center gap-2 mb-1">
-              <i class="fas fa-user-circle text-xl"></i>
-              <span class="text-yellow-500 text-sm">
-                {{ '★'.repeat(comment.rating) + '☆'.repeat(5 - comment.rating) }}
-              </span>
-            </div>
-            <p class="text-sm">{{ comment.text }}</p>
-          </div>
-        </div>
+      <div v-else class="no-reviews">
+        <p>ยังไม่มีรีวิวล่าสุด</p>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-/* 
-  ✅ รูปทั้งหมดต้องอยู่ที่: secretary-ui/src/assets/
-  - P_Aoi.png
-  - P_Pong.png
-  - P_Nim.png
-  - P_Lek.png
-  - P_Angoon.png
-*/
-
+<script>
 import { ref, computed } from 'vue'
-import BarChart from '../../components/BarChart.vue'
+import SecreLayout from '@/layouts/secretary/SecreLayout.vue' // ✅ เพิ่มการ import
+import BarChart from '@/components/secretary/Barchart.vue' // ✅ ใช้ alias @/
 
-// ✅ นำเข้ารูปจาก src/assets ด้วย alias @
-import imgAoi from '@/assets/P_Aoi.png'
-import imgPong from '@/assets/P_Pong.png'
-import imgNim from '@/assets/P_Nim.png'
-import imgLek from '@/assets/P_Lek.png'
-import imgAngoon from '@/assets/P_Angoon.png'
+export default {
+  name: 'RatingDocument',
+  components: {
+    SecreLayout, // ✅ เพิ่มใน components
+    BarChart
+  },
+  setup() {
+    // ข้อมูลจำลอง
+    const mockReviews = ref([
+      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'ดำเนินการรวดเร็ว บริการดีมาก', date: '2025-04-15', studentName: 'นายสมชาย ใจดี' },
+      { documentType: 'ใบรับรองการศึกษา', rating: 4, comment: 'รอคิวนานไปหน่อย', date: '2025-04-14', studentName: 'นางสาวสมหญิง เรียนเก่ง' },
+      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'พนักงานให้คำแนะนำดีมาก', date: '2025-04-13', studentName: 'นายวิทยา ขยันเรียน' },
+      { documentType: 'ใบรับรองผลการเรียน', rating: 3, comment: 'เอกสารมีข้อผิดพลาดต้องมาแก้ใหม่', date: '2025-04-12', studentName: 'นางสาวสุดา สมบูรณ์' },
+      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'ประทับใจในบริการ', date: '2025-04-11', studentName: 'นายกิตติ ขยันทำงาน' }
+    ])
 
-// ✅ รายชื่อพนักงาน 5 คน
-const staffList = [
-  { id: 'aoi',    name: 'Porntip Panya', img: imgAoi },
-  { id: 'pong',   name: 'Pongkajorn S.', img: imgPong },
-  { id: 'nim',    name: 'Nim Napa',      img: imgNim },
-  { id: 'lek',    name: 'Thanasak Lek',  img: imgLek },
-  { id: 'angoon', name: 'Angoon L.',     img: imgAngoon }
-]
+    const totalRatings = computed(() => mockReviews.value.length)
+    const averageRating = computed(() => {
+      if (mockReviews.value.length === 0) return 0
+      const sum = mockReviews.value.reduce((acc, review) => acc + review.rating, 0)
+      return sum / mockReviews.value.length
+    })
+    const fiveStarCount = computed(() => {
+      return mockReviews.value.filter(review => review.rating === 5).length
+    })
 
-// ✅ state
-const selectedStaffId = ref(staffList[0].id)
-const semester = ref('1')
-const year = ref('2025')
+    const recentReviews = computed(() => {
+      return [...mockReviews.value].slice(0, 5)
+    })
 
-// ✅ staff ปัจจุบันตามที่เลือก
-const currentStaff = computed(() => {
-  return staffList.find(s => s.id === selectedStaffId.value) || staffList[0]
-})
+    const hasData = computed(() => mockReviews.value.length > 0)
 
-// ✅ Chart data (ตัวอย่าง)
-const chartData = {
-  labels: ['Service Provider', 'Service Delivery process', 'Facilities'],
-  datasets: [
-    {
-      label: 'Rating',
-      backgroundColor: ['#3B82F6', '#FACC15', '#F87171'],
-      data: [5, 2, 3]
+    // ข้อมูลสำหรับกราฟ
+    const chartData = computed(() => {
+      const ratings = [1, 2, 3, 4, 5]
+      const counts = ratings.map(rating => {
+        return mockReviews.value.filter(review => review.rating === rating).length
+      })
+
+      return {
+        labels: ['1 ดาว', '2 ดาว', '3 ดาว', '4 ดาว', '5 ดาว'],
+        datasets: [
+          {
+            label: 'จำนวนการให้คะแนน',
+            backgroundColor: '#4a67d8',
+            data: counts
+          }
+        ]
+      }
+    })
+
+    const chartOptions = {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
     }
-  ]
-}
 
-const chartOptions = {
-  responsive: true,
-  scales: {
-    y: {
-      beginAtZero: true,
-      ticks: { stepSize: 1 }
+    return {
+      totalRatings,
+      averageRating,
+      fiveStarCount,
+      recentReviews,
+      hasData,
+      chartData,
+      chartOptions
     }
   }
 }
-
-const comments = ref([
-  { rating: 4, text: 'She is kind and works very quickly.' },
-  { rating: 4, text: 'The service was decent and followed the standard process. However, there’s still room for improvement...' },
-  { rating: 2, text: 'Could improve speed and explanation quality.' }
-])
 </script>
+
+<style scoped>
+.rating-document-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  color: #1f2937;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e5e7eb;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4a67d8;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 1rem;
+  color: #4b5563;
+}
+
+.star {
+  color: #fbbf24;
+}
+
+.chart-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.subtitle {
+  font-size: 1.5rem;
+  color: #374151;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.chart-wrapper {
+  height: 400px;
+}
+
+.no-data {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.recent-reviews {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-card {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  border-left: 4px solid #4a67d8;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.review-title {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.review-date {
+  color: #6b7280;
+  font-size: 0.9rem;
+}
+
+.review-stars {
+  margin: 8px 0;
+}
+
+.review-stars .star {
+  color: #d1d5db;
+  font-size: 1.2rem;
+}
+
+.review-stars .star.active {
+  color: #fbbf24;
+}
+
+.review-comment {
+  font-style: italic;
+  color: #374151;
+  margin: 8px 0;
+  padding: 8px;
+  background: white;
+  border-radius: 4px;
+}
+
+.review-author {
+  font-weight: 500;
+  color: #4b5563;
+  text-align: right;
+}
+
+.no-reviews {
+  text-align: center;
+  padding: 40px;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+</style>
