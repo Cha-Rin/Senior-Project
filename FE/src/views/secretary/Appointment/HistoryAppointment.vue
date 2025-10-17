@@ -1,77 +1,110 @@
+<!-- 📁 src/views/secretary/HistoryAppointment.vue -->
 <template>
-  <div class="min-h-screen bg-white p-6 space-y-4">
-    <!-- Title -->
-    <h1 class="text-5xl font-semibold">History</h1>
+  <SecreLayout>
+    <div class="page-content">
+      <h1 class="title">History</h1>
 
-    <!-- Date range (mock) -->
-    <label class="inline-flex items-center gap-2 text-sm font-medium">
-      <!-- calendar icon -->
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-gray-600"
-           fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-        <path stroke-linecap="round" stroke-linejoin="round"
-              d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z"/>
-      </svg>
-      <select class="border rounded px-3 py-2 shadow text-gray-700">
-        <option>21 APR 2025  -  25 APR 2025 ▼</option>
-      </select>
-    </label>
-
-    <!-- Header -->
-    <div class="max-w-5xl">
-      <div
-        class="grid grid-cols-5 gap-4 bg-gray-300 text-gray-800 font-semibold rounded-2xl px-6 py-4"
-      >
-        <div>No.</div>
-        <div>Student ID</div>
-        <div>Date &amp; Time</div>
-        <div>Topic</div>
-        <div class="text-right">status</div>
+      <!-- ตัวเลือกช่วงวันที่ -->
+      <div class="date-range-selector">
+        <span class="icon-calendar">📅</span>
+        <span>21 APR 2025 - 25 APR 2025</span>
+        <span class="dropdown-arrow">▼</span>
       </div>
 
-      <!-- Rows -->
-      <div class="mt-4 space-y-4">
+      <!-- รายการประวัติ -->
+      <div class="history-list">
         <div
           v-for="(item, i) in history"
-          :key="i"
-          class="grid grid-cols-5 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-sm ring-1 ring-gray-100"
+          :key="item.no"
+          class="history-card"
         >
-          <!-- No. -->
-          <div class="text-xl font-extrabold tracking-wide">{{ item.no }}</div>
-
-          <!-- Student ID -->
-          <div class="text-gray-700">65xxxxxxxx</div>
-
-          <!-- Date & Time -->
-          <div class="text-gray-700">
+          <div class="col no">{{ item.no }}</div>
+          <div class="col student-id">{{ item.studentId }}</div>
+          <div class="col date-time">
             <div>Date: {{ item.date }}</div>
             <div>Time: {{ item.time }}</div>
           </div>
-
-          <!-- Topic -->
-          <div class="text-gray-700">Course registration;</div>
-
-          <!-- Status -->
-          <div class="text-right font-semibold" :class="statusClass(item.status)">
+          <div class="col topic">{{ item.topic }}</div>
+          <div class="col status" :class="item.status.toLowerCase()">
             {{ item.status }}
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </SecreLayout>
 </template>
 
 <script setup>
 import { ref } from 'vue'
+import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 const history = ref([
-  { no: 'A001', date: '21/03/25', time: '8:00 - 9:00AM',  status: 'Reject'  },
-  { no: 'A002', date: '21/03/25', time: '9:00 - 10:00AM', status: 'Approve' },
-  { no: 'A003', date: '21/03/25', time: '10:00 - 11:00AM', status: 'Reject' }
+  { no: 'A001', studentId: '65xxxxxxxx', date: '21/03/25', time: '8:00 - 9:00AM', topic: 'Course registration;', status: 'Reject' },
+  { no: 'A002', studentId: '65xxxxxxxx', date: '21/03/25', time: '9:00 - 10:00AM', topic: 'Course registration;', status: 'Approve' },
+  { no: 'A003', studentId: '65xxxxxxxx', date: '21/03/25', time: '10:00 - 11:00AM', topic: 'Course registration;', status: 'Reject' }
 ])
-
-const statusClass = (s) => {
-  if (s?.toLowerCase() === 'approve') return 'text-emerald-400'
-  if (s?.toLowerCase() === 'reject')  return 'text-rose-400'
-  return 'text-gray-500'
-}
 </script>
+
+<style scoped>
+.page-content {
+  padding: 2rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  color: #1f2937;
+}
+
+.date-range-selector {
+  background: #fdf2f8;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #be185d;
+  margin-bottom: 1.5rem;
+}
+
+.history-list {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.history-card {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.col {
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+}
+
+.col.no { width: 80px; font-weight: bold; font-size: 1rem; }
+.col.student-id { width: 120px; }
+.col.date-time { width: 200px; font-size: 0.75rem; line-height: 1.2; }
+.col.topic { flex: 1; min-width: 200px; }
+
+.col.status {
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status.reject { color: #dc2626; background: #fee2e2; }
+.status.approve { color: #16a34a; background: #dcfce7; }
+</style>
