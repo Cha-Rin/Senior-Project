@@ -153,7 +153,5 @@ async function goToConfirm() {
 }
 
 
-
-
 </script>
 

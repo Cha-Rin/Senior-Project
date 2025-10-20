@@ -95,6 +95,8 @@ console.log('Available routes:', router.getRoutes().map(r => r.name))
     const role = Number(decoded.role)
     console.log('Decoded role (login):', role)
     localStorage.setItem('userRole', role)
+    localStorage.setItem('userId', decoded.user_id)
+    localStorage.setItem('email', decoded.email)
 
     // ✅ รอ router พร้อมและ nextTick
     await router.isReady()

@@ -86,7 +86,11 @@ app.post('/api/login', (req, res) => {
     });
   });
 });
-
+// ------------------------------------------ Log out -----------------------------------------
+app.post('/student/logout', (req, res) => {
+  // สำหรับ JWT ปกติ เราแค่บอก client ให้ลบ token
+  res.json({ success: true, message: 'Logged out successfully' })
+})
 
 // --------------------------------------- Catagories ---------------------------------------
 app.get('/api/categories', (req, res) => {
@@ -99,10 +103,6 @@ app.get('/api/categories', (req, res) => {
     res.json(results)
   })
 })
-
-
-
-
 
 // --------------------------------------- 404 Handler ---------------------------------------
 app.use((req, res) => {

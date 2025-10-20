@@ -73,12 +73,24 @@ const router = useRouter()
 // })
 
 onMounted(async () => {
-  const userId = localStorage.getItem('userId')
-  console.log('📦 Loaded userId:', userId)
+  const token = localStorage.getItem('authToken')  // ดึง token จาก localStorage
+  console.log('📦 Loaded token:', token)
+
+  if (!token) {
+    console.error('❌ No token found')
+    appointments.value = []
+    return
+  }
 
   try {
-    const res = await fetch(`http://localhost:3000/student/appointments/id/${userId}`)
-    const text = await res.text()              // ✅ อ่านครั้งเดียว
+    const res = await fetch('http://localhost:3000/student/appointments', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    })
+
+    const text = await res.text()  // อ่าน response ครั้งเดียว
 
     if (!res.ok) {
       console.error('HTTP', res.status, text.slice(0, 300))
@@ -98,9 +110,9 @@ onMounted(async () => {
     if (Array.isArray(data)) {
       appointments.value = data
     } else if (data.success && Array.isArray(data.appointments)) {
-      appointments.value = data.appointments   // ✅ เข้ากับ BE ที่เราเพิ่งกำหนด
+      appointments.value = data.appointments
     } else {
-      console.warn('❗ No appointments found for ID:', userId)
+      console.warn('❗ No appointments found for token')
       appointments.value = []
     }
   } catch (err) {
@@ -108,6 +120,7 @@ onMounted(async () => {
     appointments.value = []
   }
 })
+
 
 
 function formatDate(isoString) {

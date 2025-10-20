@@ -1,5 +1,6 @@
 const express = require('express')
 const authMiddleware = require('../middleware/auth') ;
+const SECRET_KEY = 'mysecretkey'
 module.exports = (db) => {
   const router = express.Router()
 
@@ -48,30 +49,51 @@ router.post('/appointments', (req, res) => {
 
 
 // check status
-router.get('/appointments/id/:id', (req, res) => {
-  const id = req.params.id
-  const sql = 'SELECT * FROM appointment WHERE user_id = ? ORDER BY appointment_date DESC'
-  db.query(sql, [id], (err, results) => {
-    if (err) {
-      console.error('DB error:', err)
-      return res.status(500).json({ success: false, message: 'Database error' })
-    }
+router.get('/appointments', (req, res) => {
+  const jwt = require('jsonwebtoken')
+  const authHeader = req.headers['authorization']
+  const token = authHeader && authHeader.split(' ')[1]
+  if (!token) return res.status(401).json({ success: false, message: 'No token provided' })
 
-    if (results.length === 0) {
-      return res.status(404).json({ success: false, message: 'No appointment found' })
-    }
+  try {
+    const decoded = jwt.verify(token, SECRET_KEY) // ใช้ secret เดียวกับตอน login
+    const userId = decoded.user_id
 
-    res.json({ success: true, appointments: results }) 
-  })
+    const sql = 'SELECT * FROM appointment WHERE user_id = ? ORDER BY appointment_date DESC'
+    db.query(sql, [userId], (err, results) => {
+      if (err) {
+        console.error('DB error:', err)
+        return res.status(500).json({ success: false, message: 'Database error' })
+      }
+
+      if (results.length === 0) {
+        return res.status(404).json({ success: false, message: 'No appointment found' })
+      }
+
+      res.json({ success: true, appointments: results })
+    })
+  } catch (err) {
+    console.error('JWT error:', err)
+    res.status(403).json({ success: false, message: 'Invalid or expired token' })
+  }
 })
 
 // history 
 router.get('/history', authMiddleware, (req, res) => {
-  const studentId = req.user.user_id; // ✅ ต้องตรงกับตอน sign token
+  const studentId = req.user.id || req.user.user_id; // ✅ รองรับทั้ง 2 แบบเผื่อ token ต่างเวอร์ชัน
   console.log('📥 Student ID from token:', studentId);
 
+  if (!studentId) {
+    return res.status(400).json({ success: false, message: 'User ID not found in token' });
+  }
+
   const sql = `
-    SELECT a.appointment_date, a.category_id, c.type AS topic
+    SELECT 
+      a.appointment_date, 
+      a.category_id, 
+      c.type AS topic,
+      a.status,
+      a.student_note
     FROM appointment AS a
     JOIN categories AS c ON a.category_id = c.category_id
     WHERE a.user_id = ?
@@ -80,11 +102,16 @@ router.get('/history', authMiddleware, (req, res) => {
 
   db.query(sql, [studentId], (err, results) => {
     if (err) {
-      console.error('🔥 SQL error:', err);
-      return res.status(500).json({ success: false });
+      console.error('🔥 SQL error (history):', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
 
-    console.log('✅ Results from JOIN:', results);
+    if (results.length === 0) {
+      console.warn('⚠️ No history found for user:', studentId);
+      return res.status(404).json({ success: false, message: 'No history found' });
+    }
+
+    console.log('✅ Results from JOIN (history):', results);
     res.json({ success: true, historyItems: results });
   });
 });
@@ -341,7 +368,9 @@ router.get('/appointment/:id/for-feedback', (req, res) => {
 
 // ✅ GET: ดึงหัวข้อของ user
 router.get('/appointment-topics', authMiddleware, (req, res) => {
-  const userId = req.user.id; // อ่านจาก token ที่ authMiddleware ถอดออกมา
+  const userId = req.user.user_id || req.user.id; // ✅ รองรับทั้งสองรูปแบบ
+  console.log('📥 User ID from token (appointment-topics):', userId);
+
   if (!userId) {
     return res.status(400).json({ success: false, message: 'invalid_user_id' });
   }
@@ -360,12 +389,18 @@ router.get('/appointment-topics', authMiddleware, (req, res) => {
       console.error('❌ fetch topics error:', err);
       return res.status(500).json({ success: false, message: 'db_error' });
     }
+
     if (!rows.length) {
+      console.warn('⚠️ No topics found for user:', userId);
       return res.json({ success: false, message: 'Not found' });
     }
+
+    const topics = rows.map(r => r.topic).filter(Boolean);
+    console.log('✅ Topics fetched for user', userId, ':', topics);
+
     res.json({
       success: true,
-      topics: rows.map(r => r.topic).filter(Boolean),
+      topics,
     });
   });
 });
