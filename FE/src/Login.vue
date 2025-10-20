@@ -1,56 +1,54 @@
 <template>
-  <div class="flex items-center justify-center min-h-screen bg-white px-4">
-    <div class="w-full max-w-sm text-center">
+  <div class="min-h-screen flex items-center justify-center min-h-screen w-screen bg-gradient-to-b from-[#f8f9ff] to-[#e0e4ff] dark:from-[#0b0f1f] dark:to-[#1a1f3c] transition-colors duration-500">
+    <div class="w-full max-w-sm text-center bg-white/80 dark:bg-[#101327]/80 backdrop-blur-lg rounded-2xl shadow-xl p-8 mx-4">
       <!-- Welcome Gradient Text -->
       <h1 class="text-4xl sm:text-7xl font-extrabold mb-10 tracking-tight leading-tight">
-        <span style="color: #211C84;">W</span>
-        <span style="color: #4D55CC;">e</span>
-        <span style="color: #7A73D1;">l</span>
-        <span style="color: #B5A8D5;">c</span>
-        <span style="color: #7A73D1;">o</span>
-        <span style="color: #4D55CC;">m</span>
-        <span style="color: #211C84;">e</span>
+        <span class="welcome-text">W</span>
+        <span class="welcome-text">e</span>
+        <span class="welcome-text">l</span>
+        <span class="welcome-text">c</span>
+        <span class="welcome-text">o</span>
+        <span class="welcome-text">m</span>
+        <span class="welcome-text">e</span>
       </h1>
 
       <!-- Login Form -->
       <form @submit.prevent="login" class="space-y-4">
         <div class="text-left">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Username</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Username</label>
           <input
             type="text"
             v-model="username"
             placeholder="Enter username"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
         <div class="text-left">
-          <label class="block mb-1 text-sm font-medium text-gray-700">Password</label>
+          <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">Password</label>
           <input
             type="password"
             v-model="password"
             placeholder="Enter password"
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400"
+            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
         </div>
-        <div class="flex items-center text-left">
-          <!-- <input type="checkbox" id="remember" v-model="rememberMe" class="mr-2" /> -->
-          <!-- <label for="remember" class="text-sm">Remember me</label> -->
-          นักศึกษา Username: anan.yod@example.com, รหัส:  123456 <br>
-          แอดมิน Username: worasak.rue@mfu.ac.th, รหัส: 1234 <br>
-          เลขา Username: porntip.pan@mfu.ac.th, รหัส: 2222
+        <div class="flex flex-col text-left text-sm text-gray-600 dark:text-gray-400">
+          นักศึกษา Username: anan.yod@example.com, รหัส: 123456
+          <br>แอดมิน Username: worasak.rue@mfu.ac.th, รหัส: 1234
+          <br>เลขา Username: porntip.pan@mfu.ac.th, รหัส: 2222
         </div>
-         <!-- 🔺 Error message -->
+
+        <!-- 🔺 Error message -->
         <p v-if="errorMessage" class="text-red-500 text-sm">{{ errorMessage }}</p>
         
         <button type="submit"
-          class="w-full py-2 bg-[#003366] text-white rounded-md hover:bg-[#5a4bdb] transition">Login
+          class="w-full py-2 bg-[#003366] dark:bg-[#5a4bdb] text-white rounded-md hover:bg-[#5a4bdb] dark:hover:bg-[#211C84] transition">
+          Login
         </button>
-
       </form>
     </div>
   </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted, nextTick } from "vue"
@@ -85,30 +83,24 @@ const login = async () => {
       errorMessage.value = 'Incorrect username or password.'
       return
     }
-console.log('Router is ready:', router.isReady)
-console.log('Available routes:', router.getRoutes().map(r => r.name))
 
-    // ✅ เก็บ token
     localStorage.setItem('authToken', data.token)
 
     const decoded = jwt_decode(data.token)
     const role = Number(decoded.role)
-    console.log('Decoded role (login):', role)
     localStorage.setItem('userRole', role)
     localStorage.setItem('userId', decoded.user_id)
     localStorage.setItem('email', decoded.email)
 
-    // ✅ รอ router พร้อมและ nextTick
     await router.isReady()
     await nextTick()
 
-    // Router ตาม role
     switch (role) {
       case 3:
-        await router.push({ name: 'PathSelect' })// ชื่อ route ต้องตรงกับ router/index.js
+        await router.push({ name: 'PathSelect' })
         break
       case 2:
-        await router.push({ name: 'Appointment' }) 
+        await router.push({ name: 'Appointment' })
         break
       case 1:
         await router.push({ name: 'Dashboard' })
@@ -131,8 +123,6 @@ onMounted(async () => {
   try {
     const decoded = jwt_decode(token)
     const role = Number(decoded.role)
-    console.log('Decoded role (mounted):', role)
-    console.log('Redirecting...')
 
     await router.isReady()
     await nextTick()
@@ -157,7 +147,30 @@ onMounted(async () => {
 })
 </script>
 
+<style scoped>
+/* 🎨 สีตัวอักษรเปลี่ยนตามธีม */
+.welcome-text {
+  font-weight: 800;
+  transition: color 0.3s ease;
+}
 
+@media (prefers-color-scheme: light) {
+  .welcome-text:nth-child(1) { color: #211C84; }
+  .welcome-text:nth-child(2) { color: #4D55CC; }
+  .welcome-text:nth-child(3) { color: #7A73D1; }
+  .welcome-text:nth-child(4) { color: #B5A8D5; }
+  .welcome-text:nth-child(5) { color: #7A73D1; }
+  .welcome-text:nth-child(6) { color: #4D55CC; }
+  .welcome-text:nth-child(7) { color: #211C84; }
+}
 
-
-
+@media (prefers-color-scheme: dark) {
+  .welcome-text:nth-child(1) { color: #C1B8FF; }
+  .welcome-text:nth-child(2) { color: #9F9AF5; }
+  .welcome-text:nth-child(3) { color: #857AEF; }
+  .welcome-text:nth-child(4) { color: #5F5BCB; }
+  .welcome-text:nth-child(5) { color: #857AEF; }
+  .welcome-text:nth-child(6) { color: #9F9AF5; }
+  .welcome-text:nth-child(7) { color: #C1B8FF; }
+}
+</style>
