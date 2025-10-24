@@ -3,8 +3,9 @@
     <!-- 🔹 Header -->
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div class="flex items-center gap-4">
-        <img :src="resolvedAvatar" alt="avatar" class="w-20 h-20 rounded-full border-2 border-purple-500" />
-        <h2 class="text-3xl font-bold text-black">Name {{ staff?.name  }}</h2>
+        <img :src="resolvedAvatar" alt="avatar"
+             class="w-20 h-20 rounded-full border-2 border-purple-500" />
+        <h2 class="text-3xl font-bold text-black">Name {{ staffName }}</h2>
       </div>
 
       <!-- 🔹 Term/Year Selector -->
@@ -19,7 +20,8 @@
           <option disabled value="">Year</option>
           <option v-for="year in years" :key="year">{{ year }}</option>
         </select>
-        <button @click="$router.push('/dashboard')" class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800">
+        <button @click="$router.push('/admin/dashboard')"
+                class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800">
           ← Back to Dashboard
         </button>
       </div>
@@ -65,42 +67,28 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useStaffStore } from '../stores/staffStore' // ✅ แก้ให้ตรง path จริง
-import BarChart from '../components/StaffRating/BarChart.vue' // ✅ แก้ให้ตรง path จริง
+import BarChart from '@/components/admin/BarChart.vue'
 
-// 🔹 Get route param
+// ✅ ดึงค่าจาก route
 const route = useRoute()
-const staffId = route.params.staffId
+const staffId = route.params.id
+const staffName = route.query.name
+const resolvedAvatar = route.query.avatar || new URL('/src/assets/default.png', import.meta.url).href
 
-// 🔹 Store
-const staffStore = useStaffStore()
-const staff = computed(() => staffStore.staffList.find(s => s.id === staffId))
+// ✅ mock ค่าคะแนน (ชั่วคราว)
+const average = ref({
+  serviceProvider: 4.2,
+  serviceProcess: 4.4,
+  facilities: 4.1
+})
 
-// 🔹 Resolve image path
-// const resolvedAvatar = computed(() => {
-//   const path = staff.value?.avatar
-//   if (!path) return new URL('/src/assets/default.png', import.meta.url).href
-//   if (path.startsWith('/src/assets/')) return new URL(path, import.meta.url).href
-//   return path
-// })
-const resolveAvatar = (path) => {
-  if (!path) return new URL('/src/assets/default.png', import.meta.url).href
-  if (path.startsWith('/src/assets/')) {
-    return new URL(path, import.meta.url).href
-  }
-  return path
-}
-
-// 🔹 Average rating per category
-const average = computed(() => staffStore.getAverageRating(staffId))
-
-// 🔹 Overall average score
+// ✅ คะแนนเฉลี่ยรวม
 const averageScore = computed(() => {
   const a = average.value
   return ((a.serviceProvider + a.serviceProcess + a.facilities) / 3).toFixed(1)
 })
 
-// 🔹 Convert to star symbols
+// ✅ ดาว
 const stars = computed(() => {
   const score = Number(averageScore.value)
   if (score >= 4.5) return '★★★★★'
@@ -110,7 +98,7 @@ const stars = computed(() => {
   return '★☆☆☆☆'
 })
 
-// 🔹 Bar Chart
+// ✅ ข้อมูลกราฟ
 const chartData = computed(() => ({
   labels: ['Service Provider', 'Service Process', 'Facilities'],
   datasets: [{
@@ -124,24 +112,21 @@ const chartData = computed(() => ({
   }]
 }))
 
-// 🔹 Comments
-const comments = computed(() =>
-  staffStore.getStaffComments(staffId).map(r => ({
-    text: r.comment,
-    stars: 5,
-    date: new Date(r.timestamp).toLocaleDateString('th-TH')
-  }))
-)
+// ✅ คอมเมนต์ตัวอย่าง
+const comments = ref([
+  { text: 'บริการดีมากค่ะ', stars: 5, date: '21/10/2025' },
+  { text: 'รวดเร็วและสุภาพ', stars: 4, date: '22/10/2025' }
+])
 
-// 🔹 Dropdowns
+// ✅ semester/year
 const selectedTerm = ref('1')
 const selectedYear = ref('2025')
 const years = Array.from({ length: 5 }, (_, i) => 2025 - i)
 
-// 🔹 Tabs
+// ✅ tab
 const tab = ref('appointment')
 
-// 🔹 Button classes
+// ✅ style
 const activeTab = "bg-white text-purple-800 font-bold px-4 py-2 rounded-t-lg border border-b-0"
 const defaultTab = "bg-purple-300 text-white px-4 py-2 rounded-t-lg hover:bg-purple-400"
 </script>
