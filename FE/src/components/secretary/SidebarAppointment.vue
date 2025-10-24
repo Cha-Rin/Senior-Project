@@ -29,7 +29,7 @@
     </router-link>
 
     <router-link
-      to="/history"
+      to="/history-appointment"
       class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
       :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'HistoryAppointment' }"
     >
