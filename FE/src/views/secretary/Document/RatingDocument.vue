@@ -40,28 +40,11 @@
           <div class="flex-1 min-w-[300px] bg-white text-gray-800 rounded-xl p-6 shadow">
             <div class="text-lg font-bold text-center mb-4">Rating</div>
 
-            <div class="relative h-64 flex items-end gap-4">
-              <!-- Y-axis -->
-              <div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-400 p-1">
-                <span v-for="i in 5" :key="i">{{ i }}</span>
-              </div>
-
-              <!-- Bars -->
-              <div class="flex-1 flex items-end gap-4 pl-5">
-                <div class="flex flex-col items-center gap-2">
-                  <div class="w-10 rounded-t" :style="{ height: `${ratings.provider * 40}px`, backgroundColor: '#1f6feb' }"></div>
-                  <div class="text-xs text-center max-w-[80px] truncate">Service Provider</div>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                  <div class="w-10 rounded-t" :style="{ height: `${ratings.delivery * 40}px`, backgroundColor: '#f59e0b' }"></div>
-                  <div class="text-xs text-center max-w-[80px] truncate">Service Delivery</div>
-                </div>
-                <div class="flex flex-col items-center gap-2">
-                  <div class="w-10 rounded-t" :style="{ height: `${ratings.facilities * 40}px`, backgroundColor: '#ef4444' }"></div>
-                  <div class="text-xs text-center max-w-[80px] truncate">Facilities</div>
-                </div>
-              </div>
-            </div>
+            <Barchart
+              :labels="['Service Provider', 'Service Delivery', 'Facilities']"
+              :data="[ratings.provider, ratings.delivery, ratings.facilities]"
+              :colors="['#1f6feb', '#f59e0b', '#ef4444']"
+            />
 
             <!-- Legend -->
             <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
@@ -117,6 +100,7 @@ import { ref, computed, onMounted} from 'vue'
 import jwt_decode from 'jwt-decode'
 import axios from 'axios'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
+import Barchart from '@/components/secretary/Barchart.vue'
 
 const selectedSemester = ref('1')
 const selectedYear = ref('2568')
