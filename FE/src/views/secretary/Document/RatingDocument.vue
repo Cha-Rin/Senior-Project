@@ -1,281 +1,455 @@
-<!-- 📁 src/views/secretary/Document/RatingDocument.vue -->
+<!-- 📁 src/views/secretary/RatingAppointment.vue -->
 <template>
-  <div class="rating-document-container">
-    <h1 class="title">รายงานคะแนนการให้บริการเอกสาร</h1>
-
-    <div class="stats-cards">
-      <div class="stat-card">
-        <div class="stat-value">{{ totalRatings }}</div>
-        <div class="stat-label">จำนวนการให้คะแนนทั้งหมด</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ averageRating.toFixed(1) }} <span class="star">★</span></div>
-        <div class="stat-label">คะแนนเฉลี่ย</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-value">{{ fiveStarCount }}</div>
-        <div class="stat-label">5 ดาว</div>
-      </div>
-    </div>
-
-    <div class="chart-section">
-      <h2 class="subtitle">กราฟการกระจายคะแนน</h2>
-      <div v-if="hasData" class="chart-wrapper">
-        <BarChart :chart-data="chartData" :chart-options="chartOptions" />
-      </div>
-      <div v-else class="no-data">
-        <p>ยังไม่มีข้อมูลการให้คะแนน</p>
-      </div>
-    </div>
-
-    <div class="recent-reviews">
-      <h2 class="subtitle">รีวิวล่าสุด</h2>
-      <div v-if="recentReviews.length > 0" class="reviews-list">
-        <div v-for="(review, index) in recentReviews" :key="index" class="review-card">
-          <div class="review-header">
-            <div class="review-title">{{ review.documentType }}</div>
-            <div class="review-date">{{ review.date }}</div>
+  <SecreLayout>
+    <div class="page-content">
+      <!-- Header แบบภาพแรก -->
+      <div class="header-bar">
+        <div class="user-info">
+          <img src="@/assets/P_Aoi.png" alt="User Avatar" class="avatar" />
+          <div class="user-name">
+            <span>Name</span>
+            <strong>Porntip Panya</strong>
           </div>
-          <div class="review-stars">
-            <span v-for="star in 5" :key="star" class="star" :class="{ active: star <= review.rating }">★</span>
-          </div>
-          <div v-if="review.comment" class="review-comment">
-            "{{ review.comment }}"
-          </div>
-          <div class="review-author">- {{ review.studentName }}</div>
+        </div>
+
+        <div class="filters">
+          <select v-model="selectedSemester" class="filter-select">
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
+          <select v-model="selectedYear" class="filter-select">
+            <option value="2568">2568</option>
+            <option value="2567">2567</option>
+            <option value="2566">2566</option>
+          </select>
         </div>
       </div>
-      <div v-else class="no-reviews">
-        <p>ยังไม่มีรีวิวล่าสุด</p>
+
+      <!-- Main Card แบบภาพแรก -->
+      <div class="rating-card">
+        <!-- Overall Rating -->
+        <div class="overall-rating">
+          <span class="score">3.9</span>
+          <div class="stars">
+            <span v-for="i in 5" :key="i" :class="{ 'filled': i <= 4 }">★</span>
+          </div>
+        </div>
+
+        <!-- Chart & Comments -->
+        <div class="content-row">
+          <!-- Bar Chart -->
+          <div class="chart-container">
+            <div class="chart-header">Rating</div>
+            <div class="bar-chart-wrapper">
+              <!-- Y-axis -->
+              <div class="y-axis">
+                <span v-for="i in 5" :key="i">{{ i }}</span>
+              </div>
+
+              <!-- Bars -->
+              <div class="bar-group">
+                <div class="bar-item">
+                  <div class="bar" :style="{ height: `${ratings.provider * 40}px`, backgroundColor: '#1f6feb' }"></div>
+                  <div class="label">Service Provider</div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar" :style="{ height: `${ratings.delivery * 40}px`, backgroundColor: '#f59e0b' }"></div>
+                  <div class="label">Service Delivery process</div>
+                </div>
+                <div class="bar-item">
+                  <div class="bar" :style="{ height: `${ratings.facilities * 40}px`, backgroundColor: '#ef4444' }"></div>
+                  <div class="label">Facilities</div>
+                </div>
+              </div>
+
+              <!-- Legend -->
+              <div class="legend">
+                <div class="legend-item">
+                  <div class="legend-color" style="background: #1f6feb;"></div>
+                  <span>Service Provider</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: #f59e0b;"></div>
+                  <span>Service Delivery process</span>
+                </div>
+                <div class="legend-item">
+                  <div class="legend-color" style="background: #ef4444;"></div>
+                  <span>Facilities</span>
+                </div>
+              </div>
+            </div>
+
+            <button class="export-btn">Export</button>
+          </div>
+
+          <!-- Comments -->
+          <div class="comments-container">
+            <div class="comment-header">
+              <span>Comment</span>
+              <select v-model="selectedTopic" class="topic-select">
+                <option value="course-registration">Course registration</option>
+                <option value="advising">Advising session</option>
+                <option value="internship">Internship approval</option>
+              </select>
+            </div>
+
+            <div class="comment-list">
+              <div v-for="(comment, i) in filteredComments" :key="i" class="comment-item">
+                <div class="avatar-placeholder">👤</div>
+                <div class="comment-text">
+                  <div class="stars">
+                    <span v-for="j in 5" :key="j" :class="{ 'filled': j <= comment.stars }">★</span>
+                  </div>
+                  <p>{{ comment.text }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </SecreLayout>
 </template>
 
-<script>
+<script setup>
 import { ref, computed } from 'vue'
-import SecreLayout from '@/layouts/secretary/SecreLayout.vue' // ✅ เพิ่มการ import
-import BarChart from '@/components/secretary/Barchart.vue' // ✅ ใช้ alias @/
+import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
-export default {
-  name: 'RatingDocument',
-  components: {
-    SecreLayout, // ✅ เพิ่มใน components
-    BarChart
-  },
-  setup() {
-    // ข้อมูลจำลอง
-    const mockReviews = ref([
-      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'ดำเนินการรวดเร็ว บริการดีมาก', date: '2025-04-15', studentName: 'นายสมชาย ใจดี' },
-      { documentType: 'ใบรับรองการศึกษา', rating: 4, comment: 'รอคิวนานไปหน่อย', date: '2025-04-14', studentName: 'นางสาวสมหญิง เรียนเก่ง' },
-      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'พนักงานให้คำแนะนำดีมาก', date: '2025-04-13', studentName: 'นายวิทยา ขยันเรียน' },
-      { documentType: 'ใบรับรองผลการเรียน', rating: 3, comment: 'เอกสารมีข้อผิดพลาดต้องมาแก้ใหม่', date: '2025-04-12', studentName: 'นางสาวสุดา สมบูรณ์' },
-      { documentType: 'ใบสมัครฝึกงาน', rating: 5, comment: 'ประทับใจในบริการ', date: '2025-04-11', studentName: 'นายกิตติ ขยันทำงาน' }
-    ])
+// ตัวเลือก
+const selectedSemester = ref('1')
+const selectedYear = ref('2568')
+const selectedTopic = ref('course-registration')
 
-    const totalRatings = computed(() => mockReviews.value.length)
-    const averageRating = computed(() => {
-      if (mockReviews.value.length === 0) return 0
-      const sum = mockReviews.value.reduce((acc, review) => acc + review.rating, 0)
-      return sum / mockReviews.value.length
-    })
-    const fiveStarCount = computed(() => {
-      return mockReviews.value.filter(review => review.rating === 5).length
-    })
-
-    const recentReviews = computed(() => {
-      return [...mockReviews.value].slice(0, 5)
-    })
-
-    const hasData = computed(() => mockReviews.value.length > 0)
-
-    // ข้อมูลสำหรับกราฟ
-    const chartData = computed(() => {
-      const ratings = [1, 2, 3, 4, 5]
-      const counts = ratings.map(rating => {
-        return mockReviews.value.filter(review => review.rating === rating).length
-      })
-
-      return {
-        labels: ['1 ดาว', '2 ดาว', '3 ดาว', '4 ดาว', '5 ดาว'],
-        datasets: [
-          {
-            label: 'จำนวนการให้คะแนน',
-            backgroundColor: '#4a67d8',
-            data: counts
-          }
-        ]
-      }
-    })
-
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      scales: {
-        y: {
-          beginAtZero: true,
-          ticks: {
-            stepSize: 1
-          }
-        }
-      }
-    }
-
-    return {
-      totalRatings,
-      averageRating,
-      fiveStarCount,
-      recentReviews,
-      hasData,
-      chartData,
-      chartOptions
-    }
-  }
+// คะแนนโดยรวม
+const ratings = {
+  provider: 4.8,
+  delivery: 2.0,
+  facilities: 2.9
 }
+
+// ความคิดเห็น
+const comments = [
+  {
+    topic: 'course-registration',
+    stars: 5,
+    text: 'She is kind and works very quickly.'
+  },
+  {
+    topic: 'course-registration',
+    stars: 4,
+    text: 'The service was decent and followed the standard process. However, there\'s still room for improvement in terms of speed and convenience to make the experience smoother and more efficient.'
+  },
+  {
+    topic: 'course-registration',
+    stars: 5,
+    text: 'Very helpful and professional!'
+  },
+  {
+    topic: 'advising',
+    stars: 3,
+    text: 'Good advice but took too long.'
+  }
+]
+
+// กรองความคิดเห็นตามหัวข้อ
+const filteredComments = computed(() => {
+  return comments.filter(c => c.topic === selectedTopic)
+})
 </script>
 
 <style scoped>
-.rating-document-container {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+.page-content {
+  padding: 2rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+  background: #f9fafb;
 }
 
-.title {
-  font-size: 2rem;
-  color: #1f2937;
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.stats-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
-}
-
-.stat-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  text-align: center;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e5e7eb;
-}
-
-.stat-value {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #4a67d8;
-  margin-bottom: 8px;
-}
-
-.stat-label {
-  font-size: 1rem;
-  color: #4b5563;
-}
-
-.star {
-  color: #fbbf24;
-}
-
-.chart-section {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  margin-bottom: 32px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.subtitle {
-  font-size: 1.5rem;
-  color: #374151;
-  margin-bottom: 24px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.chart-wrapper {
-  height: 400px;
-}
-
-.no-data {
-  text-align: center;
-  padding: 40px;
-  color: #6b7280;
-  font-size: 1.1rem;
-}
-
-.recent-reviews {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.reviews-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.review-card {
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 16px;
-  border-left: 4px solid #4a67d8;
-}
-
-.review-header {
+/* Header Bar แบบภาพแรก */
+.header-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.review-title {
-  font-weight: 600;
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-name {
+  font-size: 1.25rem;
   color: #1f2937;
 }
 
-.review-date {
+.user-name span {
+  font-size: 0.875rem;
   color: #6b7280;
-  font-size: 0.9rem;
+  display: block;
 }
 
-.review-stars {
-  margin: 8px 0;
+.filters {
+  display: flex;
+  gap: 1rem;
 }
 
-.review-stars .star {
+.filter-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+}
+
+/* Main Card แบบภาพแรก */
+.rating-card {
+  background: #4f46e5; /* สีน้ำเงิน */
+  color: white;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.overall-rating {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.score {
+  font-size: 3rem;
+  font-weight: bold;
+}
+
+.stars {
+  font-size: 1.5rem;
+  display: flex;
+}
+
+.stars span {
   color: #d1d5db;
-  font-size: 1.2rem;
 }
 
-.review-stars .star.active {
+.stars .filled {
   color: #fbbf24;
 }
 
-.review-comment {
-  font-style: italic;
-  color: #374151;
-  margin: 8px 0;
-  padding: 8px;
+.content-row {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.chart-container {
+  flex: 1;
+  min-width: 300px;
   background: white;
-  border-radius: 4px;
+  color: #1f2937;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
-.review-author {
-  font-weight: 500;
-  color: #4b5563;
-  text-align: right;
-}
-
-.no-reviews {
+.chart-header {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
   text-align: center;
-  padding: 40px;
+}
+
+.bar-chart-wrapper {
+  position: relative;
+  height: 250px;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.y-axis {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  font-size: 0.75rem;
   color: #6b7280;
-  font-size: 1.1rem;
+}
+
+.bar-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex: 1;
+  padding-left: 20px; /* ให้มีพื้นที่สำหรับ Y-axis */
+}
+
+.bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bar {
+  width: 40px;
+  transition: height 0.3s ease;
+  border-radius: 4px 4px 0 0;
+}
+
+.label {
+  font-size: 0.75rem;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.legend {
+  margin-top: 1rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.export-btn {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.export-btn:hover {
+  background: #4338ca;
+}
+
+.comments-container {
+  flex: 1;
+  min-width: 300px;
+  background: #f3f4f6;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.comment-header span {
+  font-size: 1.25rem;
+  font-weight: bold;
+}
+
+.topic-select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+}
+
+.comment-list {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.comment-item {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.avatar-placeholder {
+  font-size: 1.5rem;
+  color: #6b7280;
+}
+
+.comment-text {
+  flex: 1;
+}
+
+.comment-text .stars {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.comment-text .stars span {
+  color: #d1d5db;
+}
+
+.comment-text .stars .filled {
+  color: #fbbf24;
+}
+
+.comment-text p {
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #374151;
+}
+
+/* Scrollbar Style */
+.comment-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.comment-list::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 10px;
+}
+
+.comment-list::-webkit-scrollbar-thumb {
+  background: #6b7280;
+  border-radius: 10px;
+}
+
+.comment-list::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
 }
 </style>
