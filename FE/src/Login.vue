@@ -100,7 +100,7 @@ const login = async () => {
         await router.push({ name: 'PathSelect' })
         break
       case 2:
-        await router.push({ name: 'Appointment' })
+        await router.push({ name: 'Homepage' })
         break
       case 1:
         await router.push({ name: 'Dashboard' })
@@ -132,7 +132,7 @@ onMounted(async () => {
         await router.push({ name: 'PathSelect' })
         break
       case 2:
-        await router.push({ name: 'Appointment' })
+        await router.push({ name: 'Homepage' })
         break
       case 1:
         await router.push({ name: 'Dashboard' })
