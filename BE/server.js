@@ -3,7 +3,7 @@ const cors = require('cors')
 const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
 const mysql = require('mysql2')
-
+const router = express.Router();
 const app = express()
 
 app.use(cors())
@@ -84,6 +84,16 @@ app.post('/api/login', (req, res) => {
         role: Number(user.role)
       }
     });
+  });
+});
+// ------------------------------------------ Profile -----------------------------------------
+app.get('/profile/:id', (req, res) => {
+  const userId = Number(req.params.id); // แปลงเป็น number
+  const sql = 'SELECT name, surname FROM user WHERE user_id = ?';
+  db.query(sql, [userId], (err, result) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    if (result.length === 0) return res.status(404).json({ error: 'User not found' });
+    res.json(result[0]);
   });
 });
 // ------------------------------------------ Log out -----------------------------------------
