@@ -2,21 +2,39 @@
 <template>
   <SecreLayout>
     <div class="page-content">
-      <h1 class="title">History</h1>
+      <!-- ✅ หัวข้อใช้ gradient -->
+      <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        History
+      </h1>
 
-      <!-- 🔸 Date Range Dropdown -->
-      <div class="date-range-selector">
-        <label class="flex items-center gap-2 text-sm font-semibold">
-          <i class="far fa-calendar-alt"></i>
-          <select class="border px-3 py-1 rounded text-sm shadow">
-            <option>21 APR 2025 - 25 APR 2025</option>
-          </select>
-        </label>
+      <!-- 🔸 Date Range Selector (Week View) -->
+      <div class="flex items-center gap-3 bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
+        <span class="text-violet-600 text-xl">📅</span>
+        <input
+          type="date"
+          v-model="startDate"
+          @change="updateWeekRange"
+          class="border border-violet-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+        />
+        <span class="text-gray-500 font-medium">–</span>
+        <input
+          type="date"
+          v-model="endDate"
+          @change="updateWeekRange"
+          class="border border-violet-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
+        />
+        <button
+          @click="resetDate"
+          class="ml-2 text-sm font-medium text-violet-600 hover:text-violet-800 underline"
+        >
+          Reset
+        </button>
       </div>
 
       <!-- 🔸 Table -->
-      <div class="history-table">
-        <div class="table-header">
+      <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        <!-- ✅ Header ตารางใช้ gradient อ่อน -->
+        <div class="grid grid-cols-6 px-6 py-4 bg-gradient-to-r from-indigo-50 to-violet-50 font-bold text-indigo-800 border-b border-gray-200">
           <div>No</div>
           <div>ID</div>
           <div>Date</div>
@@ -26,31 +44,53 @@
         </div>
 
         <div
-          v-for="(item, i) in history"
-          :key="i"
-          class="table-row"
+          v-for="item in filteredHistory"
+          :key="item.no"
+          class="grid grid-cols-6 px-6 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
         >
-          <div>{{ item.no }}</div>
-          <div>{{ item.studentId }}</div>
-          <div>{{ item.date }}</div>
-          <div>{{ item.topic }}</div>
-          <div>
+          <div class="font-bold text-gray-900">{{ item.no }}</div>
+          <div class="text-gray-700">{{ item.studentId }}</div>
+          <div class="text-gray-700">{{ formatDate(item.date) }}</div>
+          <div class="text-gray-800 font-medium">{{ item.topic }}</div>
+          <div class="flex items-center gap-1.5">
             <span
-              :class="item.status === 'Complete' ? 'text-green-500' : 'text-red-500'"
-              class="font-semibold"
+              v-if="item.status === 'Complete'"
+              class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800"
             >
-              {{ item.status }}
+              <span>✅</span>
+              <span class="ml-1">Complete</span>
             </span>
+            <span
+              v-else-if="item.status === 'Reject'"
+              class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-rose-100 text-rose-800"
+            >
+              <span>❌</span>
+              <span class="ml-1">Reject</span>
+            </span>
+            <span v-else class="text-gray-500 text-sm">—</span>
           </div>
-          <div>
+          <div class="flex justify-center">
             <button
-              class="view-file-btn"
               @click="viewFile(item)"
+              class="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm hover:shadow-md"
               title="View File"
             >
-              <img :src="viewFileIcon" alt="View File" class="w-6 h-6" />
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V7a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2z" />
+              </svg>
             </button>
           </div>
+        </div>
+
+        <!-- กรณีไม่มีข้อมูล -->
+        <div
+          v-if="filteredHistory.length === 0"
+          class="text-center py-10 text-gray-500 bg-gray-50 border-t border-dashed border-gray-200"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          No documents found in selected week.
         </div>
       </div>
     </div>
@@ -58,50 +98,110 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
-// ไอคอนดูไฟล์ (คุณสามารถแทนที่ด้วย path จริงได้)
-const viewFileIcon = '/icon/view-file.png' // หรือใช้ inline SVG
-
+// ข้อมูลประวัติ (ใช้รูปแบบ ISO: YYYY-MM-DD)
 const history = ref([
   {
     no: 'A001',
     studentId: '65xxxxxxxx',
-    date: '21 Apr 2025',
-    topic: 'Course registration;',
+    date: '2025-04-21',
+    topic: 'Course registration',
     status: 'Complete',
     fileUrl: '/files/req-A001.pdf'
   },
   {
     no: 'A002',
     studentId: '65xxxxxxxx',
-    date: '21 Apr 2025',
-    topic: 'Course registration;',
+    date: '2025-04-22',
+    topic: 'Course registration',
     status: 'Reject',
     fileUrl: '/files/receipt-A002.png'
   },
   {
     no: 'A003',
     studentId: '65xxxxxxxx',
-    date: '21 Apr 2025',
-    topic: 'Course registration;',
+    date: '2025-04-23',
+    topic: 'Course registration',
     status: 'Complete',
     fileUrl: '/files/req-A003.pdf'
+  },
+  {
+    no: 'A004',
+    studentId: '65xxxxxxxx',
+    date: '2025-04-24',
+    topic: 'Advising session',
+    status: 'Reject',
+    fileUrl: '/files/req-A004.pdf'
+  },
+  {
+    no: 'A005',
+    studentId: '65xxxxxxxx',
+    date: '2025-04-25',
+    topic: 'Internship approval',
+    status: 'Reject',
+    fileUrl: '/files/req-A005.pdf'
   }
 ])
 
+// ตัวแปรสำหรับเลือกวัน
+const startDate = ref('2025-04-21')
+const endDate = ref('2025-04-25')
+
+// ฟังก์ชันคำนวณวันจันทร์และศุกร์ของสัปดาห์ที่เลือก
+const getWeekStartEnd = (date) => {
+  const d = new Date(date)
+  const day = d.getDay() // 0=อาทิตย์, 1=จันทร์, ..., 6=เสาร์
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // ปรับให้เป็นจันทร์
+  const start = new Date(d)
+  start.setDate(diff)
+  const end = new Date(start)
+  end.setDate(end.getDate() + 4) // จันทร์ + 4 วัน = ศุกร์
+  return {
+    start: start.toISOString().split('T')[0],
+    end: end.toISOString().split('T')[0]
+  }
+}
+
+// อัปเดตช่วงวันเป็นสัปดาห์เมื่อเลือกวัน
+const updateWeekRange = () => {
+  if (!startDate.value || !endDate.value) return
+  const week = getWeekStartEnd(startDate.value)
+  startDate.value = week.start
+  endDate.value = week.end
+}
+
+// รีเซ็ต
+const resetDate = () => {
+  startDate.value = '2025-04-21'
+  endDate.value = '2025-04-25'
+}
+
+// กรองประวัติตามช่วงวันที่ (สัปดาห์)
+const filteredHistory = computed(() => {
+  if (!startDate.value || !endDate.value) return history.value
+  const start = new Date(startDate.value)
+  const end = new Date(endDate.value)
+  return history.value.filter(item => {
+    const itemDate = new Date(item.date)
+    return itemDate >= start && itemDate <= end
+  })
+})
+
+// ฟอร์แมตวันที่ให้เป็น DD/MM/YY (เช่น 21/04/25)
+const formatDate = (isoDate) => {
+  const d = new Date(isoDate)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = String(d.getFullYear()).slice(-2)
+  return `${day}/${month}/${year}`
+}
+
+// ดูไฟล์
 const viewFile = (item) => {
   if (!item?.fileUrl) return
-  const w = window.open(item.fileUrl, '_blank', 'noopener,noreferrer')
-  if (!w) {
-    const a = document.createElement('a')
-    a.href = item.fileUrl
-    a.download = ''
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-  }
+  window.open(item.fileUrl, '_blank', 'noopener,noreferrer')
 }
 </script>
 
@@ -110,65 +210,5 @@ const viewFile = (item) => {
   padding: 2rem;
   min-height: 100vh;
   box-sizing: border-box;
-}
-
-.title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #1f2937;
-}
-
-.date-range-selector {
-  margin-bottom: 1.5rem;
-}
-
-.history-table {
-  max-width: 1000px;
-  margin: 0 auto;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.table-header,
-.table-row {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  padding: 1rem;
-  text-align: left;
-}
-
-.table-header {
-  background: #f3f4f6;
-  font-weight: bold;
-  color: #374151;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table-row {
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.table-row:last-child {
-  border-bottom: none;
-}
-
-.view-file-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  background: #f3f4f6;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-
-.view-file-btn:hover {
-  background: #e5e7eb;
 }
 </style>

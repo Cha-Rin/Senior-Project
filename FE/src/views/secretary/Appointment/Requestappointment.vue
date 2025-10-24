@@ -1,15 +1,14 @@
 <!-- 📁 src/views/secretary/AppointmentRequest.vue -->
 <template>
-  <!-- ใช้ SecreLayout เพื่อแสดง Navbar + Sidebar -->
   <SecreLayout>
     <div class="page-content">
-      <h1 class="text-4xl md:text-5xl font-semibold text-center mb-6">
+      <h1 class="text-4xl md:text-5xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
         Appointment Request
       </h1>
 
       <div class="max-w-5xl mx-auto">
         <!-- Header -->
-        <div class="grid grid-cols-5 gap-4 bg-gray-300 text-gray-800 font-semibold rounded-2xl px-6 py-4">
+        <div class="grid grid-cols-5 gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl px-6 py-4 shadow-lg">
           <div>No</div>
           <div>ID</div>
           <div>Date &amp; Time</div>
@@ -20,59 +19,69 @@
         <!-- Rows -->
         <div class="mt-4 space-y-4">
           <div
-            v-for="(item, i) in requests"
+            v-for="item in requests"
             :key="item.no"
-            class="grid grid-cols-5 gap-4 items-center bg-gray-100 rounded-2xl px-6 py-5 shadow-sm ring-1 ring-gray-100"
+            class="grid grid-cols-5 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
           >
             <!-- No -->
-            <div class="text-lg md:text-xl font-extrabold tracking-wide">
+            <div class="text-lg md:text-xl font-extrabold tracking-wide text-indigo-700">
               {{ item.no }}
             </div>
 
             <!-- ID -->
-            <div class="text-gray-700">{{ item.studentId }}</div>
+            <div class="text-gray-700 font-medium">{{ item.studentId }}</div>
 
             <!-- Date & Time -->
-            <div class="text-gray-700">
-              <div>Date: {{ item.date }}</div>
-              <div>Time: {{ item.time }}</div>
+            <div class="text-gray-700 space-y-1">
+              <div class="font-medium">Date: {{ item.date }}</div>
+              <div class="text-sm text-gray-500">Time: {{ item.time }}</div>
             </div>
 
             <!-- Topic -->
-            <div class="text-gray-700">{{ item.topic }}</div>
+            <div class="text-gray-800 font-medium">{{ item.topic }}</div>
 
             <!-- Status / Actions -->
             <div class="flex justify-end items-center gap-2">
               <!-- ถ้ายังรอ -->
               <template v-if="item.status === 'Pending'">
                 <button
-                  class="px-3 py-1 rounded-full text-sm bg-emerald-200 text-emerald-800 hover:bg-emerald-300"
                   @click="setStatus(item, 'Approved')"
+                  class="px-4 py-2 rounded-full text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 hover:shadow-md transition-all transform hover:-translate-y-0.5"
                 >
-                  Approve
+                  ✅ Approve
                 </button>
                 <button
-                  class="px-3 py-1 rounded-full text-sm bg-rose-300 text-white hover:bg-rose-400"
                   @click="setStatus(item, 'Rejected')"
+                  class="px-4 py-2 rounded-full text-sm font-semibold bg-rose-500 text-white hover:bg-rose-600 hover:shadow-md transition-all transform hover:-translate-y-0.5"
                 >
-                  Reject
+                  ❌ Reject
                 </button>
               </template>
 
               <!-- ถ้าอนุมัติแล้ว -->
               <template v-else-if="item.status === 'Approved'">
-                <span class="px-3 py-1 rounded-full text-sm bg-emerald-100 text-emerald-700 font-medium">
-                  Approved
+                <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                  <span>✅</span> Approved
                 </span>
-                <button class="text-xs text-gray-500 underline" @click="setStatus(item, 'Pending')">Undo</button>
+                <button
+                  @click="setStatus(item, 'Pending')"
+                  class="text-xs text-gray-500 underline hover:text-gray-700 font-medium"
+                >
+                  Undo
+                </button>
               </template>
 
               <!-- ถ้าถูกปฏิเสธ -->
               <template v-else>
-                <span class="px-3 py-1 rounded-full text-sm bg-rose-100 text-rose-600 font-medium">
-                  Rejected
+                <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-rose-100 text-rose-700 flex items-center gap-1">
+                  <span>❌</span> Rejected
                 </span>
-                <button class="text-xs text-gray-500 underline" @click="setStatus(item, 'Pending')">Undo</button>
+                <button
+                  @click="setStatus(item, 'Pending')"
+                  class="text-xs text-gray-500 underline hover:text-gray-700 font-medium"
+                >
+                  Undo
+                </button>
               </template>
             </div>
           </div>
@@ -84,21 +93,24 @@
 
 <script setup>
 import { ref } from 'vue'
-import SecreLayout from '@/layouts/secretary/SecreLayout.vue' // 👈 เพิ่มการ import
+import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 const requests = ref([
-  { no: 'A001', studentId: '65xxxxxxxx', date: '21/03/25', time: '8:00 - 9:00AM',  topic: 'Course registration;', status: 'Pending' },
-  { no: 'A002', studentId: '65xxxxxxxx', date: '21/03/25', time: '9:00 - 10:00AM', topic: 'Course registration;', status: 'Pending' },
-  { no: 'A003', studentId: '65xxxxxxxx', date: '21/03/25', time: '10:00 - 11:00AM', topic: 'Course registration;', status: 'Pending' }
+  { no: 'A001', studentId: '65xxxxxxxx', date: '21/03/25', time: '8:00 - 9:00AM', topic: 'Course registration', status: 'Pending' },
+  { no: 'A002', studentId: '65xxxxxxxx', date: '21/03/25', time: '9:00 - 10:00AM', topic: 'Course registration', status: 'Pending' },
+  { no: 'A003', studentId: '65xxxxxxxx', date: '21/03/25', time: '10:00 - 11:00AM', topic: 'Course registration', status: 'Pending' }
 ])
 
+// ✅ ใช้ splice เพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
 const setStatus = (item, status) => {
-  item.status = status
+  const index = requests.value.findIndex(r => r.no === item.no)
+  if (index !== -1) {
+    requests.value.splice(index, 1, { ...item, status })
+  }
 }
 </script>
 
 <style scoped>
-/* ปรับพื้นที่ภายใน SecreLayout */
 .page-content {
   padding: 2rem;
   min-height: 100vh;

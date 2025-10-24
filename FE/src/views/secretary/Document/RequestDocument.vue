@@ -2,29 +2,68 @@
 <template>
   <SecreLayout>
     <div class="page-content">
-      <h1 class="title">Request Document</h1>
+      <!-- ✅ หัวข้อใช้ gradient สีม่วง-น้ำเงิน -->
+      <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        Request Document
+      </h1>
 
       <!-- ตารางรายการคำขอ -->
-      <div class="request-table">
-        <table>
-          <thead>
+      <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+        <!-- ✅ Header ตารางใช้พื้นหลัง gradient อ่อน -->
+        <table class="w-full">
+          <thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
             <tr>
-              <th>No</th>
-              <th>ID</th>
-              <th>Date</th>
-              <th>Topic</th>
-              <th>Status</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">No</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">ID</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
+              <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="(item, i) in requests" :key="i">
-              <td>{{ item.no }}</td>
-              <td>{{ item.studentId }}</td>
-              <td>{{ item.date }}</td>
-              <td>{{ item.topic }}</td>
-              <td>
-                <button @click="approve(item)" class="status-btn approve">Approve</button>
-                <button @click="reject(item)" class="status-btn reject">Reject</button>
+          <tbody class="divide-y divide-gray-100">
+            <tr v-for="item in requests" :key="item.no" class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ item.no }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.studentId }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
+              <td class="px-6 py-4 text-right">
+                <!-- ถ้ายัง Pending -->
+                <template v-if="item.status === 'Pending'">
+                  <!-- ✅ ปุ่ม Approve → สีเขียว (emerald) + ไอคอน ✅ -->
+                  <button
+                    @click="approve(item)"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2"
+                  >
+                    <span>✅</span>
+                    <span class="ml-1.5">Approve</span>
+                  </button>
+                  <!-- ✅ ปุ่ม Reject → สีแดง (rose) + ไอคอน ❌ -->
+                  <button
+                    @click="reject(item)"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-500 text-white hover:bg-rose-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                  >
+                    <span>❌</span>
+                    <span class="ml-1.5">Reject</span>
+                  </button>
+                </template>
+
+                <!-- ✅ สถานะ Approved → badge + ไอคอน -->
+                <span
+                  v-else-if="item.status === 'Approved'"
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-100 text-emerald-800"
+                >
+                  <span>✅</span>
+                  <span class="ml-1.5">Approved</span>
+                </span>
+
+                <!-- ✅ สถานะ Rejected → badge + ไอคอน -->
+                <span
+                  v-else
+                  class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-100 text-rose-800"
+                >
+                  <span>❌</span>
+                  <span class="ml-1.5">Rejected</span>
+                </span>
               </td>
             </tr>
           </tbody>
@@ -39,17 +78,24 @@ import { ref } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 const requests = ref([
-  { no: 'A001', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration;', status: 'Pending' },
-  { no: 'A002', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration;', status: 'Pending' },
-  { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration;', status: 'Pending' }
+  { no: 'A001', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' },
+  { no: 'A002', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' },
+  { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' }
 ])
 
+// ✅ ใช้ splice เพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
 const approve = (item) => {
-  item.status = 'Approved'
+  const index = requests.value.findIndex(r => r.no === item.no)
+  if (index !== -1) {
+    requests.value.splice(index, 1, { ...item, status: 'Approved' })
+  }
 }
 
 const reject = (item) => {
-  item.status = 'Rejected'
+  const index = requests.value.findIndex(r => r.no === item.no)
+  if (index !== -1) {
+    requests.value.splice(index, 1, { ...item, status: 'Rejected' })
+  }
 }
 </script>
 
@@ -58,64 +104,5 @@ const reject = (item) => {
   padding: 2rem;
   min-height: 100vh;
   box-sizing: border-box;
-}
-
-.title {
-  font-size: 2.5rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  color: #1f2937;
-}
-
-.request-table {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-th, td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-th {
-  background: #f3f4f6;
-  font-weight: bold;
-  color: #374151;
-}
-
-.status-btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.875rem;
-}
-
-.approve {
-  background: #d1fae5;
-  color: #059669;
-}
-
-.reject {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.approve:hover {
-  background: #a7f3d0;
-}
-
-.reject:hover {
-  background: #fecaca;
 }
 </style>
