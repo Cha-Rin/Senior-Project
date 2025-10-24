@@ -63,7 +63,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import { useStaffStore } from '../stores/staffStore'
+
 
 const route = useRoute()
 const staffStore = useStaffStore()

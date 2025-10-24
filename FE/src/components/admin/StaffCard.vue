@@ -1,23 +1,45 @@
-<!-- ✅ StaffCard.vue -->
 <template>
-  <div class="flex items-center p-3 bg-gray-100 rounded shadow cursor-pointer hover:bg-gray-200" @click="goToDetail">
-    <img :src="avatar" class="w-20 h-20 rounded-full mr-4" alt="avatar" />
-    <div>
-      <h3 class="font-bold">{{ name }}</h3>
-      <p class="text-yellow-600">⭐ {{ rating }}</p>
+  <div
+    class="bg-white rounded-lg shadow p-4 flex items-center justify-between hover:shadow-md transition"
+  >
+    <div class="flex items-center gap-3">
+      <!-- 🔹 รูปโปรไฟล์ -->
+      <img
+        :src="avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'"
+        alt="avatar"
+        class="w-12 h-12 rounded-full border object-cover"
+      />
+      <!-- 🔹 ข้อมูล Staff -->
+      <div>
+        <h3 class="font-semibold text-gray-800 text-sm">
+          {{ name || 'ไม่ระบุชื่อ' }}
+        </h3>
+        <p class="text-xs text-gray-500">{{ category || 'ไม่มีหมวดหมู่' }}</p>
+
+        <!-- 🔹 คะแนน -->
+        <div class="flex items-center gap-1 text-yellow-500 text-xs mt-1">
+          <span>⭐</span>
+          <span>{{ rating ?? 0 }}</span>
+        </div>
+      </div>
     </div>
+
+    <!-- 🔹 ปุ่มไปหน้า rating -->
+    <RouterLink
+      :to="`/admin/staff-rating/${id}`"
+      class="text-blue-500 text-xs hover:underline"
+    >
+      ดูรายละเอียด
+    </RouterLink>
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const props = defineProps({
+defineProps({
   id: [String, Number],
   name: String,
   avatar: String,
   rating: Number,
-  to: String
+  category: String
 })
-const router = useRouter()
-const goToDetail = () => router.push(props.to || `/staff-rating/${props.id}?name=${encodeURIComponent(props.name)}&avatar=${props.avatar}`)
 </script>

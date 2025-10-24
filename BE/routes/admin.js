@@ -1,159 +1,194 @@
-const express = require('express')
+const express = require('express');
+const multer = require('multer');
+
 module.exports = (db) => {
-  const router = express.Router()
+  console.log("✅ Admin routes loaded successfully!");
+  const router = express.Router();
 
-  router.use(express.json())
-  router.use(express.urlencoded({ extended: true }))
+  router.use(express.json());
+  router.use(express.urlencoded({ extended: true }));
 
-  router.use((req, res, next) => {
-    if (req.method === 'POST') {
-      console.log('🔎 POST', req.originalUrl)
-      console.log('🔎 content-type:', req.headers['content-type'])
-      console.log('🔎 body:', req.body)
-    }
-    next()
-  })
-const multer = require('multer')
-const upload = multer({ dest: 'uploads/' })
-// ===================================== Staff Management ==================================
+  const upload = multer({ dest: 'uploads/' });
 
-//✅ ดึงรายชื่อ Staff ทั้งหมด
-router.get('/api/staffs', (req, res) => {
-  const sql = `
-    SELECT u.user_id AS id, u.name, u.surname, u.email,
-           u.profile_pic AS avatar, u.status AS active, u.category_id,
-           c.type AS category_name
-    FROM user u
-    LEFT JOIN categories c ON u.category_id = c.category_id
-    WHERE u.role = 2`
+  // =====================================
+  // 👩‍💼 Staff Management
+  // =====================================
 
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ success: false })
+  // ✅ ดึงรายชื่อ Staff ทั้งหมด + คำนวณคะแนนเฉลี่ยจาก feedback
+  router.get('/staffs', (req, res) => {
+    const sql = `
+      SELECT 
+        u.user_id AS id,
+        u.name AS firstName,
+        u.surname AS lastName,
+        u.email,
+        u.profile_pic AS avatar,
+        c.type AS category,
+        u.status,
+        (
+          SELECT AVG((fa.score_count1 + fa.score_count2 + fa.score_count3) / 3)
+          FROM feedback_appointment fa
+          JOIN appointment a ON fa.appointment_id = a.appointment_id
+          WHERE a.staff_user_id = u.user_id
+        ) AS rating
+      FROM user u
+      LEFT JOIN categories c ON u.category_id = c.category_id
+      WHERE u.role = 2
+    `;
 
-    const data = results.map(row => ({
-      id: row.id,
-      firstName: row.name,
-      lastName: row.surname,
-      email: row.email,
-      avatar: row.avatar ? `http://localhost:${PORT}${row.avatar}` : '',
-      active: row.active,
-      category_id: row.category_id,
-      category_name: row.category_name
-    }))
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error('❌ DB Error:', err);
+        return res.status(500).json({ success: false, message: err.message });
+      }
+      res.json({ success: true, data: results });
+    });
+  });
 
-    res.json({ success: true, data })
-  })
-})
-
-// routes/admin.js
-router.get('/staffs', (req, res) => {
-  const sql = 'SELECT * FROM user WHERE role = 2' // สมมติ role 2 = Staff
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error('❌ DB Error:', err)
-      return res.status(500).json({ success: false, message: err.message })
-    }
-     res.json({ success: true, data: results })
-  })
-})
-
-
-// Add Staff
-router.post('/staffs/add', upload.single('avatar'), async (req, res) => {
-  try {
-    const { firstName, lastName, email } = req.body
-    const avatar = req.file ? `/uploads/${req.file.filename}` : ''
-
-    // ตรวจสอบข้อมูล required
+  // ✅ เพิ่ม Staff
+  router.post('/staffs/add', upload.single('avatar'), (req, res) => {
+    const { firstName, lastName, email } = req.body;
+    const avatar = req.file ? `/uploads/${req.file.filename}` : '';
     if (!firstName || !lastName || !email) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' })
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
     }
-
-    const defaultPassword = '1234'
-    const role = 2   // สมมติ role 2 = Staff
-    const status = 1 // สมมติ status 1 = Active
 
     const sql = `
       INSERT INTO user (profile_pic, name, surname, email, password, role, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
-    const values = [avatar, firstName, lastName, email, defaultPassword, role, status]
+    `;
+    const values = [avatar, firstName, lastName, email, '1234', 2, 1];
 
     db.query(sql, values, (err, result) => {
-      if (err) {
-        console.error('❌ DB Error:', err)
-        return res.status(500).json({ success: false, message: err.message })
+      if (err) return res.status(500).json({ success: false, message: err.message });
+      res.json({ success: true, id: result.insertId });
+    });
+  });
+
+  // ✅ แก้ไข Staff
+  router.put('/staffs/:id', upload.single('avatar'), (req, res) => {
+    const id = req.params.id;
+    const { firstName, lastName, email, category_id } = req.body;
+    const avatar = req.file ? `/uploads/${req.file.filename}` : null;
+
+    let sql, values;
+    if (avatar) {
+      sql = `UPDATE user SET profile_pic=?, name=?, surname=?, email=?, category_id=? WHERE user_id=?`;
+      values = [avatar, firstName, lastName, email, category_id, id];
+    } else {
+      sql = `UPDATE user SET name=?, surname=?, email=?, category_id=? WHERE user_id=?`;
+      values = [firstName, lastName, email, category_id, id];
+    }
+
+    db.query(sql, values, (err) => {
+      if (err) return res.status(500).json({ success: false, message: 'Update failed' });
+      res.json({ success: true });
+    });
+  });
+
+  // ✅ เปลี่ยนสถานะ Staff
+  router.patch('/staffs/:id/status', (req, res) => {
+    const id = req.params.id;
+    const { status } = req.body;
+    db.query('UPDATE user SET status = ? WHERE user_id = ?', [status, id], (err) => {
+      if (err) return res.status(500).json({ success: false });
+      res.json({ success: true });
+    });
+  });
+
+  // =====================================
+  // 📊 Dashboard: Weekly Summary (กราฟ 1)
+  // =====================================
+  router.get('/weekly-summary', (req, res) => {
+    const { start, end } = req.query;
+
+    const sqlAppointments = `
+      SELECT DAYNAME(appointment_date) AS day_name, COUNT(*) AS count
+      FROM appointment
+      WHERE status = 1
+        AND DATE(appointment_date) BETWEEN ? AND ?
+      GROUP BY DAYNAME(appointment_date)
+    `;
+
+    const sqlDocuments = `
+      SELECT DAYNAME(submit_date) AS day_name, COUNT(*) AS count
+      FROM document_tracking
+      WHERE status = 1
+        AND DATE(submit_date) BETWEEN ? AND ?
+      GROUP BY DAYNAME(submit_date)
+    `;
+
+    db.query(sqlAppointments, [start, end], (errA, appResults) => {
+      if (errA) {
+        console.error('❌ DB Error (Appointments):', errA);
+        return res.status(500).json({ success: false, error: errA.message });
       }
 
-      res.json({ success: true, id: result.insertId })
-    })
-  } catch (err) {
-    console.error('❌ Route Error:', err)
-    res.status(500).json({ success: false, message: 'Internal Server Error' })
-  }
-})
+      db.query(sqlDocuments, [start, end], (errD, docResults) => {
+        if (errD) {
+          console.error('❌ DB Error (Documents):', errD);
+          return res.status(500).json({ success: false, error: errD.message });
+        }
 
-// Edit Staff
-router.put('/staffs/:id', upload.single('avatar'), (req, res) => {
-  const id = req.params.id
-  const { firstName, lastName, email, category_id } = req.body
-  const avatar = req.file ? `/uploads/${req.file.filename}` : null
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-  // if (!firstName || !lastName || !email || !category_id) {
-  //   return res.status(400).json({ success: false, message: 'Missing required fields' })
-  // }
+        const summary = days.map(day => ({
+          day,
+          appointments: appResults.find(r => r.day_name === day)?.count || 0,
+          documents: docResults.find(r => r.day_name === day)?.count || 0
+        }));
 
-  let sql, values
-  if (avatar) {
-    sql = `UPDATE user SET profile_pic=?, name=?, surname=?, email=?, category_id=? WHERE user_id=?`
-    values = [avatar, firstName, lastName, email, category_id, id]
-  } else {
-    sql = `UPDATE user SET name=?, surname=?, email=?, category_id=? WHERE user_id=?`
-    values = [firstName, lastName, email, category_id, id]
-  }
+        res.json({ success: true, data: summary });
+      });
+    });
+  });
 
-  db.query(sql, values, (err) => {
-    if (err) return res.status(500).json({ success: false, message: 'Update failed' })
-    res.json({ success: true })
-  })
-})
+  // =====================================
+  // ⭐ Average Rating (กราฟ 2)
+  // =====================================
+  router.get('/average-rating', (req, res) => {
+    const sqlApt = `
+      SELECT 
+        AVG(score_count1) AS sp,
+        AVG(score_count2) AS spc,
+        AVG(score_count3) AS fac
+      FROM feedback_appointment
+    `;
 
-//  เปลี่ยนสถานะใช้งาน Staff (Active/Disable)
-router.patch('/staffs/:id/status', (req, res) => {
-  const id = req.params.id
-  const { status } = req.body
-  db.query('UPDATE user SET status = ? WHERE user_id = ?', [status, id], (err) => {
-    if (err) return res.status(500).json({ success: false })
-    res.json({ success: true })
-  })
-})
+    const sqlDoc = `
+      SELECT 
+        AVG(score_count1) AS sp,
+        AVG(score_count2) AS spc,
+        AVG(score_count3) AS fac
+      FROM feedback_document_tracking
+    `;
 
+    db.query(sqlApt, (errA, aptResults) => {
+      if (errA) return res.status(500).json({ success: false, error: errA.message });
 
-// แนะนำ: เพิ่ม UNIQUE เพื่อกันใส่ซ้ำ (รันใน MySQL หนึ่งครั้ง)
-// ALTER TABLE feedback_appointment ADD UNIQUE KEY uniq_apt (appointment_id);
+      db.query(sqlDoc, (errD, docResults) => {
+        if (errD) return res.status(500).json({ success: false, error: errD.message });
 
-//history
-router.get('/history/:UserId', (req, res) => {
-  const studentId = req.params.UserId;
-  console.log('📥 Received studentId (from frontend):', UserId);
+        const apt = aptResults[0] || {};
+        const doc = docResults[0] || {};
 
-  const sql = `
-  SELECT a.appointment_date, a.category_id, c.type AS topic
-  FROM appointment AS a
-  JOIN categories AS c ON a.category_id 
-  WHERE a.user_id = ?
-  ORDER BY a.appointment_date DESC
-`;
-  db.query(sql, [studentId], (err, results) => {
-  if (err) {
-    console.error('🔥 SQL error:', err);
-    return res.status(500).json({ success: false });
-  }
+        const result = {
+          appointment: {
+            service_provider: apt.sp ? Number(parseFloat(apt.sp).toFixed(2)) : 0,
+            service_process: apt.spc ? Number(parseFloat(apt.spc).toFixed(2)) : 0,
+            facilities: apt.fac ? Number(parseFloat(apt.fac).toFixed(2)) : 0
+          },
+          document: {
+            service_provider: doc.sp ? Number(parseFloat(doc.sp).toFixed(2)) : 0,
+            service_process: doc.spc ? Number(parseFloat(doc.spc).toFixed(2)) : 0,
+            facilities: doc.fac ? Number(parseFloat(doc.fac).toFixed(2)) : 0
+          }
+        };
 
-  console.log('✅ Results from JOIN:', results);
-  res.json({ success: true, historyItems: results });
+        res.json({ success: true, data: result });
+      });
+    });
+  });
 
-});
-});
-
-return router}
+  return router;
+};
