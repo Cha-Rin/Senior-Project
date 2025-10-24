@@ -1,28 +1,56 @@
 <!-- 📁 src/components/secretary/SidebarAppointment.vue -->
 <template>
-  <div class="sidebar-appointment">
-    <router-link to="/homepage" class="menu-item" :class="{ active: $route.name === 'Homepage' }">
-      <span class="icon">🏠</span>
+  <div class="flex flex-col min-h-screen w-64 bg-[#003366] text-white p-6 box-border ">
+    <router-link
+      to="/homepage"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Homepage' }"
+    >
+      <span class="text-xl">🏠</span>
       Homepage
     </router-link>
-    <router-link to="/appointment" class="menu-item" :class="{ active: $route.name === 'Appointment' }">
-      <span class="icon">📅</span>
+
+    <router-link
+      to="/appointment"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Appointment' }"
+    >
+      <span class="text-xl">📅</span>
       Appointment
     </router-link>
-    <router-link to="/request-appointment" class="menu-item" :class="{ active: $route.name === 'RequestAppointment' }">
-      <span class="icon">📝</span>
+
+    <router-link
+      to="/request-appointment"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RequestAppointment' }"
+    >
+      <span class="text-xl">📝</span>
       Request Appointment
     </router-link>
-    <router-link to="/history" class="menu-item" :class="{ active: $route.name === 'HistoryAppointment' }">
-      <span class="icon">🕒</span>
+
+    <router-link
+      to="/history"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'HistoryAppointment' }"
+    >
+      <span class="text-xl">🕒</span>
       History
     </router-link>
-    <router-link to="/feedback" class="menu-item" :class="{ active: $route.name === 'RatingAppointment' }">
-      <span class="icon">💬</span>
+
+    <router-link
+      to="/feedback"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RatingAppointment' }"
+    >
+      <span class="text-xl">💬</span>
       Feedback
     </router-link>
-    <div class="menu-item" @click="logout">
-      <span class="icon">🚪</span>
+
+    <div
+      class="flex items-center gap-3 p-4 mt-auto rounded-lg hover:bg-[#004080] cursor-pointer transition"
+      @click="logout"
+    >
+      <span class="text-xl">🚪</span>
       Log out
     </div>
   </div>
@@ -38,40 +66,3 @@ const logout = () => {
   router.push({ name: 'Login' })
 }
 </script>
-
-<style scoped>
-.sidebar-appointment {
-  background: #003366;
-  color: white;
-  width: 250px;
-  height: 100vh;
-  padding: 2rem 1rem;
-  box-sizing: border-box;
-}
-
-.menu-item {
-  padding: 1rem;
-  cursor: pointer;
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: background 0.2s;
-  position: relative;
-}
-
-.menu-item:hover {
-  background: #004080;
-}
-
-.menu-item.active {
-  background: #003366;
-  border-bottom: 3px solid #3b82f6;
-  padding-bottom: 0.75rem;
-}
-
-.icon {
-  font-size: 1.2rem;
-}
-</style>

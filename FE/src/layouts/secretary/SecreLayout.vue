@@ -12,7 +12,7 @@
       <SidebarSecretary v-else /> <!-- สำหรับหน้าอื่นๆ เช่น Homepage -->
 
       <!-- Page Content -->
-      <div class="page-wrapper">
+      <div class="page-wrapper"> 
         <slot />
       </div>
     </div>
@@ -32,7 +32,7 @@ const isAppointmentRoute = computed(() => {
   return [
     '/appointment',
     '/request-appointment',
-    '/history', // ✅ ใช้ Sidebar Appointment สำหรับ /history (Appointment)
+    '/history-appointment', // ✅ ใช้ Sidebar Appointment สำหรับ /history (Appointment)
     '/feedback'
   ].some(p => path.startsWith(p))
 })

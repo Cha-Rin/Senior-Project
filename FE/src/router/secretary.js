@@ -31,7 +31,7 @@ export default [
     })
   },
   {
-    path: '/history',
+    path: '/history-appointment',
     name: 'HistoryAppointment',
     component: HistoryAppointment
   },

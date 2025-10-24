@@ -1,39 +1,62 @@
 <!-- 📁 src/components/secretary/SidebarDocument.vue -->
 <template>
-  <div class="sidebar-document">
+  <div class="flex flex-col min-h-screen w-64 bg-[#003366] text-white p-6 box-border">
     <!-- Homepage -->
-    <router-link to="/homepage" class="menu-item" :class="{ active: $route.name === 'Homepage' }">
-      <span class="icon">🏠</span>
+    <router-link
+      to="/homepage"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition relative"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Homepage' }"
+    >
+      <span class="text-xl">🏠</span>
       Homepage
     </router-link>
 
     <!-- Request Document -->
-    <router-link to="/request-document" class="menu-item" :class="{ active: $route.name === 'RequestDocument' }">
-      <span class="icon">📝</span>
+    <router-link
+      to="/request-document"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition relative"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RequestDocument' }"
+    >
+      <span class="text-xl">📝</span>
       Request Document
     </router-link>
 
     <!-- Document Status -->
-    <router-link to="/status" class="menu-item" :class="{ active: $route.name === 'Status' }">
-      <span class="icon">✅</span>
+    <router-link
+      to="/status"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition relative"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Status' }"
+    >
+      <span class="text-xl">✅</span>
       Document Status
     </router-link>
 
     <!-- History -->
-    <router-link to="/history-document" class="menu-item" :class="{ active: $route.name === 'HistoryDocument' }">
-      <span class="icon">🕒</span>
+    <router-link
+      to="/history-document"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition relative"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'HistoryDocument' }"
+    >
+      <span class="text-xl">🕒</span>
       History
     </router-link>
 
     <!-- Feedback -->
-    <router-link to="/rating-document" class="menu-item" :class="{ active: $route.name === 'RatingDocument' }">
-      <span class="icon">💬</span>
+    <router-link
+      to="/rating-document"
+      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition relative"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RatingDocument' }"
+    >
+      <span class="text-xl">💬</span>
       Feedback
     </router-link>
 
     <!-- Log out -->
-    <div class="menu-item" @click="logout">
-      <span class="icon">🚪</span>
+    <div
+      class="flex items-center gap-3 p-4 mt-auto rounded-lg hover:bg-[#004080] cursor-pointer transition"
+      @click="logout"
+    >
+      <span class="text-xl">🚪</span>
       Log out
     </div>
   </div>
@@ -49,47 +72,3 @@ const logout = () => {
   router.push({ name: 'Login' })
 }
 </script>
-
-<style scoped>
-.sidebar-document {
-  background: #003366;
-  color: white;
-  width: 250px;
-  height: 100vh;
-  padding: 2rem 1rem;
-  box-sizing: border-box;
-}
-
-.menu-item {
-  padding: 1rem;
-  cursor: pointer;
-  margin-bottom: 0.5rem;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  transition: background 0.2s;
-  position: relative;
-}
-
-.menu-item:hover {
-  background: #004080;
-}
-
-.menu-item.active {
-  background: #003366;
-  position: relative;
-}
-
-.menu-item.active::before {
-  content: "✓";
-  position: absolute;
-  left: 8px;
-  font-weight: bold;
-  color: white;
-}
-
-.icon {
-  font-size: 1.2rem;
-}
-</style>
