@@ -1,63 +1,104 @@
+<!-- 📁 src/views/admin/StaffRatingView.vue -->
 <template>
-  <div class="min-h-screen bg-[#e8eafe] p-6 space-y-6">
-    <!-- 🔹 Header -->
-    <div class="flex items-center justify-between flex-wrap gap-4">
+  <div class="min-h-screen bg-gray-50 p-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 p-4 bg-white rounded-xl shadow">
       <div class="flex items-center gap-4">
-        <img :src="resolvedAvatar" alt="avatar"
-             class="w-20 h-20 rounded-full border-2 border-purple-500" />
-        <h2 class="text-3xl font-bold text-black">Name {{ staffName }}</h2>
+        <img :src="resolvedAvatar" alt="Staff Avatar" class="w-16 h-16 rounded-full object-cover" />
+        <div class="text-gray-800 text-lg">
+          <span class="block text-sm text-gray-500">Name</span>
+          <strong>{{ staffName }}</strong>
+        </div>
       </div>
 
-      <!-- 🔹 Term/Year Selector -->
-      <div class="flex items-center gap-3">
-        <select v-model="selectedTerm" class="border px-4 py-2 rounded-md shadow-sm">
-          <option disabled value="">Semester</option>
-          <option>1</option>
-          <option>2</option>
-          <option>3</option>
+      <div class="flex gap-4">
+        <select v-model="selectedSemester" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer">
+          <option value="1">Semester 1</option>
+          <option value="2">Semester 2</option>
         </select>
-        <select v-model="selectedYear" class="border px-4 py-2 rounded-md shadow-sm">
-          <option disabled value="">Year</option>
+        <select v-model="selectedYear" class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer">
           <option v-for="year in years" :key="year">{{ year }}</option>
         </select>
-        <button @click="$router.push('/admin/dashboard')"
-                class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800">
+        <button
+          @click="$router.push('/admin/dashboard')"
+          class="bg-purple-700 text-white px-4 py-2 rounded hover:bg-purple-800 transition"
+        >
           ← Back to Dashboard
         </button>
       </div>
     </div>
 
-    <!-- 🔹 Tabs -->
-    <div class="flex gap-2">
-      <button :class="tab === 'appointment' ? activeTab : defaultTab" @click="tab = 'appointment'">Appointment</button>
-      <button :class="tab === 'document' ? activeTab : defaultTab" @click="tab = 'document'">Document Tracking</button>
-    </div>
-
-    <!-- 🔹 Average Score -->
-    <div class="flex items-center gap-4 text-4xl font-bold text-black">
-      {{ averageScore }}
-      <span class="text-yellow-500 text-3xl">★</span>
-      <span class="text-2xl font-medium">({{ stars }})</span>
-    </div>
-
-    <!-- 🔹 Chart + Comments -->
-    <div class="flex flex-wrap gap-6">
-      <!-- 📊 Chart -->
-      <div class="bg-white rounded-lg shadow p-4 flex-1 min-w-[300px]">
-        <h3 class="text-lg font-semibold mb-2">Rating</h3>
-        <BarChart :data="chartData" />
+    <!-- Main Card -->
+    <div class="bg-indigo-600 text-white rounded-2xl p-8 shadow-lg">
+      <!-- Overall Rating -->
+      <div class="flex items-center gap-4 mb-8">
+        <span class="text-5xl font-bold">{{ averageScore }}</span>
+        <div class="flex text-2xl">
+          <span v-for="i in 5" :key="i" :class="{ 'text-yellow-400': i <= starLevel, 'text-gray-300': i > starLevel }">★</span>
+        </div>
       </div>
 
-      <!-- 💬 Comments -->
-      <div class="bg-white rounded-lg shadow p-4 w-full lg:w-1/3 max-h-96 overflow-y-auto">
-        <h3 class="text-lg font-semibold mb-3">Comments</h3>
-        <div v-for="(comment, index) in comments" :key="index" class="mb-4 border-b pb-2">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="text-xl text-yellow-600">★</span>
-            <span class="font-semibold">{{ comment.stars }}/5</span>
-            <span class="text-sm text-gray-400 ml-auto">{{ comment.date }}</span>
+      <!-- Content Row -->
+      <div class="flex flex-wrap gap-6">
+        <!-- Chart -->
+        <div class="flex-1 min-w-[300px] bg-white text-gray-800 rounded-xl p-6 shadow">
+          <div class="text-center text-lg font-semibold mb-4">Rating</div>
+          <div class="relative h-52 flex items-end gap-4 px-2">
+            <!-- y-axis -->
+            <div class="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-400 pl-1">
+              <span v-for="i in 5" :key="i">{{ i }}</span>
+            </div>
+
+            <div class="flex items-end gap-4 flex-1 justify-center">
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 rounded-t bg-blue-600 transition-all" :style="{ height: `${ratings.provider * 20}px` }"></div>
+                <div class="text-xs text-center w-20">Service Provider</div>
+              </div>
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 rounded-t bg-yellow-500 transition-all" :style="{ height: `${ratings.process * 20}px` }"></div>
+                <div class="text-xs text-center w-24">Service Process</div>
+              </div>
+              <div class="flex flex-col items-center gap-2">
+                <div class="w-10 rounded-t bg-pink-500 transition-all" :style="{ height: `${ratings.facilities * 20}px` }"></div>
+                <div class="text-xs text-center w-20">Facilities</div>
+              </div>
+            </div>
           </div>
-          <p class="text-sm text-gray-700">{{ comment.text }}</p>
+        </div>
+
+        <!-- Comments -->
+        <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow">
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-lg font-semibold text-black">Comments</span>
+            <select
+              v-model="selectedTopic"
+              class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white cursor-pointer"
+            >
+              <option value="appointment">Appointment</option>
+              <option value="document">Document Tracking</option>
+            </select>
+          </div>
+
+          <div class="max-h-72 overflow-y-auto pr-2 space-y-3">
+            <div
+              v-for="(comment, i) in filteredComments"
+              :key="i"
+              class="flex gap-3 p-4 bg-white rounded-lg shadow-sm"
+            >
+              <div class="text-2xl text-gray-500">👤</div>
+              <div class="flex-1">
+                <div class="flex text-yellow-400 mb-1 text-base">
+                  <span
+                    v-for="j in 5"
+                    :key="j"
+                    :class="{ 'text-yellow-400': j <= comment.stars, 'text-gray-300': j > comment.stars }"
+                    >★</span
+                  >
+                </div>
+                <p class="text-sm text-gray-700 leading-snug">{{ comment.text }}</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -67,66 +108,42 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
-import BarChart from '@/components/admin/BarChart.vue'
 
-// ✅ ดึงค่าจาก route
+// 📦 ดึงข้อมูล staff ที่ถูกคลิกมาจาก dashboard
 const route = useRoute()
 const staffId = route.params.id
-const staffName = route.query.name
+const staffName = route.query.name || 'ไม่ระบุชื่อ'
 const resolvedAvatar = route.query.avatar || new URL('/src/assets/default.png', import.meta.url).href
 
-// ✅ mock ค่าคะแนน (ชั่วคราว)
-const average = ref({
-  serviceProvider: 4.2,
-  serviceProcess: 4.4,
-  facilities: 4.1
-})
+// 🔹 Semester / Year
+const selectedSemester = ref('1')
+const selectedYear = ref('2568')
+const years = Array.from({ length: 5 }, (_, i) => 2568 - i)
 
-// ✅ คะแนนเฉลี่ยรวม
+// 🔹 Mock Rating Data (ชั่วคราว)
+const ratings = {
+  provider: 4.3,
+  process: 4.1,
+  facilities: 3.8
+}
+
+// 🔹 คำนวณค่าเฉลี่ย
 const averageScore = computed(() => {
-  const a = average.value
-  return ((a.serviceProvider + a.serviceProcess + a.facilities) / 3).toFixed(1)
+  const avg = ((ratings.provider + ratings.process + ratings.facilities) / 3).toFixed(1)
+  return avg
 })
 
-// ✅ ดาว
-const stars = computed(() => {
-  const score = Number(averageScore.value)
-  if (score >= 4.5) return '★★★★★'
-  if (score >= 3.5) return '★★★★☆'
-  if (score >= 2.5) return '★★★☆☆'
-  if (score >= 1.5) return '★★☆☆☆'
-  return '★☆☆☆☆'
-})
+// 🔹 ระดับดาว
+const starLevel = computed(() => Math.round(averageScore.value))
 
-// ✅ ข้อมูลกราฟ
-const chartData = computed(() => ({
-  labels: ['Service Provider', 'Service Process', 'Facilities'],
-  datasets: [{
-    label: 'Rating',
-    backgroundColor: ['#60a5fa', '#f59e0b', '#f472b6'],
-    data: [
-      average.value.serviceProvider,
-      average.value.serviceProcess,
-      average.value.facilities
-    ]
-  }]
-}))
+// 🔹 Mock Comments
+const comments = [
+  { topic: 'appointment', stars: 5, text: 'บริการดีมากค่ะ รวดเร็วและสุภาพ' },
+  { topic: 'appointment', stars: 4, text: 'ให้คำแนะนำดี แต่บางครั้งตอบช้าเล็กน้อย' },
+  { topic: 'document', stars: 5, text: 'ระบบเอกสารสะดวก ใช้งานง่ายค่ะ' },
+  { topic: 'document', stars: 4, text: 'บางครั้งโหลดไฟล์ช้า แต่โดยรวมดีมาก' }
+]
 
-// ✅ คอมเมนต์ตัวอย่าง
-const comments = ref([
-  { text: 'บริการดีมากค่ะ', stars: 5, date: '21/10/2025' },
-  { text: 'รวดเร็วและสุภาพ', stars: 4, date: '22/10/2025' }
-])
-
-// ✅ semester/year
-const selectedTerm = ref('1')
-const selectedYear = ref('2025')
-const years = Array.from({ length: 5 }, (_, i) => 2025 - i)
-
-// ✅ tab
-const tab = ref('appointment')
-
-// ✅ style
-const activeTab = "bg-white text-purple-800 font-bold px-4 py-2 rounded-t-lg border border-b-0"
-const defaultTab = "bg-purple-300 text-white px-4 py-2 rounded-t-lg hover:bg-purple-400"
+const selectedTopic = ref('appointment')
+const filteredComments = computed(() => comments.filter(c => c.topic === selectedTopic.value))
 </script>
