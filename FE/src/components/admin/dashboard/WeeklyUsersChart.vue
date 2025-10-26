@@ -1,3 +1,4 @@
+<!-- WeeklyUsersChart.vue -->
 <script setup>
 import { defineProps, ref, watch, onMounted } from 'vue'
 import { Chart, registerables } from 'chart.js'

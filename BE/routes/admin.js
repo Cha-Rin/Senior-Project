@@ -26,7 +26,7 @@ module.exports = (db) => {
   router.get('/staffs', (req, res) => {
     const sqlStaff = `
       SELECT user_id AS id, name AS firstName, surname AS lastName, 
-             email, profile_pic AS avatar, status
+             email, profile_pic AS avatar, status, role
       FROM user
       WHERE role = 2;
     `
@@ -114,6 +114,27 @@ module.exports = (db) => {
     })
   })
 
+  // ✅ อัปเดตข้อมูล Staff
+router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
+  const id = req.params.id
+  const { firstName, lastName, email, role } = req.body
+  const avatar = req.file ? `/uploads/${req.file.filename}` : null
+
+  const sql = avatar
+    ? `UPDATE user SET name=?, surname=?, email=?, role=?, profile_pic=? WHERE user_id=?`
+    : `UPDATE user SET name=?, surname=?, email=?, role=? WHERE user_id=?`
+
+  const values = avatar
+    ? [firstName, lastName, email, role, avatar, id]
+    : [firstName, lastName, email, role, id]
+
+  db.query(sql, values, (err) => {
+    if (err) return res.status(500).json({ success: false, message: err.message })
+    res.json({ success: true })
+  })
+})
+
+
   // =====================================
   // 📊 Dashboard: Weekly Summary (กราฟ 1)
   // =====================================
@@ -195,6 +216,133 @@ module.exports = (db) => {
       })
     })
   })
+
+
+router.get('/staff/:id/rating', (req, res) => {
+  const staffId = parseInt(req.params.id);
+  const { year, semester } = req.query; // 🧩 รับค่าปีและเทอมจาก frontend
+
+  const catIds = staffCategoryMap[staffId] || [];
+  if (catIds.length === 0) {
+    return res.json({
+      success: true,
+      data: {
+        appointment: { service_provider: 0, service_process: 0, facilities: 0 },
+        document: { service_provider: 0, service_process: 0, facilities: 0 }
+      }
+    });
+  }
+
+  const placeholders = catIds.map(() => '?').join(',');
+
+  // 🔹 Appointment feedback
+  const sqlApt = `
+    SELECT 
+      AVG(fa.score_count1) AS service_provider,
+      AVG(fa.score_count2) AS service_process,
+      AVG(fa.score_count3) AS facilities
+    FROM feedback_appointment fa
+    JOIN appointment a ON fa.appointment_id = a.appointment_id
+    WHERE a.category_id IN (${placeholders})
+      AND a.academic_year = ?
+      AND a.semester = ?;
+  `;
+
+  // 🔹 Document tracking feedback
+  const sqlDoc = `
+    SELECT 
+      AVG(fd.score_count1) AS service_provider,
+      AVG(fd.score_count2) AS service_process,
+      AVG(fd.score_count3) AS facilities
+    FROM feedback_document_tracking fd
+    JOIN document_tracking d ON fd.document_id = d.document_id
+    WHERE d.category_id IN (${placeholders})
+      AND d.academic_year = ?
+      AND d.semester = ?;
+  `;
+
+  // ✅ Execute queries
+  db.query(sqlApt, [...catIds, year, semester], (errA, aptResults) => {
+    if (errA) return res.status(500).json({ success: false, error: errA.message });
+
+    db.query(sqlDoc, [...catIds, year, semester], (errD, docResults) => {
+      if (errD) return res.status(500).json({ success: false, error: errD.message });
+
+      const appointment = aptResults[0] || {};
+      const document = docResults[0] || {};
+
+      res.json({
+        success: true,
+        data: {
+          appointment: {
+            service_provider: parseFloat(appointment.service_provider || 0),
+            service_process: parseFloat(appointment.service_process || 0),
+            facilities: parseFloat(appointment.facilities || 0)
+          },
+          document: {
+            service_provider: parseFloat(document.service_provider || 0),
+            service_process: parseFloat(document.service_process || 0),
+            facilities: parseFloat(document.facilities || 0)
+          }
+        }
+      });
+    });
+  });
+});
+
+
+
+
+
+router.get('/staff/:id/comments', (req, res) => {
+  const staffId = parseInt(req.params.id);
+  const { type, year, semester } = req.query; // 🧩 เพิ่ม year + semester
+  const catIds = staffCategoryMap[staffId] || [];
+
+  if (catIds.length === 0) return res.json({ success: true, data: [] });
+
+  const placeholders = catIds.map(() => '?').join(',');
+  let sql;
+
+  if (type === 'appointment') {
+    sql = `
+      SELECT 
+        ((fa.score_count1 + fa.score_count2 + fa.score_count3)/3) AS avg_score,
+        fa.comment
+      FROM feedback_appointment fa
+      JOIN appointment a ON fa.appointment_id = a.appointment_id
+      WHERE a.category_id IN (${placeholders})
+        AND a.academic_year = ?
+        AND a.semester = ?
+        AND fa.comment IS NOT NULL
+        AND fa.comment <> '';
+    `;
+  } else {
+    sql = `
+      SELECT 
+        ((fd.score_count1 + fd.score_count2 + fd.score_count3)/3) AS avg_score,
+        fd.comment
+      FROM feedback_document_tracking fd
+      JOIN document_tracking d ON fd.document_id = d.document_id
+      WHERE d.category_id IN (${placeholders})
+        AND d.academic_year = ?
+        AND d.semester = ?
+        AND fd.comment IS NOT NULL
+        AND fd.comment <> '';
+    `;
+  }
+
+  db.query(sql, [...catIds, year, semester], (err, results) => {
+    if (err) {
+      console.error('❌ Error fetching staff comments:', err);
+      return res.status(500).json({ success: false, message: err.message });
+    }
+    res.json({ success: true, data: results });
+  });
+});
+
+
+
 
   return router
 }
