@@ -21,7 +21,7 @@ onMounted(async () => {
   }
 
   try {
-    console.log("🔑 Fetching approved document topics")
+    console.log("🔑 Fetching approved topics")
     const res = await fetch('http://localhost:3000/student/document-topics', {
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -29,7 +29,7 @@ onMounted(async () => {
       }
     })
     const data = await res.json()
-    console.log('📥 Document topics response:', data)
+    console.log('📥 Topics response:', data)
 
     if (data.success) {
       topics.value = Array.isArray(data.topics) ? data.topics : []
@@ -38,7 +38,7 @@ onMounted(async () => {
       console.warn("⚠️ API returned no success flag:", data)
     }
   } catch (err) {
-    console.error('❌ Error fetching document topics:', err)
+    console.error('❌ Error fetching topics:', err)
   }
 
   await loadDocuments()
@@ -74,7 +74,7 @@ const filteredItems = computed(() => {
 // -------------------- Submit Feedback --------------------
 async function handleSubmit(payload) {
   try {
-    console.log("🧩 handleSubmit payload:", payload);
+    console.log("🧩 handleSubmit payload:", payload)
 
     const res = await fetch('http://localhost:3000/student/feedback/documents', {
       method: 'POST',
@@ -83,26 +83,36 @@ async function handleSubmit(payload) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        document_id: payload.itemId,    // ✅ ต้องมี
-        ratings: payload.ratings,       // ✅ ต้องเป็น array
-        comment: payload.note || ''     // ✅ optional
+        document_id: payload.itemId,
+        ratings: payload.ratings,
+        comment: payload.note || ''
       })
-    });
+    })
 
-    const result = await res.json();
-    console.log("📥 Feedback submit response:", result);
+    const result = await res.json()
+    console.log("📥 Feedback submit response:", result)
 
     if (result.success) {
-      alert('ส่งความคิดเห็นเรียบร้อย ✅');
+      alert('ส่งความคิดเห็นเรียบร้อย ✅')
+
+      // ✅ ลบ document ที่เพิ่ง feedback ออก
+      documents.value = documents.value.filter(d => d.document_id !== payload.itemId)
+
+      // ✅ อัปเดตหัวข้อใหม่
+      const remainingTopics = [...new Set(documents.value.map(d => d.topic))]
+      topics.value = topics.value.filter(t => remainingTopics.includes(t))
+
+      if (!remainingTopics.includes(selectedTopic.value)) {
+        selectedTopic.value = ''
+      }
     } else {
-      alert(result.message || 'เกิดข้อผิดพลาด');
+      alert(result.message || 'เกิดข้อผิดพลาด')
     }
   } catch (e) {
-    console.error('❌ handleSubmit error:', e);
-    alert('เกิดข้อผิดพลาดในการส่ง feedback');
+    console.error('❌ handleSubmit error:', e)
+    alert('เกิดข้อผิดพลาดในการส่ง feedback')
   }
 }
-
 </script>
 
 <template>

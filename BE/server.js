@@ -42,6 +42,10 @@ app.use((err, req, res, next) => {
 const studentRouter = require('./routes/student')(db)
 app.use('/student', studentRouter)
 
+const secretaryRouter = require('./routes/secretary')(db)
+app.use('/secretary', secretaryRouter)
+
+
 const adminRouter = require('./routes/admin')(db)
 app.use('/admin', adminRouter)
 

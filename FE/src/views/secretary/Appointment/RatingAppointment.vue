@@ -67,7 +67,7 @@
           </div>
 
           <!-- Comments Container -->
-          <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col">
+          <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
             <div class="flex justify-between items-center mb-4">
               <span class="text-lg font-bold">Comment</span>
               <select v-model="selectedTopic" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">

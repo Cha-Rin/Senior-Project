@@ -451,6 +451,8 @@ router.post('/feedback/documents', authMiddleware, (req, res) => {
 
   const params = [document_id, ratings[0], ratings[1], ratings[2], comment || '']
 
+//   const updateSql = 'UPDATE documents SET feedback_status = 1 WHERE document_id = ?';
+// db.query(updateSql, [req.body.document_id]);
   db.query(sql, params, (err, result) => {
     if (err) {
       if (err.code === 'ER_DUP_ENTRY') {
@@ -553,13 +555,15 @@ router.get('/document-topics', authMiddleware, (req, res) => {
   }
 
   const sql = `
-    SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
-    FROM document_tracking d
-    LEFT JOIN categories c ON c.category_id = d.category_id
-    WHERE d.user_id = ?
-      AND d.status = 2  -- ✅ เฉพาะเอกสารอนุมัติแล้ว
-    ORDER BY topic
-  `;
+  SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
+  FROM document_tracking d
+  LEFT JOIN categories c ON c.category_id = d.category_id
+  LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+  WHERE d.user_id = ?
+    AND d.status = 2
+    AND f.document_id IS NULL  
+  ORDER BY topic;
+`;
 
   db.query(sql, [userId], (err, rows) => {
     if (err) {

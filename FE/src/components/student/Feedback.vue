@@ -1,30 +1,10 @@
 <template>
   <div>
-    <!-- ✅ Navbar (optional ถ้าไม่ใช้ ให้ลบออก) -->
+    <!-- ✅ Navbar -->
     <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" v-if="hasNavbar" />
 
-    <div class="p-4 space-y-6 max-w-md mx-auto bg-white min-h-screen">
-      <!-- หัวเรื่อง -->
+    <div class="p-8 space-y-6 max-w-md mx-auto bg-white min-h-screen">
       <h1 class="text-xl font-semibold text-center mt-8">Feedback</h1>
-
-      <!-- 🔘 Segmented Control -->
-      <div class="flex justify-center mb-4">
-        <div class="inline-flex bg-gray-200 rounded-full p-1 space-x-1">
-          <button
-            v-for="tab in categories"
-            :key="tab"
-            @click="selectedCategory = tab"
-            :class="[
-              'px-4 py-1 rounded-full text-sm font-medium',
-              selectedCategory === tab
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-700 hover:bg-gray-300'
-            ]"
-          >
-            {{ tab }}
-          </button>
-        </div>
-      </div>
 
       <!-- 🔽 Topic Dropdown -->
       <div class="mb-4">
@@ -42,41 +22,24 @@
         :key="item.id"
         @click="selectAppointment(item)"
         class="bg-white shadow-md rounded-xl p-4 text-sm relative space-y-2 mb-4 border cursor-pointer"
-        :class="
-          selectedAppointment?.id === item.id
+        :class="selectedAppointment?.id === item.id
             ? 'border-blue-600 ring-2 ring-blue-200'
-            : 'border-gray-200 hover:border-gray-300'
-        "
+            : 'border-gray-200 hover:border-gray-300'"
       >
         <div class="flex justify-between items-center font-semibold text-black">
           <span>#{{ item.id }}</span>
-          <span
-            class="text-green-600 text-xs px-2 py-0.5 rounded-full bg-green-50 border border-green-200"
-            >Approve</span
-          >
+          <!-- <span class="text-green-600 text-xs px-2 py-0.5 rounded-full bg-green-50 border border-green-200">
+            Approve
+          </span> -->
         </div>
 
         <div class="text-black">
           <p>
             Date: {{ item.date }}
-            <span v-if="item.time && item.time !== 'N/A'" class="ml-2"
-              >Time: {{ item.time }}</span
-            >
+            <span v-if="item.time && item.time !== 'N/A'" class="ml-2">Time: {{ item.time }}</span>
           </p>
           <p>Topic: {{ item.topic }}</p>
           <p>Note: {{ item.note }}</p>
-        </div>
-
-        <!-- Radio select -->
-        <div class="absolute top-4 right-4">
-          <input
-            type="radio"
-            name="selectedAppointment"
-            :value="item.id"
-            :checked="selectedAppointment?.id === item.id"
-            class="w-4 h-4"
-            @change="selectAppointment(item)"
-          />
         </div>
       </div>
 
@@ -95,30 +58,18 @@
 
           <div class="flex justify-around items-center">
             <div
-              v-for="(item, index) in options"
+              v-for="(option, index) in options"
               :key="`q${qIndex}-${index}`"
               @click="select(qIndex, index)"
               class="flex flex-col items-center cursor-pointer"
             >
-              <div
-                class="text-3xl transition-transform duration-200"
-                :class="
-                  ratings[qIndex] === index
-                    ? 'scale-125'
-                    : 'opacity-60 hover:opacity-100'
-                "
-              >
-                {{ item.emoji }}
+              <div class="text-3xl transition-transform duration-200"
+                :class="ratings[qIndex] === index ? 'scale-125' : 'opacity-60 hover:opacity-100'">
+                {{ option.emoji }}
               </div>
-              <p
-                class="text-xs mt-1"
-                :class="
-                  ratings[qIndex] === index
-                    ? 'font-semibold text-black'
-                    : 'text-gray-500'
-                "
-              >
-                {{ item.label }}
+              <p class="text-xs mt-1"
+                :class="ratings[qIndex] === index ? 'font-semibold text-black' : 'text-gray-500'">
+                {{ option.label }}
               </p>
             </div>
           </div>
@@ -153,10 +104,10 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import Navbar from '@/components/student/NavbarFeedback.vue' 
+import { ref, computed, onMounted } from 'vue'
+import Navbar from '@/components/student/NavbarFeedback.vue'
 
-// ✅ Props
+// Props
 const props = defineProps({
   items: { type: Array, default: () => [] },
   topics: { type: Array, default: () => [] },
@@ -164,8 +115,8 @@ const props = defineProps({
 })
 const emit = defineEmits(['submit'])
 
-// ✅ State
-const hasNavbar = true // ถ้าไม่ใช้ Navbar ให้เปลี่ยนเป็น false
+// State
+const hasNavbar = true
 const selectedCategory = ref(props.defaultCategory)
 const selectedTopic = ref('')
 const selectedAppointment = ref(null)
@@ -173,29 +124,32 @@ const note = ref('')
 const ratings = ref([null, null, null])
 const categories = ['Appointment', 'Document']
 
-// ✅ Static data
+// Static data
 const questions = [
   'The service was fast, convenient, and accurate.',
   'The staff gave clear answers and helpful advice.',
   'Service was completed within the scheduled timeframe.'
 ]
 const options = [
-  { emoji: '😄', label: 'Excellent' },
-  { emoji: '🙂', label: 'Good' },
-  { emoji: '😐', label: 'Average' },
+  { emoji: '😠', label: 'Bad' },
   { emoji: '🙁', label: 'Poor' },
-  { emoji: '😠', label: 'Bad' }
-]
+  { emoji: '😐', label: 'Average' },
+  { emoji: '🙂', label: 'Good' },
+  { emoji: '😄', label: 'Excellent' }
+];
 
-// ✅ Computed
+
+// Computed
 const filteredTopics = computed(() =>
   props.topics.map(t => (typeof t === 'string' ? t : t?.name ?? t?.title ?? '')).filter(Boolean)
 )
 
+// ✅ Filtered items: เฉพาะอันที่ยังไม่ทำ feedback
 const filteredItems = computed(() =>
   props.items.filter(item =>
     (!item.category || item.category === selectedCategory.value) &&
-    (selectedTopic.value === '' || item.topic === selectedTopic.value)
+    (selectedTopic.value === '' || item.topic === selectedTopic.value) &&
+    !item.completed
   )
 )
 
@@ -203,15 +157,18 @@ const canSubmit = computed(() =>
   selectedAppointment.value && ratings.value.every(v => v !== null)
 )
 
-// ✅ Methods
+// Methods
 function selectAppointment(item) {
   selectedAppointment.value = item
 }
+
 function select(qIndex, optionIndex) {
   ratings.value[qIndex] = optionIndex
 }
+
 function submitFeedback() {
   if (!canSubmit.value) return
+
   const payload = {
     category: selectedCategory.value,
     itemId: selectedAppointment.value.id,
@@ -219,14 +176,25 @@ function submitFeedback() {
     ratings: ratings.value,
     note: note.value
   }
+
   emit('submit', payload)
+
+  // ✅ mark item ว่าเสร็จ
+  const item = props.items.find(i => i.id === selectedAppointment.value.id)
+  if (item) item.completed = true
+
+  // ✅ รีเซ็ต form
+  selectedAppointment.value = null
+  note.value = ''
+  ratings.value = [null, null, null]
 }
 
-// ✅ Lifecycle
+// Lifecycle
 onMounted(() => {
   console.log('✅ Feedback mounted. Topics:', props.topics)
 })
 </script>
+
 
 
 <!-- ใช้ template เดิมของคุณได้เลย -->
