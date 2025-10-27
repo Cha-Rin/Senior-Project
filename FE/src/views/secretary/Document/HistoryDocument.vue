@@ -7,34 +7,68 @@
         History
       </h1>
 
-      <!-- 🔸 Date Range Selector (Week View) -->
-      <div class="flex items-center gap-3 bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
-        <span class="text-violet-600 text-xl">📅</span>
-        <input
-          type="date"
-          v-model="startDate"
-          @change="updateWeekRange"
-          class="border border-violet-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
-        />
-        <span class="text-gray-500 font-medium">–</span>
-        <input
-          type="date"
-          v-model="endDate"
-          @change="updateWeekRange"
-          class="border border-violet-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white"
-        />
-        <button
-          @click="resetDate"
-          class="ml-2 text-sm font-medium text-violet-600 hover:text-violet-800 underline"
-        >
-          Reset
-        </button>
+      <!-- 🔸 Date Range Selector (แบบใหม่ — เหมือน HistoryAppointment.vue) -->
+      <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-violet-600 text-xl">📅</span>
+          <div class="relative" ref="calendarContainer">
+            <!-- ช่องแสดงผลรวม -->
+            <div 
+              @click="toggleCalendar"
+              class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[240px]"
+            >
+              <span v-if="startDate && endDate">
+                {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate) }}
+              </span>
+              <span v-else class="text-gray-500">Choose date range</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7l4-4m0 0l4 4m-4-4v18" />
+              </svg>
+            </div>
+
+            <!-- ปฎิทิน dropdown -->
+            <div v-if="showCalendar" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 w-80">
+              <div class="flex justify-between items-center mb-3">
+                <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded"><</button>
+                <span class="font-medium">{{ currentMonthName }} {{ currentYear }}</span>
+                <button @click="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded">></button>
+              </div>
+
+              <!-- หัวตารางวันในสัปดาห์ -->
+              <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2">
+                <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+              </div>
+
+              <!-- ตารางวัน -->
+              <div class="grid grid-cols-7 gap-1">
+                <div 
+                  v-for="day in calendarDays" 
+                  :key="day.date" 
+                  :class="[
+                    'h-8 flex items-center justify-center rounded-md text-sm cursor-pointer',
+                    day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400',
+                    day.isSelected ? 'bg-indigo-600 text-white' : '',
+                    day.isInRange ? 'bg-indigo-100' : '',
+                    day.isToday ? 'border border-indigo-500' : ''
+                  ]"
+                  @click="selectDate(day.date)"
+                >
+                  {{ day.day }}
+                </div>
+              </div>
+
+              <div class="mt-3 flex justify-end">
+                <button @click="resetDate" class="text-sm font-medium text-violet-600 hover:text-violet-800 underline">Reset</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- 🔸 Table -->
       <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <!-- ✅ Header ตารางใช้ gradient อ่อน -->
-        <div class="grid grid-cols-6 px-6 py-4 bg-gradient-to-r from-indigo-50 to-violet-50 font-bold text-indigo-800 border-b border-gray-200">
+        <!-- ✅ Header ตารางใช้พื้นหลังสีม่วงอ่อน (เหมือนภาพ) -->
+        <div class="grid grid-cols-6 px-6 py-4 bg-indigo-50 font-semibold text-indigo-800 border-b border-gray-200">
           <div>No</div>
           <div>ID</div>
           <div>Date</div>
@@ -52,27 +86,31 @@
           <div class="text-gray-700">{{ item.studentId }}</div>
           <div class="text-gray-700">{{ formatDate(item.date) }}</div>
           <div class="text-gray-800 font-medium">{{ item.topic }}</div>
-          <div class="flex items-center gap-1.5">
+          <div class="flex items-center">
             <span
               v-if="item.status === 'Complete'"
-              class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800"
+              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-green-100 text-green-800"
             >
-              <span>✅</span>
-              <span class="ml-1">Complete</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+              </svg>
+              Complete
             </span>
             <span
               v-else-if="item.status === 'Reject'"
-              class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full bg-rose-100 text-rose-800"
+              class="inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-full bg-red-100 text-red-800"
             >
-              <span>❌</span>
-              <span class="ml-1">Reject</span>
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Reject
             </span>
             <span v-else class="text-gray-500 text-sm">—</span>
           </div>
           <div class="flex justify-center">
             <button
               @click="viewFile(item)"
-              class="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm hover:shadow-md"
+              class="w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 transition-colors shadow-sm"
               title="View File"
             >
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -90,7 +128,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
-          No documents found in selected week.
+          No documents found in selected date range.
         </div>
       </div>
     </div>
@@ -98,7 +136,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 // ข้อมูลประวัติ (ใช้รูปแบบ ISO: YYYY-MM-DD)
@@ -145,40 +183,101 @@ const history = ref([
   }
 ])
 
-// ตัวแปรสำหรับเลือกวัน
+// วันที่เลือก
 const startDate = ref('2025-04-21')
 const endDate = ref('2025-04-25')
 
-// ฟังก์ชันคำนวณวันจันทร์และศุกร์ของสัปดาห์ที่เลือก
-const getWeekStartEnd = (date) => {
-  const d = new Date(date)
-  const day = d.getDay() // 0=อาทิตย์, 1=จันทร์, ..., 6=เสาร์
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // ปรับให้เป็นจันทร์
-  const start = new Date(d)
-  start.setDate(diff)
-  const end = new Date(start)
-  end.setDate(end.getDate() + 4) // จันทร์ + 4 วัน = ศุกร์
-  return {
-    start: start.toISOString().split('T')[0],
-    end: end.toISOString().split('T')[0]
+// ควบคุมปฎิทิน
+const showCalendar = ref(false)
+const currentMonth = ref(new Date().getMonth())
+const currentYear = ref(new Date().getFullYear())
+const calendarContainer = ref(null)
+
+// ========== ฟังก์ชันช่วย ==========
+const formatDateDisplay = (dateStr) => {
+  if (!dateStr) return ''
+  const d = new Date(dateStr)
+  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const year = d.getFullYear()
+  return `${day}/${month}/${year}`
+}
+
+const toggleCalendar = () => {
+  showCalendar.value = !showCalendar.value
+}
+
+const changeMonth = (offset) => {
+  currentMonth.value += offset
+  if (currentMonth.value < 0) {
+    currentMonth.value = 11
+    currentYear.value--
+  } else if (currentMonth.value > 11) {
+    currentMonth.value = 0
+    currentYear.value++
   }
 }
 
-// อัปเดตช่วงวันเป็นสัปดาห์เมื่อเลือกวัน
-const updateWeekRange = () => {
-  if (!startDate.value || !endDate.value) return
-  const week = getWeekStartEnd(startDate.value)
-  startDate.value = week.start
-  endDate.value = week.end
+const selectDate = (date) => {
+  if (!startDate.value) {
+    startDate.value = date
+  } else if (!endDate.value || date < startDate.value) {
+    endDate.value = startDate.value
+    startDate.value = date
+  } else {
+    endDate.value = date
+  }
 }
 
-// รีเซ็ต
-const resetDate = () => {
-  startDate.value = '2025-04-21'
-  endDate.value = '2025-04-25'
+const calendarDays = computed(() => {
+  const days = []
+  const firstDayOfMonth = new Date(currentYear.value, currentMonth.value, 1)
+  const lastDayOfMonth = new Date(currentYear.value, currentMonth.value + 1, 0)
+  const startDayOfWeek = firstDayOfMonth.getDay()
+
+  for (let i = 0; i < startDayOfWeek; i++) {
+    const prevDate = new Date(firstDayOfMonth)
+    prevDate.setDate(prevDate.getDate() - (startDayOfWeek - i))
+    days.push(createDayObj(prevDate, false))
+  }
+
+  for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
+    const dateObj = new Date(currentYear.value, currentMonth.value, day)
+    days.push(createDayObj(dateObj, true))
+  }
+
+  const total = days.length
+  const remaining = 42 - total
+  for (let i = 1; i <= remaining; i++) {
+    const nextDate = new Date(lastDayOfMonth)
+    nextDate.setDate(nextDate.getDate() + i)
+    days.push(createDayObj(nextDate, false))
+  }
+
+  return days
+})
+
+const createDayObj = (date, isCurrentMonth) => {
+  const dateStr = date.toISOString().slice(0, 10)
+  const isSelected = dateStr === startDate.value || dateStr === endDate.value
+  const isInRange = startDate.value && endDate.value && dateStr >= startDate.value && dateStr <= endDate.value
+  const isToday = dateStr === new Date().toISOString().slice(0, 10)
+
+  return {
+    day: date.getDate(),
+    date: dateStr,
+    isCurrentMonth,
+    isSelected,
+    isInRange,
+    isToday
+  }
 }
 
-// กรองประวัติตามช่วงวันที่ (สัปดาห์)
+const currentMonthName = computed(() => {
+  return new Date(currentYear.value, currentMonth.value).toLocaleString('default', { month: 'long' })
+})
+
+// ========== กรองประวัติ ==========
 const filteredHistory = computed(() => {
   if (!startDate.value || !endDate.value) return history.value
   const start = new Date(startDate.value)
@@ -189,7 +288,14 @@ const filteredHistory = computed(() => {
   })
 })
 
-// ฟอร์แมตวันที่ให้เป็น DD/MM/YY (เช่น 21/04/25)
+// ========== รีเซ็ตวันที่ ==========
+const resetDate = () => {
+  startDate.value = '2025-04-21'
+  endDate.value = '2025-04-25'
+  showCalendar.value = false
+}
+
+// ========== ฟอร์แมตวันที่สำหรับตาราง ==========
 const formatDate = (isoDate) => {
   const d = new Date(isoDate)
   const day = String(d.getDate()).padStart(2, '0')
@@ -198,11 +304,26 @@ const formatDate = (isoDate) => {
   return `${day}/${month}/${year}`
 }
 
-// ดูไฟล์
+// ========== ดูไฟล์ ==========
 const viewFile = (item) => {
   if (!item?.fileUrl) return
   window.open(item.fileUrl, '_blank', 'noopener,noreferrer')
 }
+
+// ========== จัดการ click นอกปฎิทิน ==========
+const handleClickOutside = (event) => {
+  if (calendarContainer.value && !calendarContainer.value.contains(event.target)) {
+    showCalendar.value = false
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>

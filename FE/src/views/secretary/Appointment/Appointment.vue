@@ -1,7 +1,6 @@
 <!-- 📁 src/views/secretary/Appointment.vue -->
 <template>
   <SecreLayout>
-    <!-- ใช้ flex จัดเนื้อหาให้อยู่ตรงกลางแนวนอน -->
     <div class="page">
       <div class="content-wrapper">
         <h1 class="title">Appointment</h1>
@@ -33,17 +32,35 @@
           >
             Delete
           </button>
-           <div class="flex gap-4 ">
-          <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer ">
-            <option value="1" class="text-black">Semester 1</option>
-            <option value="2">Semester 2</option>
-          </select>
-          <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-            <option value="2568">2568</option>
-            <option value="2567">2567</option>
-            <option value="2566">2566</option>
-          </select>
-        </div>
+
+          <!-- 🔸 Month & Week Selector -->
+          <div class="flex gap-4 items-center">
+            <!-- Month Picker -->
+            <select v-model="selectedMonthYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
+              <option v-for="month in monthOptions" :key="month.value" :value="month.value">
+                {{ month.label }}
+              </option>
+            </select>
+
+            <!-- Week Picker -->
+            <div class="flex gap-2">
+              <span class="text-gray-700 text-sm">Week:</span>
+              <div class="flex flex-wrap gap-1 max-w-[300px]">
+                <button
+                  v-for="(week, index) in weeksInMonth"
+                  :key="index"
+                  @click="selectWeek(week)"
+                  class="px-2 py-1 text-xs rounded border"
+                  :class="{
+                    'bg-indigo-100 border-indigo-500 text-indigo-800 font-medium': selectedWeek?.start === week.start,
+                    'bg-white border-gray-300 text-gray-700 hover:bg-gray-50': selectedWeek?.start !== week.start
+                  }"
+                >
+                  {{ formatDateShort(week.start) }} – {{ formatDateShort(week.end) }}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Grid -->
@@ -89,7 +106,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
@@ -107,15 +124,15 @@ const timeSlots = [
   '15:00 - 16:00'
 ]
 const days = ['mon', 'tue', 'wed', 'thu', 'fri']
-const LUNCH_ROW = 4 // 12:00 - 13:00
+const LUNCH_ROW = 4
 
 /* โหมด */
-const mode = ref('add') // 'add' | 'select'
+const mode = ref('add')
 const setMode = (m) => {
   mode.value = m
 }
 
-/* การจอง: เก็บคีย์ "row,col" ใน Set */
+/* การจอง */
 const key = (r, c) => `${r},${c}`
 const reserved = ref(new Set())
 ;[[1, 1], [2, 1], [5, 3], [7, 4]].forEach(([r, c]) => reserved.value.add(key(r, c)))
@@ -162,14 +179,13 @@ const cellStyle = (r, c) => {
   return { backgroundColor: '#fff' }
 }
 
-/* รายการคำขอ (เดโม) */
+/* รายการคำขอ */
 const requests = ref([
   { topic: 'Internship', date: '21 / 04 / 25', time: '08:00 - 09:00 A.M.' },
   { topic: 'Faculty Club', date: '21 / 04 / 25', time: '08:00 - 09:00 A.M.' },
   { topic: 'Faculty Club', date: '21 / 04 / 25', time: '08:00 - 09:00 A.M.' }
 ])
 
-/* ฟังก์ชันเปิดคำขอ */
 const openRequest = (req) => {
   router.push({
     name: 'RequestAppointment',
@@ -180,6 +196,93 @@ const openRequest = (req) => {
     }
   })
 }
+
+// ========== Month & Week Logic ==========
+const today = new Date()
+const currentYear = today.getFullYear()
+const currentMonth = today.getMonth()
+
+// สร้างตัวเลือกเดือน (ย้อนหลัง 6 เดือน → ไปข้างหน้า 6 เดือน)
+const monthOptions = computed(() => {
+  const options = []
+  for (let i = -6; i <= 6; i++) {
+    const date = new Date(currentYear, currentMonth + i, 1)
+    const label = date.toLocaleString('default', { month: 'long', year: 'numeric' })
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    options.push({ label, value })
+  }
+  return options
+})
+
+const selectedMonthYear = ref(
+  `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
+)
+
+// คำนวณสัปดาห์ทั้งหมดในเดือนที่เลือก
+const weeksInMonth = computed(() => {
+  const [year, month] = selectedMonthYear.value.split('-').map(Number)
+  const firstDay = new Date(year, month - 1, 1)
+  const lastDay = new Date(year, month, 0)
+
+  const weeks = []
+  let current = new Date(firstDay)
+
+  // หาวันจันทร์ของสัปดาห์แรกที่ทับเดือนนี้
+  while (current.getDay() !== 1) { // 1 = Monday
+    current.setDate(current.getDate() - 1)
+  }
+
+  while (current <= lastDay) {
+    const monday = new Date(current)
+    const friday = new Date(monday)
+    friday.setDate(monday.getDate() + 4)
+
+    // ตรวจสอบว่าสัปดาห์นี้ทับกับเดือนที่เลือกหรือไม่
+    if (friday >= firstDay && monday <= lastDay) {
+      weeks.push({
+        start: monday.toISOString().slice(0, 10),
+        end: friday.toISOString().slice(0, 10)
+      })
+    }
+
+    current.setDate(current.getDate() + 7)
+  }
+
+  return weeks
+})
+
+// เลือกสัปดาห์
+const selectedWeek = ref(null)
+
+const selectWeek = (week) => {
+  selectedWeek.value = week
+  // ✅ ตอนนี้คุณสามารถใช้ selectedWeek.value.start / .end ในการบันทึกนัดหมาย
+}
+
+// ฟอร์แมตวันที่สั้น (เช่น 21 Apr)
+const formatDateShort = (isoDate) => {
+  const d = new Date(isoDate)
+  const day = d.getDate()
+  const month = d.toLocaleString('default', { month: 'short' })
+  return `${day} ${month}`
+}
+
+// เมื่อโหลดหน้า → เลือกสัปดาห์ปัจจุบันโดยอัตโนมัติ
+onMounted(() => {
+  const now = new Date()
+  const currentWeekStart = new Date(now)
+  const day = now.getDay()
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+  currentWeekStart.setDate(diff)
+  const startStr = currentWeekStart.toISOString().slice(0, 10)
+
+  const currentWeek = weeksInMonth.value.find(w => w.start === startStr)
+  if (currentWeek) {
+    selectedWeek.value = currentWeek
+  } else if (weeksInMonth.value.length > 0) {
+    selectedWeek.value = weeksInMonth.value[0]
+  }
+})
 </script>
 
 <style scoped>
@@ -190,12 +293,12 @@ const openRequest = (req) => {
   padding: 24px;
   box-sizing: border-box;
   display: flex;
-  justify-content: center; /* 👈 จัดเนื้อหาให้อยู่ตรงกลางแนวนอน */
-  align-items: flex-start; /* ไม่จัดแนวตั้ง เพราะอาจยาวเกินหน้าจอ */
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .content-wrapper {
-  max-width: 1000px; /* จำกัดความกว้าง */
+  max-width: 1000px;
   width: 100%;
   text-align: center;
 }
@@ -222,7 +325,8 @@ const openRequest = (req) => {
   align-items: center;
   gap: 12px;
   margin-bottom: 8px;
-  justify-content: center; /* จัดปุ่มตรงกลาง */
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .label {
@@ -262,7 +366,7 @@ const openRequest = (req) => {
   min-width: 720px;
   border-collapse: collapse;
   width: max-content;
-  margin: 0 auto; /* จัดตารางให้อยู่ตรงกลาง */
+  margin: 0 auto;
 }
 
 .table th,
@@ -305,7 +409,7 @@ const openRequest = (req) => {
   max-width: 720px;
   display: grid;
   gap: 12px;
-  margin: 0 auto; /* จัดรายการคำขอให้อยู่ตรงกลาง */
+  margin: 0 auto;
 }
 
 .request-row {

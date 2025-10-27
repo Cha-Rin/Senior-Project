@@ -2,7 +2,9 @@
 <template>
   <SecreLayout>
     <div class="page-content">
-      <h1 class="text-4xl font-bold text-gray-800 mb-6">Document Status</h1>
+      <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        Document Status
+      </h1>
 
       <!-- ตารางสถานะเอกสาร -->
       <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
@@ -93,7 +95,7 @@ const documents = ref([
   { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: ['in-progress'] }
 ])
 
-// ✅ Toggle สถานะ: เพิ่มถ้ายังไม่มี, ลบถ้ามีอยู่แล้ว
+// ✅ Toggle สถานะ: เพิ่มถ้ายังไม่มี, ลบถ้ามีอยู่แล้ว — พร้อมบังคับ Vue ให้ตรวจจับการเปลี่ยนแปลง
 const toggleStatus = (item, status) => {
   const index = item.status.indexOf(status)
   if (index === -1) {
@@ -102,6 +104,12 @@ const toggleStatus = (item, status) => {
   } else {
     // ลบสถานะ
     item.status.splice(index, 1)
+  }
+
+  // ✅ บังคับให้ Vue รู้ว่า object นี้เปลี่ยนแล้ว
+  const indexInArray = documents.value.findIndex(d => d.no === item.no)
+  if (indexInArray !== -1) {
+    documents.value.splice(indexInArray, 1, { ...item })
   }
 }
 </script>
