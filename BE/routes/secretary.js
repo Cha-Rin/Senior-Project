@@ -33,7 +33,8 @@ SELECT
   a.student_note
 FROM appointment AS a
 JOIN categories AS c ON a.category_id = c.category_id
-WHERE a.category_id = 4
+JOIN user_category uc ON a.category_id = uc.category_id
+WHERE uc.user_id = ?
   AND a.status IN (1, 2)
 ORDER BY a.appointment_date DESC
 `;
