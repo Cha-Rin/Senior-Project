@@ -1,3 +1,4 @@
+<!-- BarChart.vue -->
 <template>
   <canvas ref="chartCanvas"></canvas>
 </template>
@@ -7,9 +8,18 @@ import { ref, onMounted, watch } from 'vue'
 import { Chart } from 'chart.js/auto'
 
 const props = defineProps({
-  labels: Array,
-  data: Array,
-  colors: Array
+  labels: {
+    type: Array,
+    required: true
+  },
+  data: {
+    type: Array,
+    required: true
+  },
+  colors: {
+    type: Array,
+    required: true
+  }
 })
 
 const chartCanvas = ref(null)
@@ -32,31 +42,30 @@ const renderChart = () => {
       ]
     },
     options: {
-  responsive: true,
-  plugins: { legend: { display: false } },
-  scales: {
-    y: {
-      beginAtZero: true,
-      max: 5,
-      ticks: {
-        stepSize: 1,         // บังคับให้แสดงทีละ 1
-        autoSkip: false,     // ไม่ข้าม tick
-        padding: 5,          // ระยะห่างของตัวเลขจากแกน
-      },
-      grid: {
-        drawTicks: true,     // แสดง tick บนแกน
-        lineWidth: 0.5
-      }
-    },
-    x: {
-      ticks: {
-        maxRotation: 0,
-        minRotation: 0
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 5,
+          ticks: {
+            stepSize: 1,
+            autoSkip: false,
+            padding: 5
+          },
+          grid: {
+            drawTicks: true,
+            lineWidth: 0.5
+          }
+        },
+        x: {
+          ticks: {
+            maxRotation: 0,
+            minRotation: 0
+          }
+        }
       }
     }
-  }
-}
-
   })
 }
 

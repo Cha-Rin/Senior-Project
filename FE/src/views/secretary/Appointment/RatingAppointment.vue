@@ -41,41 +41,51 @@
             <div class="text-lg font-bold text-center mb-4">Rating</div>
 
             <!-- ✅ ใช้ Barchart.vue -->
-            <Barchart
+            <!-- <Barchart
               :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
               :data="[ratings.friendliness, ratings.efficiency, ratings.communication]"
               :colors="['#10b981', '#3b82f6', '#f59e0b']"
-            />
+            /> -->
 
             <!-- Legend -->
-            <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-sm" style="background:#10b981"></div>
-                <span>Staff Friendliness</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-sm" style="background:#3b82f6"></div>
-                <span>Service Efficiency</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-sm" style="background:#f59e0b"></div>
-                <span>Communication</span>
-              </div>
-            </div>
+            <div>
+    <!-- Legend -->
+    <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-sm" style="background:#10b981"></div>
+        <span>Staff Friendliness</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-sm" style="background:#3b82f6"></div>
+        <span>Service Efficiency</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-3 h-3 rounded-sm" style="background:#f59e0b"></div>
+        <span>Communication</span>
+      </div>
+    </div>
+
+    <!-- Bar Chart -->
+    <BarChart
+      :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
+      :data="[4, 3, 5]"
+      :colors="['#10b981', '#3b82f6', '#f59e0b']"
+    />
+  </div>
 
             <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Export</button>
           </div>
 
           <!-- Comments Container -->
           <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
-            <div class="flex justify-between items-center mb-4">
+            <!-- <div class="flex justify-between items-center mb-4">
               <span class="text-lg font-bold">Comment</span>
               <select v-model="selectedTopic" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
                 <option value="appointment">Appointment</option>
                 <option value="counseling">Counseling</option>
                 <option value="support">Support</option>
               </select>
-            </div>
+            </div> -->
 
             <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
               <div v-for="(comment, i) in filteredComments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">

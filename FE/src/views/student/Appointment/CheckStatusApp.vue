@@ -145,10 +145,11 @@ function mapCategoryIdToTopic(id) {
 }
 
 function mapStatus(code) {
-  switch (code) {
-    case '0': return 'รอดำเนินการ'
-    case '1': return 'อนุมัติ'
-    case '2': return 'ปฏิเสธ'
+  const c = parseInt(code)
+  switch (c) {
+    case 0: return 'รอดำเนินการ'
+    case 1: return 'อนุมัติ'
+    case 2: return 'ปฏิเสธ'
     default: return 'ไม่ทราบสถานะ'
   }
 }

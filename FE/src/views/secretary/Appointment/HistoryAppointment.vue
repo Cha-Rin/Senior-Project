@@ -4,6 +4,7 @@
     <div class="page-content">
       <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
         History
+        <WeekPicker @weekSelected="onWeekChange" />
       </h1>
 
       <!-- ตัวเลือกช่วงวันที่ -->
@@ -99,7 +100,29 @@ const formatDateTime = (isoDate) => {
   return { date: `${day}/${month}/${year}`, time: `${hours}:${minutes}` }
 }
 
+// ✅ WeekPicker callback
+const onWeekChange = ([start, end]) => {
+  const formatDate = d => format(d, 'yyyy-MM-dd')
+  fetchWeeklySummary(formatDate(start), formatDate(end))
+  fetchAverageRating()
+}
 
+// ✅ โหลดเมื่อ mount
+onMounted(async () => {
+  await nextTick()
+
+  // ✅ ใช้ date-fns เพื่อให้ logic ตรงกับ WeekPicker
+  const today = new Date()
+  const monday = startOfWeek(today, { weekStartsOn: 1 })
+  const friday = addDays(monday, 4)
+
+  const start = format(monday, 'yyyy-MM-dd')
+  const end = format(friday, 'yyyy-MM-dd')
+
+  fetchWeeklySummary(start, end)
+  fetchAverageRating()
+  fetchStaffs()
+})
 // โหลดข้อมูลจาก API
 onMounted(async () => {
   const token = localStorage.getItem('authToken')

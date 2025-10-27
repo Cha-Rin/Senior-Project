@@ -33,6 +33,17 @@
           >
             Delete
           </button>
+           <div class="flex gap-4 ">
+          <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer ">
+            <option value="1" class="text-black">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
+          <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
+            <option value="2568">2568</option>
+            <option value="2567">2567</option>
+            <option value="2566">2566</option>
+          </select>
+        </div>
         </div>
 
         <!-- Grid -->
