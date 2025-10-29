@@ -29,7 +29,7 @@
             <!-- ปฎิทิน dropdown -->
             <div v-if="showCalendar" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 w-80">
               <div class="flex justify-between items-center mb-3">
-                <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded"><</button>
+                <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded"></button>
                 <span class="font-medium">{{ currentMonthName }} {{ currentYear }}</span>
                 <button @click="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded">></button>
               </div>

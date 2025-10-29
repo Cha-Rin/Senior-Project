@@ -1,6 +1,5 @@
 <template>
   <div class="relative">
-    <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
   
   <div class="min-h-screen flex flex-col items-center bg-white pt-20 px-4">
     
@@ -43,7 +42,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import Navbar from "@/components/student/NavbarDoc.vue";
 
 const router = useRouter()
 const categories = ref([])

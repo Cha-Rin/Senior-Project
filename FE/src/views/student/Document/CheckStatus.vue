@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
     <div class="min-h-screen bg-white pt-20 px-4 flex flex-col items-center text-center">
       <h1 class="text-xl font-semibold mb-4">Check Status</h1>
@@ -29,7 +28,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Navbar from "@/components/student/NavbarDoc.vue";
 
 const route = useRoute()
 const router = useRouter()

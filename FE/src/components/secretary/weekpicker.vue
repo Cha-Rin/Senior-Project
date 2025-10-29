@@ -3,19 +3,19 @@
   <div class="ml-4 inline-flex gap-2">
     <button
       @click="selectWeek('prev')"
-      class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
+      class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-black"
     >
       ← Prev
     </button>
     <button
       @click="selectWeek('current')"
-      class="px-3 py-1 text-sm bg-indigo-100 hover:bg-indigo-200 rounded-lg font-medium"
+      class="px-3 py-1 text-sm bg-indigo-100 hover:bg-indigo-200 rounded-lg font-medium text-black"
     >
       This Week
     </button>
     <button
       @click="selectWeek('next')"
-      class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg"
+      class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-black"
     >
       Next →
     </button>

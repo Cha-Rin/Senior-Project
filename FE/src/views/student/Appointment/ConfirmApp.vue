@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
 
   <div class="min-h-screen flex flex-col items-center pt-10 px-4 py-2 bg-white text-center">
     <h1 class="text-xl font-semibold mb-4">Confirm an appointment</h1>
@@ -31,7 +30,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import Navbar from '@/components/student/Navbar.vue'
 import girl from '@/assets/girl.png'
 import boy from '@/assets/boy.png'
 import unicorn from '@/assets/unicorn.png'
@@ -142,7 +140,7 @@ async function goToConfirm() {
     const data = await res.json()
 
     if (data.success) {
-      router.push({ name: 'CheckStatusApp' })
+      router.push({ name: 'Historytest' })
     } else {
       alert('❌ Failed to save appointment')
     }

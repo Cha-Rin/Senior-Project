@@ -1,6 +1,5 @@
 <template>
   <div>
-    <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
     
   <div class="min-h-screen flex flex-col items-center bg-white pt-20 px-4 py-2">
     <!-- 🔹 Headline -->
@@ -31,8 +30,6 @@
 <script setup>
 import { ref, onMounted  } from 'vue'
 import { useRouter} from 'vue-router'
-import Navbar from '@/components/student/Navbar.vue'
-
 
 const router = useRouter()
 const userId = localStorage.getItem('userId')

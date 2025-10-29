@@ -1,6 +1,5 @@
 <template>
   <div>
-<Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
     
   <div class="min-h-screen bg-white px-4 py-6">
      <!-- หัวเรื่อง -->
@@ -76,7 +75,6 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import Navbar from '@/components/student/Navbar.vue'
 
 // -------------------- State --------------------
 const isExpanded = ref(false)

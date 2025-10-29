@@ -32,7 +32,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import Navbar from '@/components/student/Navbar.vue'
 import dayjs from 'dayjs'
 import 'dayjs/locale/th'
 dayjs.locale('th')

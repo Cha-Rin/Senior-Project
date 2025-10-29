@@ -5,7 +5,7 @@ const bodyParser = require("body-parser");
 const mysql = require('mysql2')
 const router = express.Router();
 const app = express()
-
+// const authMiddleware = require('./middleware/auth') ;
 app.use(cors())
 app.use(express.json()) 
 app.use(express.json({ limit: '1mb' }))  
@@ -49,7 +49,8 @@ app.use('/secretary', secretaryRouter)
 const adminRouter = require('./routes/admin')(db)
 app.use('/admin', adminRouter)
 
-
+const historyRouter = require('./routes/history')(db)
+app.use('/history', historyRouter)
 // ------------------------------------------ Log in -----------------------------------------
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
@@ -100,6 +101,8 @@ app.get('/profile/:id', (req, res) => {
     res.json(result[0]);
   });
 });
+
+
 // ------------------------------------------ Log out -----------------------------------------
 app.post('/student/logout', (req, res) => {
   // สำหรับ JWT ปกติ เราแค่บอก client ให้ลบ token

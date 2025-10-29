@@ -1,7 +1,6 @@
 <!-- src/views/CreateAppointment.vue -->
 <template>
 <div>
- <Navbar @toggle-sidebar="sidebarOpen = !sidebarOpen" />
     
   
   <div class="min-h-screen bg-white pt-20 px-4 py-2 flex flex-col items-center text-center">
@@ -38,7 +37,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import Navbar from '@/components/student/Navbar.vue'
 import boy from '@/assets/boy.png'
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'

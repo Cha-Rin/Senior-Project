@@ -341,6 +341,21 @@ router.get('/staff/:id/comments', (req, res) => {
   });
 });
 
+// ✅ 2. ดึงข้อมูล staff รายคน
+router.get('/staff/:id', (req, res) => {
+  const { id } = req.params
+  const sql = `
+    SELECT user_id AS id, name AS firstName, surname AS lastNam, profile_pic, email, role
+    FROM user
+    WHERE user_id = ?
+  `
+  db.query(sql, [id], (err, results) => {
+    if (err) return res.status(500).json({ success: false, message: 'Database error', error: err })
+    if (results.length === 0) return res.status(404).json({ success: false, message: 'Staff not found' })
+    res.json({ success: true, staff: results[0] })
+  })
+})
+
 
 
 

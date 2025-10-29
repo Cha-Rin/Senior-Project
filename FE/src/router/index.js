@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import jwt_decode from 'jwt-decode'
 import Login from '@/Login.vue'
-
+import Historyshere from '../layouts/Shared/Historyshere.vue'
 // import routes จาก role ต่างๆ
 import studentRoutes from './student'
 import secretaryRoutes from './secretary'
@@ -10,6 +10,7 @@ import adminRoutes from './admin'
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: Login },
+  { path: '/Historyshere', name: 'Historyshere', component: Historyshere },
   ...studentRoutes,
   ...secretaryRoutes,
   ...adminRoutes

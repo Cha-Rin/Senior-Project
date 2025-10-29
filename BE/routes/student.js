@@ -49,72 +49,72 @@ router.post('/appointments', (req, res) => {
 
 
 // check status
-router.get('/appointments', (req, res) => {
-  const jwt = require('jsonwebtoken')
-  const authHeader = req.headers['authorization']
-  const token = authHeader && authHeader.split(' ')[1]
-  if (!token) return res.status(401).json({ success: false, message: 'No token provided' })
+// router.get('/appointments', (req, res) => {
+//   const jwt = require('jsonwebtoken')
+//   const authHeader = req.headers['authorization']
+//   const token = authHeader && authHeader.split(' ')[1]
+//   if (!token) return res.status(401).json({ success: false, message: 'No token provided' })
 
-  try {
-    const decoded = jwt.verify(token, SECRET_KEY) // ใช้ secret เดียวกับตอน login
-    const userId = decoded.user_id
+//   try {
+//     const decoded = jwt.verify(token, SECRET_KEY) // ใช้ secret เดียวกับตอน login
+//     const userId = decoded.user_id
 
-    const sql = 'SELECT * FROM appointment WHERE user_id = ? ORDER BY appointment_date DESC'
-    db.query(sql, [userId], (err, results) => {
-      if (err) {
-        console.error('DB error:', err)
-        return res.status(500).json({ success: false, message: 'Database error' })
-      }
+//     const sql = 'SELECT * FROM appointment WHERE user_id = ? ORDER BY appointment_date DESC'
+//     db.query(sql, [userId], (err, results) => {
+//       if (err) {
+//         console.error('DB error:', err)
+//         return res.status(500).json({ success: false, message: 'Database error' })
+//       }
 
-      if (results.length === 0) {
-        return res.status(404).json({ success: false, message: 'No appointment found' })
-      }
+//       if (results.length === 0) {
+//         return res.status(404).json({ success: false, message: 'No appointment found' })
+//       }
 
-      res.json({ success: true, appointments: results })
-    })
-  } catch (err) {
-    console.error('JWT error:', err)
-    res.status(403).json({ success: false, message: 'Invalid or expired token' })
-  }
-})
+//       res.json({ success: true, appointments: results })
+//     })
+//   } catch (err) {
+//     console.error('JWT error:', err)
+//     res.status(403).json({ success: false, message: 'Invalid or expired token' })
+//   }
+// })
 
 // history 
-router.get('/history', authMiddleware, (req, res) => {
-  const studentId = req.user.id || req.user.user_id; // ✅ รองรับทั้ง 2 แบบเผื่อ token ต่างเวอร์ชัน
-  console.log('📥 Student ID from token:', studentId);
+// router.get('/history', authMiddleware, (req, res) => {
+//   const studentId = req.user.id || req.user.user_id; // ✅ รองรับทั้ง 2 แบบเผื่อ token ต่างเวอร์ชัน
+//   console.log('📥 Student ID from token:', studentId);
 
-  if (!studentId) {
-    return res.status(400).json({ success: false, message: 'User ID not found in token' });
-  }
+//   if (!studentId) {
+//     return res.status(400).json({ success: false, message: 'User ID not found in token' });
+//   }
 
-  const sql = `
-    SELECT 
-      a.appointment_date, 
-      a.category_id, 
-      c.type AS topic,
-      a.status,
-      a.student_note
-    FROM appointment AS a
-    JOIN categories AS c ON a.category_id = c.category_id
-    WHERE a.user_id = ?
-    ORDER BY a.appointment_date DESC
-  `;
+//   const sql = `
+//     SELECT 
+//       a.appointment_date, 
+//       a.category_id, 
+//       c.type AS topic,
+//       a.status,
+//       a.student_note
+//     FROM appointment AS a
+//     JOIN categories AS c ON a.category_id = c.category_id
+//     WHERE a.user_id = ?
+//     ORDER BY a.appointment_date DESC
+//   `;
 
-  db.query(sql, [studentId], (err, results) => {
-    if (err) {
-      console.error('🔥 SQL error (history):', err);
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+//   db.query(sql, [studentId], (err, results) => {
+//     if (err) {
+//       console.error('🔥 SQL error (history):', err);
+//       return res.status(500).json({ success: false, message: 'Database error' });
+//     }
 
-    if (results.length === 0) {
-      console.warn('⚠️ No history found for user:', studentId);
-      return res.status(404).json({ success: false, message: 'No history found' });
-    }
+//     if (results.length === 0) {
+//       console.warn('⚠️ No history found for user:', studentId);
+//       return res.status(404).json({ success: false, message: 'No history found' });
+//     }
 
-    console.log('✅ Results from JOIN (history):', results);
-    res.json({ success: true, historyItems: results });
-  });
-});
+//     console.log('✅ Results from JOIN (history):', results);
+//     res.json({ success: true, historyItems: results });
+//   });
+// });
 
 //-------------------------------------- Student Documents ----------------------------------------
 router.post('/documents', authMiddleware, (req, res) => {

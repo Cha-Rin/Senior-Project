@@ -12,7 +12,7 @@ import { useRouter } from 'vue-router'
 const props = defineProps({
   icon: String,
   label: String,
-  to: String
+  to: [String, Object]
 })
 
 const router = useRouter()

@@ -56,6 +56,7 @@
         <SidebarItem icon="user" label="Choose Topic" to="/student/appointment/topic" />
         <SidebarItem icon="check-circle" label="Check Status" to="/student/appointment/check" />
         <SidebarItem icon="clock" label="History" to="/student/appointment/history" />
+        <SidebarItem icon="clock-outline" label="Historytest" to="/student/appointment/historytest" />
         <SidebarItem icon="message-square" label="Feedback" to="/student/feedback/appointments" />
 
 

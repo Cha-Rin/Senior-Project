@@ -12,6 +12,7 @@ import CreateAppointment from '../views/student/Appointment/CreateApp.vue'
 import ConfirmAppointment from '../views/student/Appointment/ConfirmApp.vue'
 import CheckStatus from '../views/student/Appointment/CheckStatusApp.vue'
 import HistoryAppointment from '../views/student/Appointment/HistoryAppointment.vue'
+import Historytest from '../views/student/Appointment/historytest.vue'
 // Document pages
 import TopicTracking from '../views/student/Document/TopicTracking.vue'
 import CheckStatusdoc from '../views/student/Document/CheckStatus.vue'
@@ -32,7 +33,8 @@ export default [
       { path: 'create', name: 'CreateAppointment', component: CreateAppointment },
       { path: 'confirm', name: 'ConfirmAppointment', component: ConfirmAppointment },
       { path: 'check', name: 'CheckStatusApp', component: CheckStatus },
-      { path: 'history', name: 'HistoryApp', component: HistoryAppointment }
+      { path: 'history', name: 'HistoryApp', component: HistoryAppointment },
+      { path: 'historytest', name: 'Historytest', component: Historytest }
     ]
   },
 
