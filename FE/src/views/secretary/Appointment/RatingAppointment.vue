@@ -28,7 +28,9 @@
       <div class="bg-indigo-600 text-white rounded-2xl p-8 shadow-lg flex flex-col gap-8">
         <!-- Overall Rating -->
         <div class="flex items-center gap-6">
-          <span class="text-5xl font-bold">{{ ratingsAverage }}</span>
+          <span class="text-5xl font-bold">
+            {{ ratingsEmpty ? '0.0' : ratingsAverage }}
+          </span>
           <div class="flex text-2xl">
             <span v-for="i in 5" :key="i" :class="i <= 4 ? 'text-yellow-400' : 'text-gray-300'">★</span>
           </div>
@@ -40,53 +42,43 @@
           <div class="flex-1 min-w-[300px] bg-white text-gray-800 rounded-xl p-6 shadow">
             <div class="text-lg font-bold text-center mb-4">Rating</div>
 
-            <!-- ✅ ใช้ Barchart.vue -->
-            <!-- <Barchart
-              :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
-              :data="[ratings.friendliness, ratings.efficiency, ratings.communication]"
-              :colors="['#10b981', '#3b82f6', '#f59e0b']"
-            /> -->
+            <!-- Empty state -->
+            <template v-if="ratingsEmpty">
+              <div class="text-center text-gray-500 py-16">
+                ยังไม่มี feedback สำหรับเทอมนี้ 😔
+              </div>
+            </template>
+
+            <!-- BarChart -->
+            <template v-else>
+              <BarChart
+                :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
+                :data="[ratings.value.friendliness, ratings.value.efficiency, ratings.value.communication]"
+                :colors="['#10b981', '#3b82f6', '#f59e0b']"
+              />
+            </template>
 
             <!-- Legend -->
-            <div>
-    <!-- Legend -->
-    <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
-      <div class="flex items-center gap-2">
-        <div class="w-3 h-3 rounded-sm" style="background:#10b981"></div>
-        <span>Staff Friendliness</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <div class="w-3 h-3 rounded-sm" style="background:#3b82f6"></div>
-        <span>Service Efficiency</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <div class="w-3 h-3 rounded-sm" style="background:#f59e0b"></div>
-        <span>Communication</span>
-      </div>
-    </div>
-
-    <!-- Bar Chart -->
-    <BarChart
-      :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
-      :data="[4, 3, 5]"
-      :colors="['#10b981', '#3b82f6', '#f59e0b']"
-    />
-  </div>
+            <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-sm" style="background:#10b981"></div>
+                <span>Staff Friendliness</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-sm" style="background:#3b82f6"></div>
+                <span>Service Efficiency</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-sm" style="background:#f59e0b"></div>
+                <span>Communication</span>
+              </div>
+            </div>
 
             <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Export</button>
           </div>
 
           <!-- Comments Container -->
           <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
-            <!-- <div class="flex justify-between items-center mb-4">
-              <span class="text-lg font-bold">Comment</span>
-              <select v-model="selectedTopic" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-                <option value="appointment">Appointment</option>
-                <option value="counseling">Counseling</option>
-                <option value="support">Support</option>
-              </select>
-            </div> -->
-
             <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
               <div v-for="(comment, i) in filteredComments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
                 <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
@@ -107,25 +99,20 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import jwt_decode from 'jwt-decode'
 import axios from 'axios'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 import Barchart from '@/components/secretary/Barchart.vue'
 
-const selectedSemester = ref('1')
-const selectedYear = ref('2568')
-const selectedTopic = ref('appointment')
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
 
-const ratings = {
-  friendliness: 4.5,
-  efficiency: 3.2,
-  communication: 4.0
-}
+const selectedSemester = ref('1')
+const selectedYear = ref('2568')
+const selectedTopic = ref('appointment')
 
 function getUserAvatar(userId) {
   switch (userId) {
@@ -137,21 +124,42 @@ function getUserAvatar(userId) {
   }
 }
 
-const ratingsAverage = ((ratings.friendliness + ratings.efficiency + ratings.communication) / 3).toFixed(1)
-
+const user = ref({ name: '', avatar: '' })
 const comments = [
   { topic: 'appointment', stars: 5, text: 'Very kind and punctual!' },
   { topic: 'appointment', stars: 4, text: 'Good communication and easy to schedule.' },
   { topic: 'counseling', stars: 3, text: 'Helpful but waiting time was a bit long.' },
 ]
 
-const user = ref({ name: '', avatar: '' })
+const filteredComments = computed(() => comments.filter(c => c.topic === selectedTopic.value))
 
+// Ratings state
+const ratings = ref({
+  friendliness: 0,
+  efficiency: 0,
+  communication: 0
+})
+
+// Computed empty state
+const ratingsEmpty = computed(() =>
+  ratings.value.friendliness + ratings.value.efficiency + ratings.value.communication === 0
+)
+
+// Computed average
+const ratingsAverage = computed(() => {
+  if (ratingsEmpty.value) return '0.0'
+  const r = ratings.value
+  const f = Number(r.friendliness) || 0
+  const e = Number(r.efficiency) || 0
+  const c = Number(r.communication) || 0
+  return ((f + e + c) / 3).toFixed(1)
+})
+
+// Fetch user profile
 onMounted(async () => {
   try {
     const token = localStorage.getItem('authToken')
     if (!token) return
-
     const decoded = jwt_decode(token)
     const userId = Number(decoded.user_id)
     const res = await axios.get(`http://localhost:3000/profile/${userId}`)
@@ -162,5 +170,27 @@ onMounted(async () => {
   }
 })
 
-const filteredComments = computed(() => comments.filter(c => c.topic === selectedTopic.value))
+// Fetch ratings function
+const fetchRatings = async () => {
+  try {
+    const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
+      params: { year: selectedYear.value, semester: selectedSemester.value }
+    })
+    console.log('📊 Raw rating data from backend:', res.data.data)
+
+    if (res.data.success && res.data.data) {
+      const f = parseFloat(res.data.data.friendliness) || 0
+      const e = parseFloat(res.data.data.efficiency) || 0
+      const c = parseFloat(res.data.data.communication) || 0
+
+      ratings.value = { friendliness: f, efficiency: e, communication: c }
+    }
+  } catch (err) {
+    console.error('Failed to fetch ratings:', err)
+  }
+}
+
+// Load ratings on mount and watch changes
+onMounted(fetchRatings)
+watch([selectedSemester, selectedYear], fetchRatings)
 </script>

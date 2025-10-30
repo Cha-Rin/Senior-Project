@@ -14,19 +14,20 @@ app.use(bodyParser.json());
 
 const SECRET_KEY = "mysecretkey";
 
-const db = mysql.createConnection({
+const db = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
   database: 'andtsp'
 })
 
-db.connect((err) => {
+db.getConnection((err, connection) => {
   if (err) {
     console.error('Database connection failed:', err.stack)
     return
   }
   console.log('Connected to database.')
+  connection.release(); // คืน connection กลับ pool
 })
 
 app.use((err, req, res, next) => {
@@ -51,6 +52,9 @@ app.use('/admin', adminRouter)
 
 const historyRouter = require('./routes/history')(db)
 app.use('/history', historyRouter)
+
+const academicRoutes = require('./routes/academic.js')(db) 
+app.use('/academic', academicRoutes)
 // ------------------------------------------ Log in -----------------------------------------
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
