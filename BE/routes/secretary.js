@@ -15,6 +15,72 @@ module.exports = (db) => {
     }
     next()
   })
+
+  // GET /secretary/appointmentRequests
+router.get('/appointmentRequests', authMiddleware, (req, res) => {
+  const userId = req.user.id || req.user.user_id;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID not found in token' });
+  }
+
+  const sql = `
+    SELECT 
+      a.appointment_id,
+      a.user_id AS studentId,
+      a.appointment_date,
+      c.type AS topic,
+      a.student_note,
+      a.status
+  FROM appointment a
+  JOIN user_category uc ON a.category_id = uc.category_id
+  JOIN categories c ON a.category_id = c.category_id
+  WHERE uc.user_id = ? AND a.status = 0
+  ORDER BY a.appointment_date ASC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('❌ SQL error (appointmentRequests):', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    console.log('✅ Fetched pending appointments for secretary:', userId, '| Count:', results.length);
+    res.json({ requests: results });
+  });
+});
+
+// POST /secretary/updateAppointmentStatus
+router.post('/updateAppointmentStatus', authMiddleware, (req, res) => {
+  const userId = req.user.id || req.user.user_id;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID not found in token' });
+  }
+
+  const { appointment_id, status } = req.body;
+
+  if (![0, 1, 2].includes(Number(status))) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  // ✅ ใช้ appointment_id เท่านั้น
+  const sql = `
+    UPDATE appointment
+    SET status = ?
+    WHERE appointment_id = ?
+  `;
+
+  db.query(sql, [status, appointment_id], (err, result) => {
+    if (err) {
+      console.error('❌ SQL error (update):', err);
+      return res.status(500).json({ error: 'Failed to update' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Appointment not found' });
+    }
+    res.json({ success: true });
+  });
+});
+
   // ------------------------------------------ Get history appointment -----------------------------------------
   router.get('/historyAppointment', authMiddleware, (req, res) => {
   const userId = req.user.id || req.user.user_id; 
