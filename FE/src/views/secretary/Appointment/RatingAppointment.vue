@@ -12,16 +12,24 @@
         </div>
 
         <div class="flex gap-4">
-          <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-            <option value="1">Semester 1</option>
-            <option value="2">Semester 2</option>
-          </select>
-          <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-            <option value="2568">2568</option>
-            <option value="2567">2567</option>
-            <option value="2566">2566</option>
-          </select>
-        </div>
+  <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
+    <option 
+      v-for="semester in semesterOptions" 
+      :key="semester.value" 
+      :value="semester.value">
+      {{ semester.text }}
+    </option>
+  </select>
+  
+  <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
+    <option 
+      v-for="year in yearOptions" 
+      :key="year" 
+      :value="year">
+      {{ year }}
+    </option>
+  </select>
+</div>
       </div>
 
       <!-- Main Card -->
@@ -117,10 +125,11 @@ import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
 import userimg from '@/assets/user.png'
 
-const selectedSemester = ref('1')
-const selectedYear = ref('2568')
-// const selectedTopic = ref('appointment')
+const selectedSemester = ref(null) 
+const selectedYear = ref(null)
 
+const semesterOptions = ref([])
+const yearOptions = ref([])
 function getUserAvatar(userId) {
   switch (userId) {
     case 2: return Aoi
@@ -168,10 +177,37 @@ onMounted(async () => {
     const res = await axios.get(`http://localhost:3000/profile/${userId}`)
     user.value = res.data
     user.value.avatar = getUserAvatar(userId)
+    await fetchDropdownOptions()
+    await fetchRatings()
   } catch (err) {
     console.error('ไม่สามารถโหลดข้อมูลผู้ใช้:', err)
   }
 })
+
+// ⭐️ 4. เพิ่มฟังก์ชันสำหรับดึงข้อมูล Dropdown ⭐️
+const fetchDropdownOptions = async () => {
+  try {
+    // 4.1 ดึง "รายการตัวเลือก"
+    const optionsRes = await axios.get('http://localhost:3000/academic/academic-options')
+    if (optionsRes.data.success) {
+      semesterOptions.value = optionsRes.data.data.semesters
+      yearOptions.value = optionsRes.data.data.years
+    }
+
+    // 4.2 ดึง "ค่าปัจจุบัน"
+    const currentRes = await axios.get('http://localhost:3000/academic/current')
+    if (currentRes.data.success) {
+      // 4.3 ตั้งค่า v-model (Default)
+      selectedSemester.value = currentRes.data.data.semester
+      selectedYear.value = currentRes.data.data.academic_year
+    }
+  } catch (err) {
+    console.error('❌ ไม่สามารถโหลดข้อมูล Dropdown:', err)
+    // ถ้าพลาด, ก็ยังตั้งค่าสำรองไว้
+    selectedSemester.value = '1'
+    selectedYear.value = '2568' 
+  }
+}
 
 // Fetch ratings function
 const fetchRatings = async () => {
@@ -183,6 +219,10 @@ const fetchRatings = async () => {
     const staffId = Number(decoded.user_id); // นี่คือ ID ของเลขาที่ login อยู่
 
     if (!staffId) return; // กันพลาด
+    if (!selectedYear.value || !selectedSemester.value) {
+      console.warn('...รอข้อมูล Dropdown ก่อน...')
+      return; 
+    }
 
  const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
  params: { 
@@ -210,8 +250,6 @@ ratings.value = res.data.data.averages;
 };
 
 // Load ratings on mount and watch changes
-onMounted(fetchRatings)
 watch([selectedSemester, selectedYear], fetchRatings)
-
 
 </script>
