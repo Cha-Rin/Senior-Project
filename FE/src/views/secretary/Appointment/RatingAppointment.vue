@@ -51,9 +51,9 @@
 
             <!-- BarChart -->
             <template v-else>
-              <BarChart
+              <Barchart
                 :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
-                :data="[ratings.value.friendliness, ratings.value.efficiency, ratings.value.communication]"
+                :data="[ratings.friendliness, ratings.efficiency, ratings.communication]"
                 :colors="['#10b981', '#3b82f6', '#f59e0b']"
               />
             </template>
@@ -109,6 +109,7 @@ import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
+import userimg from '@/assets/user.png'
 
 const selectedSemester = ref('1')
 const selectedYear = ref('2568')
@@ -120,7 +121,7 @@ function getUserAvatar(userId) {
     case 4: return Lek
     case 3: return Ang
     case 6: return phum
-    default: return phum
+    default: return userimg
   }
 }
 
@@ -172,25 +173,44 @@ onMounted(async () => {
 
 // Fetch ratings function
 const fetchRatings = async () => {
-  try {
-    const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
-      params: { year: selectedYear.value, semester: selectedSemester.value }
-    })
-    console.log('📊 Raw rating data from backend:', res.data.data)
+  try {
+    // ⭐️ เพิ่มการอ่าน user_id (staffId) จาก token ⭐️
+    const token = localStorage.getItem('authToken');
+    if (!token) return; // ถ้าไม่มี token ก็ไม่ต้องทำ
+    const decoded = jwt_decode(token);
+    const staffId = Number(decoded.user_id); // นี่คือ ID ของเลขาที่ login อยู่
 
-    if (res.data.success && res.data.data) {
-      const f = parseFloat(res.data.data.friendliness) || 0
-      const e = parseFloat(res.data.data.efficiency) || 0
-      const c = parseFloat(res.data.data.communication) || 0
+    if (!staffId) return; // กันพลาด
 
-      ratings.value = { friendliness: f, efficiency: e, communication: c }
+    const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
+      params: { 
+        year: selectedYear.value, 
+        semester: selectedSemester.value,
+        staffId: staffId // ⭐️ ส่ง staffId ไปให้ Backend ⭐️
+      }
+    });
+    console.log('📊 Raw rating data from backend:', res.data.data);
+
+    if (res.data.success && res.data.data) {
+      const f = parseFloat(res.data.data.friendliness) || 0;
+      const e = parseFloat(res.data.data.efficiency) || 0;
+      const c = parseFloat(res.data.data.communication) || 0;
+
+      ratings.value = { friendliness: f, efficiency: e, communication: c };
+    } else {
+      // เผื่อกรณีข้อมูลไม่มา (เช่น ไม่มี feedback) ให้ clear ค่าเก่า
+      ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
     }
-  } catch (err) {
-    console.error('Failed to fetch ratings:', err)
-  }
-}
+  } catch (err) {
+    console.error('Failed to fetch ratings:', err);
+    // ถ้า error ก็ clear ค่า
+    ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
+  }
+};
 
 // Load ratings on mount and watch changes
 onMounted(fetchRatings)
 watch([selectedSemester, selectedYear], fetchRatings)
+
+
 </script>

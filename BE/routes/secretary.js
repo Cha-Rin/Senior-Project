@@ -60,12 +60,12 @@ console.log('✅ Found history items:', results.length);
 // 💼 Secretary Rating (เฉลี่ยรายเทอม)
 // =====================================
 router.get('/rating-Appointment', (req, res) => {
-  const { year, semester } = req.query;
-  console.log('📊 Received rating request:', { year, semester });
+  const { year, semester, staffId } = req.query;
+  console.log('📊 Received rating request:', { year, semester, staffId });
   // ตรวจสอบว่ามีค่าที่ส่งมาหรือไม่
-  if (!year || !semester) {
-    return res.status(400).json({ success: false, message: "Missing year or semester" });
-  }
+  if (!year || !semester || !staffId) {
+    return res.status(400).json({ success: false, message: "Missing year, semester, or staffId" });
+  }
 
   // 🔹 Query feedback ของเลขา
   const sql = `
@@ -74,11 +74,17 @@ router.get('/rating-Appointment', (req, res) => {
     AVG(fa.score_count2) AS efficiency,
     AVG(fa.score_count3) AS communication
   FROM feedback_appointment fa
-  JOIN academic_period ap ON fa.period_id = ap.period_id
-  WHERE ap.academic_year = ? AND ap.semester = ?;
+  JOIN appointment a ON fa.appointment_id = a.appointment_id
+  JOIN academic_period ap ON a.appointment_date BETWEEN ap.start_date AND ap.end_date
+  JOIN user_category uc ON a.category_id = uc.category_id
+  JOIN user s ON uc.user_id = s.user_id
+  WHERE
+    ap.academic_year = ? AND
+    ap.semester = ? AND
+    s.user_id = ?;
 `;
 
-  db.query(sql, [year, semester], (err, results) => {
+  db.query(sql, [year, semester, staffId], (err, results) => {
    if (err) {
   console.error('❌ SQL Error:', err);
   return res.status(500).json({ success: false, error: err.message });
