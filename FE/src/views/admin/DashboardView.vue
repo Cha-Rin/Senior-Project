@@ -50,7 +50,7 @@ const chartData1 = reactive({
 })
 
 const chartData2 = reactive({
-  labels: ['Service Provider', 'Service Process', 'Facilities'],
+  labels: ['Staff Friendliness', 'Service Efficiency', 'Communication'],
   datasets: [
     { label: 'Appointment', data: [], backgroundColor: '#2563eb' },
     { label: 'Document Tracking', data: [], backgroundColor: '#facc15' }

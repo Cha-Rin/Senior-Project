@@ -91,15 +91,6 @@
             </tbody>
           </table>
         </div>
-
-        <!-- Requests (demo) -->
-        <h2 class="sub-title">Request Appointment</h2>
-        <div class="request-list">
-          <div v-for="(req, i) in requests" :key="i" class="request-row">
-            <span>{{ req.topic }} - {{ req.date }} {{ req.time }}</span>
-            <button class="req-btn" @click="openRequest(req)">▶</button>
-          </div>
-        </div>
       </div>
     </div>
   </SecreLayout>
