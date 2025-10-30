@@ -1,5 +1,5 @@
 const express = require('express')
-
+const path = require('path')
 
 module.exports = (db) => {
   console.log('✅ Admin routes loaded successfully!')
@@ -12,7 +12,7 @@ router.use('/uploads', express.static(path.join(process.cwd(), 'BE/uploads')))
 
   // ---------------------- 📸 ตั้งค่า Upload ----------------------
 const multer = require('multer')
-const path = require('path')
+
 
 // สร้าง storage แบบกำหนดชื่อไฟล์เอง
 const storage = multer.diskStorage({
