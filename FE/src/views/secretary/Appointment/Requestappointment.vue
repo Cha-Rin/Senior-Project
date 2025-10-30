@@ -3,16 +3,17 @@
   <SecreLayout>
     <div class="page-content">
       <h1 class="text-4xl md:text-5xl font-bold text-center mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-        Appointment Request
+        Request Appointment
       </h1>
 
       <div class="max-w-5xl mx-auto">
         <!-- Header -->
-        <div class="grid grid-cols-5 gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl px-6 py-4 shadow-lg">
+        <div class="grid grid-cols-6 gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl px-6 py-4 shadow-lg">
           <div>No</div>
           <div>ID</div>
           <div>Date &amp; Time</div>
           <div>Topic</div>
+          <div>Note</div>
           <div class="text-right">Status</div>
         </div>
 
@@ -21,7 +22,7 @@
           <div
             v-for="(item, i) in requests"
             :key="item.no"
-            class="grid grid-cols-5 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
+            class="grid grid-cols-6 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
           >
             <!-- No -->
             <div class="text-lg md:text-xl font-extrabold tracking-wide text-indigo-700">
@@ -39,6 +40,9 @@
 
             <!-- Topic -->
             <div class="text-gray-800 font-medium">{{ item.topic }}</div>
+
+            <!-- Note -->
+            <div class="text-gray-500 text-sm italic">{{ item.note }}</div>
 
             <!-- Status / Actions -->
             <div class="flex justify-end items-center gap-2">
@@ -96,9 +100,9 @@ import { ref } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 const requests = ref([
-  { no: 'A001', studentId: '65xxxxxxxx', date: '21/03/25', time: '8:00 - 9:00AM', topic: 'Course registration', status: 'Pending' },
-  { no: 'A002', studentId: '65xxxxxxxx', date: '21/03/25', time: '9:00 - 10:00AM', topic: 'Course registration', status: 'Pending' },
-  { no: 'A003', studentId: '65xxxxxxxx', date: '21/03/25', time: '10:00 - 11:00AM', topic: 'Course registration', status: 'Pending' }
+  { no: 'A001', studentId: '65xxxxxxxx', date: '21/03/25', time: '8:00 - 9:00AM', topic: 'Course registration', note: '', status: 'Pending' },
+  { no: 'A002', studentId: '65xxxxxxxx', date: '21/03/25', time: '9:00 - 10:00AM', topic: 'Course registration', note: '', status: 'Pending' },
+  { no: 'A003', studentId: '65xxxxxxxx', date: '21/03/25', time: '10:00 - 11:00AM', topic: 'Course registration', note: '', status: 'Pending' }
 ])
 
 // ✅ ใช้ splice เพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
@@ -108,6 +112,7 @@ const setStatus = (item, status) => {
     requests.value.splice(index, 1, { ...item, status })
   }
 }
+
 </script>
 
 <style scoped>

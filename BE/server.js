@@ -45,7 +45,6 @@ app.use('/student', studentRouter)
 const secretaryRouter = require('./routes/secretary')(db)
 app.use('/secretary', secretaryRouter)
 
-
 const adminRouter = require('./routes/admin')(db)
 app.use('/admin', adminRouter)
 
@@ -101,7 +100,6 @@ app.get('/profile/:id', (req, res) => {
     res.json(result[0]);
   });
 });
-
 
 // ------------------------------------------ Log out -----------------------------------------
 app.post('/student/logout', (req, res) => {
