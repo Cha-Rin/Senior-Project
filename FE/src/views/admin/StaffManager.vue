@@ -74,13 +74,19 @@
       <input v-model="newStaff.email" placeholder="Email" class="border px-3 py-1 w-full rounded" />
 
       <!-- ✅ Multiple Responsibilities -->
-      <label class="block text-sm font-semibold text-gray-700">Responsibilities</label>
-      <select v-model="newStaff.categoryIds" multiple class="border px-3 py-1 w-full rounded h-24">
-        <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
+       <label class="block text-sm font-semibold text-gray-700">Responsibilities</label>
+<select v-model="newStaff.categoryIds" multiple class="border px-3 py-1 w-full rounded h-24">
+  <option disabled value="">Select Responsibilities</option>
+  <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
+    {{ c.type }}
+  </option>
+</select>
+      <!-- <select v-model="newStaff.categoryIds"  class="border px-3 py-1 w-full rounded "  >
+      <option disabled value="" placeholder="Email" >Select Responsibilities</option>
+        <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id" placeholder=" Responsibilities">
           {{ c.type }}
         </option>
-      </select>
-
+</select> -->
       <!-- 📸 Upload Avatar -->
       <input type="file" accept="image/*" @change="handleAddAvatar" class="w-full" />
       <div v-if="previewAvatar" class="mt-2 text-center">
@@ -107,12 +113,19 @@
           <input v-model="editStaffData.lastName" placeholder="Last Name" class="border px-3 py-1 w-full rounded" />
           <input v-model="editStaffData.email" placeholder="Email" class="border px-3 py-1 w-full rounded" />
 
-          <select v-model="editStaffData.categoryIds" class="border px-3 py-1 w-full rounded">
+          <label class="block text-sm font-semibold text-gray-700">Responsibilities</label>
+<select v-model="editStaffData.categoryIds" multiple class="border px-3 py-1 w-full rounded h-24">
+  <option disabled value="">Select Responsibilities</option>
+  <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
+    {{ c.type }}
+  </option>
+</select>
+          <!-- <select v-model="editStaffData.categoryIds" placeholder=" Responsibilities" class="border px-3 py-1 w-full rounded">
             <option disabled value="">Select Responsibilities</option>
             <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
           {{ c.type }}
         </option>
-          </select>
+          </select> -->
 
           <input type="file" accept="image/*" @change="handleEditAvatar" class="w-full" />
           <div v-if="editPreviewAvatar" class="mt-2 text-center">
@@ -225,10 +238,28 @@ onMounted(() => {
 })
 
 // 🧩 เปิด modal edit
-function editStaff(staff) {
-  editStaffData.value = { ...staff }
-  editPreviewAvatar.value = staff.avatar
-  showEditForm.value = true
+// 🧩 เปิด modal edit (แบบแก้ไขแล้ว)
+async function editStaff(staff) {
+  try {
+    // 1. ยิง API ไปเอา Category ID ของ Staff คนนี้
+    const res = await axios.get(`http://localhost:3000/admin/staff/${staff.id}/categories`)
+    
+    // 2. สร้างตัวแปร categoryIds จากผลลัพธ์ (แปลงจาก [ {id: 5} ] เป็น [ 5 ])
+    const categoryIds = res.data.data.map(c => c.category_id)
+
+    // 3. ตั้งค่าข้อมูลสำหรับ Modal (ตอนนี้ categoryIds (ตัวขวา) ถูกสร้างแล้ว)
+    editStaffData.value = {
+      ...staff, // คัดลอกข้อมูลเดิม (firstName, lastName, email...)
+      categoryIds: categoryIds // 👈 ใส่ Array ID ที่ดึงมาใหม่
+    }
+    
+    editPreviewAvatar.value = staff.avatar
+    showEditForm.value = true // 4. เปิด Modal
+
+  } catch (err) {
+    console.error('❌ Failed to fetch categories for edit:', err)
+    alert('Error loading staff details.')
+  }
 }
 
 // 🧩 เปลี่ยนรูปใหม่ตอนแก้ไข
