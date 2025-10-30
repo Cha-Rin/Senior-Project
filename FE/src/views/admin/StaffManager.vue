@@ -1,3 +1,4 @@
+<!-- staff Manage page -->
 <template>
   <div class="p-6">
     <!-- 🔷 Header -->
@@ -31,7 +32,7 @@
           </td>
           <td class="px-4 py-2 border">{{ staff.firstName }} {{ staff.lastName }}</td>
           <td class="px-4 py-2 border">{{ staff.email }}</td>
-          <td class="px-4 py-2 border">{{ staff.role || '-' }}</td>
+          <td class="px-4 py-2 border">{{ staff.categories || '-' }}</td>
           <td class="px-4 py-2 border text-center">
             <span :class="staff.status ? 'text-green-600 font-semibold' : 'text-red-500 font-semibold'">
               {{ staff.status ? 'Active' : 'Disabled' }}
@@ -61,7 +62,39 @@
     </table>
 
     <!-- 🟩 Add Modal (คงเดิม) -->
-    <!-- ... -->
+     <!-- 🟩 Add Staff Modal -->
+<div v-if="showAddForm" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+  <div class="bg-gray-100 p-6 rounded shadow-lg w-full max-w-md relative">
+    <button @click="showAddForm = false" class="absolute top-2 right-2 text-gray-500 hover:text-black text-xl">×</button>
+    <h2 class="font-semibold mb-3 text-lg">Add New Staff</h2>
+
+    <div class="space-y-2">
+      <input v-model="newStaff.firstName" placeholder="First Name" class="border px-3 py-1 w-full rounded" />
+      <input v-model="newStaff.lastName" placeholder="Last Name" class="border px-3 py-1 w-full rounded" />
+      <input v-model="newStaff.email" placeholder="Email" class="border px-3 py-1 w-full rounded" />
+
+      <!-- ✅ Multiple Responsibilities -->
+      <label class="block text-sm font-semibold text-gray-700">Responsibilities</label>
+      <select v-model="newStaff.categoryIds" multiple class="border px-3 py-1 w-full rounded h-24">
+        <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
+          {{ c.type }}
+        </option>
+      </select>
+
+      <!-- 📸 Upload Avatar -->
+      <input type="file" accept="image/*" @change="handleAddAvatar" class="w-full" />
+      <div v-if="previewAvatar" class="mt-2 text-center">
+        <img :src="previewAvatar" class="w-16 h-16 rounded-full object-cover mx-auto" />
+      </div>
+
+      <div class="flex gap-2 mt-3 justify-end">
+        <button @click="saveNewStaff" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded">Save</button>
+        <button @click="showAddForm = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-1 rounded">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
     <!-- 🟨 Edit Modal -->
     <div v-if="showEditForm" class="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
@@ -74,9 +107,11 @@
           <input v-model="editStaffData.lastName" placeholder="Last Name" class="border px-3 py-1 w-full rounded" />
           <input v-model="editStaffData.email" placeholder="Email" class="border px-3 py-1 w-full rounded" />
 
-          <select v-model="editStaffData.role" class="border px-3 py-1 w-full rounded">
+          <select v-model="editStaffData.categoryIds" class="border px-3 py-1 w-full rounded">
             <option disabled value="">Select Responsibilities</option>
-            <option v-for="r in roles" :key="r">{{ r }}</option>
+            <option v-for="c in categoriesList" :key="c.category_id" :value="c.category_id">
+          {{ c.type }}
+        </option>
           </select>
 
           <input type="file" accept="image/*" @change="handleEditAvatar" class="w-full" />
@@ -98,6 +133,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 
+const categoriesList = ref([]) 
 const staffList = ref([])
 const showAddForm = ref(false)
 const showEditForm = ref(false)
@@ -105,11 +141,11 @@ const showAlert = ref(false)
 const alertMessage = ref('')
 const roles = ['Reception', 'Document', 'Appointment', 'Support']
 
-const newStaff = ref({ firstName: '', lastName: '', email: '', role: '', avatar: null })
+const newStaff = ref({ firstName: '', lastName: '', email: '', role: '', avatar: null,categoryIds: []   })
 const previewAvatar = ref(null)
 
 // 🧩 สำหรับ Edit
-const editStaffData = ref({ id: null, firstName: '', lastName: '', email: '', role: '', avatar: null })
+const editStaffData = ref({ id: null, firstName: '', lastName: '', email: '', role: '', avatar: null, categoryIds: [] })
 const editPreviewAvatar = ref(null)
 
 // โหลด staff
@@ -117,6 +153,76 @@ async function fetchStaff() {
   const res = await axios.get('http://localhost:3000/admin/staffs')
   if (res.data.success) staffList.value = res.data.data
 }
+
+
+// โหลด categories ตอนเปิดหน้า
+async function fetchCategories() {
+  const res = await axios.get('http://localhost:3000/admin/categories')
+  if (res.data.success) categoriesList.value = res.data.data
+}
+
+// 📸 เปลี่ยนรูปตอน Add
+function handleAddAvatar(e) {
+  const file = e.target.files[0]
+  if (file) {
+    newStaff.value.avatar = file
+    previewAvatar.value = URL.createObjectURL(file)
+  }
+}
+
+// 💾 Save Staff ใหม่
+async function saveNewStaff() {
+  console.log('🧩 Before Add Staff:', newStaff.value)
+
+  const formData = new FormData()
+  formData.append('firstName', newStaff.value.firstName)
+  formData.append('lastName', newStaff.value.lastName)
+  formData.append('email', newStaff.value.email)
+  formData.append('categoryIds', JSON.stringify(newStaff.value.categoryIds)) // ✅ สำคัญมาก
+  
+  if (newStaff.value.avatar instanceof File) formData.append('avatar', newStaff.value.avatar)
+
+  try {
+    const res = await axios.post('http://localhost:3000/admin/staffs', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    if (res.data.success) {
+      alert('✅ Staff added successfully')
+      showAddForm.value = false
+      previewAvatar.value = null
+      fetchStaff()
+    }
+  } catch (err) {
+    console.error('❌ Add staff failed:', err)
+  }
+}
+
+// async function saveNewStaff() {
+//   const formData = new FormData()
+//   formData.append('firstName', newStaff.value.firstName)
+//   formData.append('lastName', newStaff.value.lastName)
+//   formData.append('email', newStaff.value.email)
+//   formData.append('categoryIds', JSON.stringify(newStaff.value.categoryIds))
+//   if (newStaff.value.avatar instanceof File) formData.append('avatar', newStaff.value.avatar)
+
+//   try {
+//     const res = await axios.post('http://localhost:3000/admin/staffs', formData, {
+//       headers: { 'Content-Type': 'multipart/form-data' }
+//     })
+//     if (res.data.success) {
+//       showAddForm.value = false
+//       previewAvatar.value = null
+//       fetchStaff()
+//     }
+//   } catch (err) {
+//     console.error('Add staff failed:', err)
+//   }
+// }
+
+onMounted(() => {
+  fetchStaff()
+  fetchCategories()
+})
 
 // 🧩 เปิด modal edit
 function editStaff(staff) {
@@ -136,26 +242,36 @@ function handleEditAvatar(e) {
 
 // 🧩 บันทึกการแก้ไข
 async function saveEdit() {
-  const { id, firstName, lastName, email, role, avatar } = editStaffData.value
+  const { id, firstName, lastName, email,  avatar } = editStaffData.value
   const formData = new FormData()
   formData.append('firstName', firstName)
   formData.append('lastName', lastName)
   formData.append('email', email)
-  formData.append('role', role)
+  // formData.append('role', role)
+
+  // ✅ แปลงให้แน่ใจว่า categoryIds เป็น array เสมอ
+  let cats = editStaffData.value.categoryIds
+  if (!Array.isArray(cats)) cats = [cats]
+  formData.append('categoryIds', JSON.stringify(cats))
+
   if (avatar instanceof File) formData.append('avatar', avatar)
+
+  console.log('📤 Sending edit form:', Object.fromEntries(formData))
 
   try {
     const res = await axios.patch(`http://localhost:3000/admin/staffs/${id}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     if (res.data.success) {
+      alert('✅ Staff updated successfully')
       showEditForm.value = false
       fetchStaff()
     }
   } catch (err) {
-    console.error('Edit staff failed:', err)
+    console.error('❌ Edit staff failed:', err)
   }
 }
+
 
 // เปิดปิดสถานะ
 async function toggleStatus(staff) {

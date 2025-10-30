@@ -1,146 +1,288 @@
 const express = require('express')
-const multer = require('multer')
+
 
 module.exports = (db) => {
-  console.log("✅ Admin routes loaded successfully!")
+  console.log('✅ Admin routes loaded successfully!')
   const router = express.Router()
-
   router.use(express.json())
   router.use(express.urlencoded({ extended: true }))
+  
+// ✅ อนุญาต static file จาก uploads/
+router.use('/uploads', express.static(path.join(process.cwd(), 'BE/uploads')))
 
-  const upload = multer({ dest: 'uploads/' })
+  // ---------------------- 📸 ตั้งค่า Upload ----------------------
+const multer = require('multer')
+const path = require('path')
 
-  // =====================================
-  // 👩‍💼 Staff Management
-  // =====================================
+// สร้าง storage แบบกำหนดชื่อไฟล์เอง
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/') // เก็บไว้ในโฟลเดอร์ BE/uploads/
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    cb(null, uniqueSuffix + path.extname(file.originalname)) // ตั้งชื่อใหม่ ป้องกันซ้ำ
+  }
+})
 
-  // ✅ Mapping: staff_user_id => category_id[]
-  const staffCategoryMap = {
-    6: [1, 2], // ภาคภูมิ ล้ำประเสริฐ — กิจกรรมนักศึกษา, สหกิจศึกษา
-    3: [3],    // ทัตต์ชไม หวานชัยสีห์ — ผ่อนผัน
-    4: [5],    // รัตติกาล นางแล — บัณฑิตศึกษา
-    2: [4]     // พรทิพย์ ปัญญา — งานทะเบียน
+const upload = multer({ storage })
+
+
+  // ============================================================
+  // 🟢 1. ดึงรายชื่อ Staff ทั้งหมด
+  // ============================================================
+  router.get('/staffs', (req, res) => {
+    const sql = `
+      SELECT 
+        u.user_id AS id,
+        u.name AS firstName,
+        u.surname AS lastName,
+        u.email,
+        u.profile_pic AS avatar,
+        u.status,
+        GROUP_CONCAT(c.type SEPARATOR ', ') AS categories
+      FROM user u
+      LEFT JOIN user_category uc ON u.user_id = uc.user_id
+      LEFT JOIN categories c ON uc.category_id = c.category_id
+      WHERE u.role = 2
+      GROUP BY u.user_id
+    `
+    db.query(sql, (err, results) => {
+      if (err) {
+        console.error('❌ Error fetching staffs:', err)
+        return res.status(500).json({ success: false, error: err.message })
+      }
+      results.forEach((s) => {
+  if (s.avatar) s.avatar = `http://localhost:3000/admin/uploads/${s.avatar}`
+  else s.avatar = 'http://localhost:3000/admin/uploads/default.png'
+})
+
+
+      // results.forEach((s) => {
+      //   if (s.avatar) s.avatar = `http://localhost:3000/uploads/${s.avatar}`
+      // })
+
+      res.json({ success: true, data: results })
+    })
+  })
+
+  // ============================================================
+  // 🟢 2. ดึง responsibilities (categories)
+  // ============================================================
+  router.get('/categories', (req, res) => {
+    db.query('SELECT category_id, type FROM categories', (err, results) => {
+      if (err) {
+        console.error('❌ Error fetching categories:', err)
+        return res.status(500).json({ success: false, error: err.message })
+      }
+      res.json({ success: true, data: results })
+    })
+  })
+
+  // ============================================================
+  // 🟢 3. ดึง responsibilities ของ staff คนเดียว
+  // ============================================================
+  router.get('/staff/:id/categories', (req, res) => {
+    const { id } = req.params
+    const sql = `
+      SELECT uc.category_id, c.type
+      FROM user_category uc
+      JOIN categories c ON uc.category_id = c.category_id
+      WHERE uc.user_id = ?
+    `
+    db.query(sql, [id], (err, results) => {
+      if (err) {
+        console.error('❌ Error fetching user categories:', err)
+        return res.status(500).json({ success: false, error: err.message })
+      }
+      res.json({ success: true, data: results })
+    })
+  })
+
+  // ============================================================
+  // 🟢 4. เพิ่ม Staff ใหม่
+  // ============================================================
+// ============================================================
+// 🟢 4. เพิ่ม Staff ใหม่ (อัปโหลดรูป + responsibilities)
+// ============================================================
+router.post('/staffs', upload.single('avatar'), (req, res) => {
+  console.log('📥 Add Staff Request:', req.body)
+  console.log('📦 Uploaded file:', req.file)
+
+  const { firstName, lastName, email, categoryIds } = req.body
+  const avatarFile = req.file ? req.file.filename : 'default.png'
+  console.log('🖼 Avatar filename:', avatarFile)
+
+  let categories = []
+  try {
+    categories = JSON.parse(categoryIds || '[]')
+  } catch (err) {
+    console.error('⚠️ JSON parse error:', err.message)
   }
 
-  // ✅ ดึงรายชื่อ Staff ทั้งหมด + คำนวณคะแนนเฉลี่ยจาก category ที่รับผิดชอบ
-  router.get('/staffs', (req, res) => {
-    const sqlStaff = `
-      SELECT user_id AS id, name AS firstName, surname AS lastName, 
-             email, profile_pic AS avatar, status, role
-      FROM user
-      WHERE role = 2;
-    `
+  console.log('🧩 Parsed categories:', categories)
 
-    db.query(sqlStaff, async (err, staffList) => {
-      if (err) {
-        console.error('❌ Error fetching staff:', err)
-        return res.status(500).json({ success: false, message: err.message })
-      }
+  const sqlUser = `
+    INSERT INTO user (name, surname, email, role, profile_pic, status)
+    VALUES (?, ?, ?, 2, ?, 1)
+  `
+  const params = [firstName, lastName, email, avatarFile]
 
-      const promises = staffList.map(staff => {
-        const catIds = staffCategoryMap[staff.id] || []
-        if (catIds.length === 0) {
-          return Promise.resolve({
-            ...staff,
-            avatar: staff.avatar ? `http://localhost:3000${staff.avatar}` : '/default-avatar.png',
-            rating: 0
-          })
-        }
-
-        const placeholders = catIds.map(() => '?').join(',')
-
-        const sql1 = `
-          SELECT AVG((fa.score_count1 + fa.score_count2 + fa.score_count3)/3) AS avg1
-          FROM feedback_appointment fa
-          JOIN appointment a ON fa.appointment_id = a.appointment_id
-          WHERE a.category_id IN (${placeholders});
-        `
-
-        const sql2 = `
-          SELECT AVG((fd.score_count1 + fd.score_count2 + fd.score_count3)/3) AS avg2
-          FROM feedback_document_tracking fd
-          JOIN document_tracking d ON fd.document_id = d.document_id
-          WHERE d.category_id IN (${placeholders});
-        `
-
-        return new Promise(resolve => {
-          db.query(sql1, catIds, (err1, r1) => {
-            db.query(sql2, catIds, (err2, r2) => {
-              const avg1 = r1?.[0]?.avg1 || 0
-              const avg2 = r2?.[0]?.avg2 || 0
-              const rating = Number(((parseFloat(avg1) + parseFloat(avg2)) / 2).toFixed(2))
-              resolve({
-                ...staff,
-                avatar: staff.avatar ? `http://localhost:3000${staff.avatar}` : '/default-avatar.png',
-                rating
-              })
-            })
-          })
-        })
-      })
-
-      const data = await Promise.all(promises)
-      res.json({ success: true, data })
-    })
-  })
-
-  // ✅ เพิ่ม Staff
-  router.post('/staffs/add', upload.single('avatar'), (req, res) => {
-    const { firstName, lastName, email } = req.body
-    const avatar = req.file ? `/uploads/${req.file.filename}` : ''
-    if (!firstName || !lastName || !email) {
-      return res.status(400).json({ success: false, message: 'Missing required fields' })
+  db.query(sqlUser, params, (err, result) => {
+    if (err) {
+      console.error('❌ Error adding staff:', err)
+      return res.status(500).json({ success: false, error: err.message })
     }
 
-    const sql = `
-      INSERT INTO user (profile_pic, name, surname, email, password, role, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `
-    const values = [avatar, firstName, lastName, email, '1234', 2, 1]
+    const userId = result.insertId
+    console.log('✅ Added new staff with user_id:', userId)
 
-    db.query(sql, values, (err, result) => {
-      if (err) return res.status(500).json({ success: false, message: err.message })
-      res.json({ success: true, id: result.insertId })
-    })
-  })
-
-  // ✅ เปลี่ยนสถานะ Staff
-  router.patch('/staffs/:id/status', (req, res) => {
-    const id = req.params.id
-    const { status } = req.body
-    db.query('UPDATE user SET status = ? WHERE user_id = ?', [status, id], (err) => {
-      if (err) return res.status(500).json({ success: false })
-      res.json({ success: true })
-    })
-  })
-
-  // ✅ อัปเดตข้อมูล Staff
-router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
-  const id = req.params.id
-  const { firstName, lastName, email, role } = req.body
-  const avatar = req.file ? `/uploads/${req.file.filename}` : null
-
-  const sql = avatar
-    ? `UPDATE user SET name=?, surname=?, email=?, role=?, profile_pic=? WHERE user_id=?`
-    : `UPDATE user SET name=?, surname=?, email=?, role=? WHERE user_id=?`
-
-  const values = avatar
-    ? [firstName, lastName, email, role, avatar, id]
-    : [firstName, lastName, email, role, id]
-
-  db.query(sql, values, (err) => {
-    if (err) return res.status(500).json({ success: false, message: err.message })
-    res.json({ success: true })
+    if (Array.isArray(categories) && categories.length > 0) {
+      const sqlUC = 'INSERT INTO user_category (user_id, category_id) VALUES ?'
+      const values = categories.map((cid) => [userId, cid])
+      db.query(sqlUC, [values], (err2) => {
+        if (err2) {
+          console.error('⚠️ Error adding user_category:', err2)
+          return res.status(500).json({ success: false, error: err2.message })
+        }
+        console.log('✅ Added user_category:', values)
+        res.json({ success: true, message: 'Staff added successfully with responsibilities' })
+      })
+    } else {
+      console.log('ℹ️ No responsibilities assigned.')
+      res.json({ success: true, message: 'Staff added successfully (no categories)' })
+    }
   })
 })
 
 
-  // =====================================
-  // 📊 Dashboard: Weekly Summary (กราฟ 1)
-  // =====================================
+// router.post('/staffs', upload.single('avatar'), (req, res) => {
+//   try {
+//     console.log('📥 Add Staff Request:', req.body)
+//     const { firstName, lastName, email, categoryIds } = req.body
+//     const avatarFile = req.file ? req.file.filename : 'avatar women.png'
+
+//     let categories = []
+//     try {
+//       categories = JSON.parse(categoryIds || '[]')
+//     } catch (e) {
+//       console.error('⚠️ JSON parse error:', e.message)
+//     }
+//     console.log('🧩 Parsed categoryIds:', categories)
+
+//     const sqlUser = `
+//       INSERT INTO user (name, surname, email, role, profile_pic, status)
+//       VALUES (?, ?, ?, 2, ?, 1)
+//     `
+//     db.query(sqlUser, [firstName, lastName, email, avatarFile], (err, result) => {
+//       if (err) {
+//         console.error('❌ Error adding staff:', err)
+//         return res.status(500).json({ success: false, error: err.message })
+//       }
+
+//       const userId = result.insertId
+//       if (categories.length > 0) {
+//         const sqlUC = 'INSERT INTO user_category (user_id, category_id) VALUES ?'
+//         const values = categories.map((cid) => [userId, cid])
+//         db.query(sqlUC, [values], (err2) => {
+//           if (err2) {
+//             console.error('⚠️ Error adding user_category:', err2)
+//             return res.status(500).json({ success: false, error: err2.message })
+//           }
+//           console.log('✅ Added user_category for user_id:', userId, '->', values)
+//           res.json({ success: true, message: 'Staff added successfully' })
+//         })
+//       } else {
+//         res.json({ success: true, message: 'Staff added successfully (no categories)' })
+//       }
+//     })
+//   } catch (e) {
+//     console.error('❌ Unexpected error:', e)
+//     res.status(500).json({ success: false, message: 'Server error', error: e.message })
+//   }
+// })
+
+
+  
+
+  // ============================================================
+// 🟢 5. แก้ไข Staff (แก้ข้อมูล + responsibilities + รูป)
+// ============================================================
+router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
+  const { id } = req.params
+  const { firstName, lastName, email, categoryIds } = req.body
+  const categories = JSON.parse(categoryIds || '[]')
+  const avatarFile = req.file ? req.file.filename : null
+
+  console.log('🛠 Update Staff ID:', id)
+  console.log('📧 Email:', email)
+  console.log('📦 New avatar:', avatarFile)
+  console.log('🧩 Categories:', categories)
+
+  // ✅ อัปเดตข้อมูล user ก่อน
+  const sqlUser = `
+    UPDATE user 
+    SET name=?, surname=?, email=? ${avatarFile ? ', profile_pic=?' : ''} 
+    WHERE user_id=?
+  `
+  const params = avatarFile
+    ? [firstName, lastName, email, avatarFile, id]
+    : [firstName, lastName, email, id]
+
+  db.query(sqlUser, params, (err) => {
+    if (err) {
+      console.error('❌ Error updating staff:', err)
+      return res.status(500).json({ success: false, error: err.message })
+    }
+
+    // ✅ ลบ responsibilities เดิมก่อน
+    db.query('DELETE FROM user_category WHERE user_id=?', [id], (err2) => {
+      if (err2) {
+        console.error('⚠️ Error deleting old categories:', err2)
+        return res.status(500).json({ success: false, error: err2.message })
+      }
+
+      // ✅ ถ้ามี responsibilities ใหม่ → เพิ่มกลับ
+      if (Array.isArray(categories) && categories.length > 0) {
+        const sqlUC = 'INSERT INTO user_category (user_id, category_id) VALUES ?'
+        const values = categories.map((cid) => [id, cid])
+        db.query(sqlUC, [values], (err3) => {
+          if (err3) {
+            console.error('⚠️ Error adding new categories:', err3)
+            return res.status(500).json({ success: false, error: err3.message })
+          }
+
+          console.log('✅ Updated categories for user_id:', id, values)
+          return res.json({ success: true, message: 'Staff updated successfully with categories' })
+        })
+      } else {
+        console.log('ℹ️ No categories assigned after update.')
+        return res.json({ success: true, message: 'Staff updated successfully (no categories)' })
+      }
+    })
+  })
+})
+
+  // ============================================================
+  // 🟢 6. เปลี่ยนสถานะ Staff
+  // ============================================================
+  router.patch('/staffs/:id/status', (req, res) => {
+    const { id } = req.params
+    const { status } = req.body
+    db.query('UPDATE user SET status = ? WHERE user_id = ?', [status, id], (err) => {
+      if (err) {
+        console.error('❌ Error updating status:', err)
+        return res.status(500).json({ success: false, error: err.message })
+      }
+      res.json({ success: true })
+    })
+  })
+
+  // ============================================================
+  // 📊 7. Weekly Summary (Dashboard)
+  // ============================================================
   router.get('/weekly-summary', (req, res) => {
     const { start, end } = req.query
-
     const sqlAppointments = `
       SELECT DAYNAME(appointment_date) AS day_name, COUNT(*) AS count
       FROM appointment
@@ -148,7 +290,6 @@ router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
         AND DATE(appointment_date) BETWEEN ? AND ?
       GROUP BY DAYNAME(appointment_date)
     `
-
     const sqlDocuments = `
       SELECT DAYNAME(submit_date) AS day_name, COUNT(*) AS count
       FROM document_tracking
@@ -159,6 +300,7 @@ router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
 
     db.query(sqlAppointments, [start, end], (errA, appResults) => {
       if (errA) return res.status(500).json({ success: false, error: errA.message })
+
       db.query(sqlDocuments, [start, end], (errD, docResults) => {
         if (errD) return res.status(500).json({ success: false, error: errD.message })
 
@@ -174,190 +316,46 @@ router.patch('/staffs/:id/update', upload.single('avatar'), (req, res) => {
     })
   })
 
-  // =====================================
-  // ⭐ Average Rating (กราฟ 2)
-  // =====================================
+  // ============================================================
+  // 📊 8. Average Rating (Dashboard)
+  // ============================================================
   router.get('/average-rating', (req, res) => {
     const sqlApt = `
-      SELECT 
-        AVG(score_count1) AS sp,
-        AVG(score_count2) AS spc,
-        AVG(score_count3) AS fac
+      SELECT AVG(score_count1) AS sp, AVG(score_count2) AS spc, AVG(score_count3) AS fac
       FROM feedback_appointment
     `
     const sqlDoc = `
-      SELECT 
-        AVG(score_count1) AS sp,
-        AVG(score_count2) AS spc,
-        AVG(score_count3) AS fac
+      SELECT AVG(score_count1) AS sp, AVG(score_count2) AS spc, AVG(score_count3) AS fac
       FROM feedback_document_tracking
     `
+
     db.query(sqlApt, (errA, aptResults) => {
       if (errA) return res.status(500).json({ success: false, error: errA.message })
+
       db.query(sqlDoc, (errD, docResults) => {
         if (errD) return res.status(500).json({ success: false, error: errD.message })
 
         const apt = aptResults[0] || {}
         const doc = docResults[0] || {}
 
-        const result = {
-          appointment: {
-            service_provider: apt.sp ? Number(parseFloat(apt.sp).toFixed(2)) : 0,
-            service_process: apt.spc ? Number(parseFloat(apt.spc).toFixed(2)) : 0,
-            facilities: apt.fac ? Number(parseFloat(apt.fac).toFixed(2)) : 0
-          },
-          document: {
-            service_provider: doc.sp ? Number(parseFloat(doc.sp).toFixed(2)) : 0,
-            service_process: doc.spc ? Number(parseFloat(doc.spc).toFixed(2)) : 0,
-            facilities: doc.fac ? Number(parseFloat(doc.fac).toFixed(2)) : 0
+        res.json({
+          success: true,
+          data: {
+            appointment: {
+              service_provider: Number(apt.sp || 0).toFixed(2),
+              service_process: Number(apt.spc || 0).toFixed(2),
+              facilities: Number(apt.fac || 0).toFixed(2)
+            },
+            document: {
+              service_provider: Number(doc.sp || 0).toFixed(2),
+              service_process: Number(doc.spc || 0).toFixed(2),
+              facilities: Number(doc.fac || 0).toFixed(2)
+            }
           }
-        }
-        res.json({ success: true, data: result })
+        })
       })
     })
   })
-
-
-router.get('/staff/:id/rating', (req, res) => {
-  const staffId = parseInt(req.params.id);
-  const { year, semester } = req.query; // 🧩 รับค่าปีและเทอมจาก frontend
-
-  const catIds = staffCategoryMap[staffId] || [];
-  if (catIds.length === 0) {
-    return res.json({
-      success: true,
-      data: {
-        appointment: { service_provider: 0, service_process: 0, facilities: 0 },
-        document: { service_provider: 0, service_process: 0, facilities: 0 }
-      }
-    });
-  }
-
-  const placeholders = catIds.map(() => '?').join(',');
-
-  // 🔹 Appointment feedback
-  const sqlApt = `
-    SELECT 
-      AVG(fa.score_count1) AS service_provider,
-      AVG(fa.score_count2) AS service_process,
-      AVG(fa.score_count3) AS facilities
-    FROM feedback_appointment fa
-    JOIN appointment a ON fa.appointment_id = a.appointment_id
-    WHERE a.category_id IN (${placeholders})
-      AND a.academic_year = ?
-      AND a.semester = ?;
-  `;
-
-  // 🔹 Document tracking feedback
-  const sqlDoc = `
-    SELECT 
-      AVG(fd.score_count1) AS service_provider,
-      AVG(fd.score_count2) AS service_process,
-      AVG(fd.score_count3) AS facilities
-    FROM feedback_document_tracking fd
-    JOIN document_tracking d ON fd.document_id = d.document_id
-    WHERE d.category_id IN (${placeholders})
-      AND d.academic_year = ?
-      AND d.semester = ?;
-  `;
-
-  // ✅ Execute queries
-  db.query(sqlApt, [...catIds, year, semester], (errA, aptResults) => {
-    if (errA) return res.status(500).json({ success: false, error: errA.message });
-
-    db.query(sqlDoc, [...catIds, year, semester], (errD, docResults) => {
-      if (errD) return res.status(500).json({ success: false, error: errD.message });
-
-      const appointment = aptResults[0] || {};
-      const document = docResults[0] || {};
-
-      res.json({
-        success: true,
-        data: {
-          appointment: {
-            service_provider: parseFloat(appointment.service_provider || 0),
-            service_process: parseFloat(appointment.service_process || 0),
-            facilities: parseFloat(appointment.facilities || 0)
-          },
-          document: {
-            service_provider: parseFloat(document.service_provider || 0),
-            service_process: parseFloat(document.service_process || 0),
-            facilities: parseFloat(document.facilities || 0)
-          }
-        }
-      });
-    });
-  });
-});
-
-
-
-
-
-router.get('/staff/:id/comments', (req, res) => {
-  const staffId = parseInt(req.params.id);
-  const { type, year, semester } = req.query; // 🧩 เพิ่ม year + semester
-  const catIds = staffCategoryMap[staffId] || [];
-
-  if (catIds.length === 0) return res.json({ success: true, data: [] });
-
-  const placeholders = catIds.map(() => '?').join(',');
-  let sql;
-
-  if (type === 'appointment') {
-    sql = `
-      SELECT 
-        ((fa.score_count1 + fa.score_count2 + fa.score_count3)/3) AS avg_score,
-        fa.comment
-      FROM feedback_appointment fa
-      JOIN appointment a ON fa.appointment_id = a.appointment_id
-      WHERE a.category_id IN (${placeholders})
-        AND a.academic_year = ?
-        AND a.semester = ?
-        AND fa.comment IS NOT NULL
-        AND fa.comment <> '';
-    `;
-  } else {
-    sql = `
-      SELECT 
-        ((fd.score_count1 + fd.score_count2 + fd.score_count3)/3) AS avg_score,
-        fd.comment
-      FROM feedback_document_tracking fd
-      JOIN document_tracking d ON fd.document_id = d.document_id
-      WHERE d.category_id IN (${placeholders})
-        AND d.academic_year = ?
-        AND d.semester = ?
-        AND fd.comment IS NOT NULL
-        AND fd.comment <> '';
-    `;
-  }
-
-  db.query(sql, [...catIds, year, semester], (err, results) => {
-    if (err) {
-      console.error('❌ Error fetching staff comments:', err);
-      return res.status(500).json({ success: false, message: err.message });
-    }
-    res.json({ success: true, data: results });
-  });
-});
-
-// ✅ 2. ดึงข้อมูล staff รายคน
-router.get('/staff/:id', (req, res) => {
-  const { id } = req.params
-  const sql = `
-    SELECT user_id AS id, name AS firstName, surname AS lastNam, profile_pic, email, role
-    FROM user
-    WHERE user_id = ?
-  `
-  db.query(sql, [id], (err, results) => {
-    if (err) return res.status(500).json({ success: false, message: 'Database error', error: err })
-    if (results.length === 0) return res.status(404).json({ success: false, message: 'Staff not found' })
-    res.json({ success: true, staff: results[0] })
-  })
-})
-
-
-
 
   return router
 }
