@@ -62,47 +62,95 @@ console.log('✅ Found history items:', results.length);
 router.get('/rating-Appointment', (req, res) => {
   const { year, semester, staffId } = req.query;
   console.log('📊 Received rating request:', { year, semester, staffId });
-  // ตรวจสอบว่ามีค่าที่ส่งมาหรือไม่
+
   if (!year || !semester || !staffId) {
-    return res.status(400).json({ success: false, message: "Missing year, semester, or staffId" });
-  }
+    return res.status(400).json({ success: false, message: "Missing year, semester, or staffId" });
+  }
 
-  // 🔹 Query feedback ของเลขา
+  // 1. ⭐️ แก้ SQL: ลบ fa.score_overall ออก
   const sql = `
-  SELECT 
-    AVG(fa.score_count1) AS friendliness,
-    AVG(fa.score_count2) AS efficiency,
-    AVG(fa.score_count3) AS communication
-  FROM feedback_appointment fa
-  JOIN appointment a ON fa.appointment_id = a.appointment_id
-  JOIN academic_period ap ON a.appointment_date BETWEEN ap.start_date AND ap.end_date
-  JOIN user_category uc ON a.category_id = uc.category_id
-  JOIN user s ON uc.user_id = s.user_id
-  WHERE
-    ap.academic_year = ? AND
-    ap.semester = ? AND
-    s.user_id = ?;
-`;
+    SELECT 
+ fa.score_count1,
+ fa.score_count2,
+ fa.score_count3,
+ fa.comment       
+ FROM feedback_appointment fa
+ JOIN appointment a ON fa.appointment_id = a.appointment_id
+ JOIN academic_period ap ON DATE(a.appointment_date) BETWEEN ap.start_date AND ap.end_date
+ JOIN user_category uc ON a.category_id = uc.category_id
+ JOIN user s ON uc.user_id = s.user_id 
+ WHERE 
+ ap.academic_year = ? AND 
+ ap.semester = ? AND
+ s.user_id = ?;
+ `;
 
-  db.query(sql, [year, semester, staffId], (err, results) => {
-   if (err) {
-  console.error('❌ SQL Error:', err);
-  return res.status(500).json({ success: false, error: err.message });
-}
+ db.query(sql, [year, semester, staffId], (err, results) => {
+ if (err) {
+console.error('❌ SQL Error:', err);
+ return res.status(500).json({ success: false, error: err.message });
+ }
 
+ // 2. (เหมือนเดิม)
+ if (results.length === 0) {
+ const emptyData = {
+ averages: { friendliness: "0.00", efficiency: "0.00", communication: "0.00", average: "0.0" },
+ comments: []
+ };
+ return res.json({ success: true, data: emptyData });
+ }
 
-    const r = results[0] || {};
-    const data = {
-      friendliness: parseFloat(r.friendliness || 0).toFixed(2),
-      efficiency: parseFloat(r.efficiency || 0).toFixed(2),
-      communication: parseFloat(r.communication || 0).toFixed(2),
-    };
+ // 3. ⭐️ แก้ไขการคำนวณ JS
+ let totalFriendliness = 0;
+ let totalEfficiency = 0;
+ let totalCommunication = 0;
+ const commentsList = [];
+ const count = results.length;
 
-    const overall =
-      ((Number(data.friendliness) + Number(data.efficiency) + Number(data.communication)) / 3).toFixed(1);
+ results.forEach(row => {
+ const score1 = parseFloat(row.score_count1 || 0);
+ const score2 = parseFloat(row.score_count2 || 0);
+ const score3 = parseFloat(row.score_count3 || 0);
 
-    res.json({ success: true, data: { ...data, average: overall } });
-  });
+      // (สำหรับกราฟ)
+ totalFriendliness += score1;
+ totalEfficiency += score2;
+ totalCommunication += score3;
+      
+ // ⭐️ (สำหรับคอมเมนต์)
+      // ‼️ (แก้ 'row.comment' ถ้าชื่อคอลัมน์ไม่ตรง)
+ if (row.comment) { 
+        // ⭐️ คำนวณค่าเฉลี่ยของ 3 ส่วน แล้วปัดเศษ
+        const commentAvg = (score1 + score2 + score3) / 3;
+        const commentStars = Math.round(commentAvg); // ปัดเศษเป็นจำนวนเต็ม (เช่น 3.6 -> 4)
+
+ commentsList.push({
+ text: row.comment, 
+ stars: commentStars // ⭐️ ใช้ค่าที่คำนวณใหม่
+ });
+ }
+ });
+
+ // (ส่วนที่เหลือเหมือนเดิม)
+ const avgData = {
+friendliness: (totalFriendliness / count).toFixed(2),
+ efficiency: (totalEfficiency / count).toFixed(2),
+ communication: (totalCommunication / count).toFixed(2),
+ };
+ const overallAvg = ((
+      Number(avgData.friendliness) + 
+      Number(avgData.efficiency) + 
+      Number(avgData.communication)
+    ) / 3).toFixed(1);
+
+ res.json({ 
+ success: true, 
+ data: { 
+ averages: { ...avgData, average: overallAvg }, 
+ comments: commentsList 
+ } 
+ });
+ });
 });
 
 // ------------------------------------------ Document -----------------------------------------------------

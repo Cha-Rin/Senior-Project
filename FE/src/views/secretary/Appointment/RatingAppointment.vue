@@ -31,9 +31,9 @@
           <span class="text-5xl font-bold">
             {{ ratingsEmpty ? '0.0' : ratingsAverage }}
           </span>
-          <div class="flex text-2xl">
+          <!-- <div class="flex text-2xl">
             <span v-for="i in 5" :key="i" :class="i <= 4 ? 'text-yellow-400' : 'text-gray-300'">★</span>
-          </div>
+          </div> -->
         </div>
 
         <!-- Content Row -->
@@ -79,18 +79,24 @@
 
           <!-- Comments Container -->
           <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
-            <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
-              <div v-for="(comment, i) in filteredComments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
-                <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
-                <div class="flex-1">
-                  <div class="flex text-sm mb-1">
-                    <span v-for="j in 5" :key="j" :class="j <= comment.stars ? 'text-yellow-400' : 'text-gray-300'">★</span>
-                  </div>
-                  <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
+ <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
+            
+ <div v-for="(comment, i) in comments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
+ <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
+ <div class="flex-1">
+ <!-- <div class="flex text-sm mb-1">
+ <span v-for="j in 5" :key="j" :class="j <= comment.stars ? 'text-yellow-400' : 'text-gray-300'">★</span>
+ </div> -->
+ <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
+ </div>
+ </div>
+
+ <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
+ ไม่มีคอมเมนต์ในเทอมนี้
+ </div>
+
+ </div>
+ </div>
         </div>
       </div>
 
@@ -113,7 +119,7 @@ import userimg from '@/assets/user.png'
 
 const selectedSemester = ref('1')
 const selectedYear = ref('2568')
-const selectedTopic = ref('appointment')
+// const selectedTopic = ref('appointment')
 
 function getUserAvatar(userId) {
   switch (userId) {
@@ -126,13 +132,7 @@ function getUserAvatar(userId) {
 }
 
 const user = ref({ name: '', avatar: '' })
-const comments = [
-  { topic: 'appointment', stars: 5, text: 'Very kind and punctual!' },
-  { topic: 'appointment', stars: 4, text: 'Good communication and easy to schedule.' },
-  { topic: 'counseling', stars: 3, text: 'Helpful but waiting time was a bit long.' },
-]
-
-const filteredComments = computed(() => comments.filter(c => c.topic === selectedTopic.value))
+const comments = ref([])
 
 // Ratings state
 const ratings = ref({
@@ -143,7 +143,9 @@ const ratings = ref({
 
 // Computed empty state
 const ratingsEmpty = computed(() =>
-  ratings.value.friendliness + ratings.value.efficiency + ratings.value.communication === 0
+ (Number(ratings.value.friendliness) + 
+  Number(ratings.value.efficiency) + 
+  Number(ratings.value.communication)) === 0
 )
 
 // Computed average
@@ -173,7 +175,7 @@ onMounted(async () => {
 
 // Fetch ratings function
 const fetchRatings = async () => {
-  try {
+ try {
     // ⭐️ เพิ่มการอ่าน user_id (staffId) จาก token ⭐️
     const token = localStorage.getItem('authToken');
     if (!token) return; // ถ้าไม่มี token ก็ไม่ต้องทำ
@@ -182,30 +184,29 @@ const fetchRatings = async () => {
 
     if (!staffId) return; // กันพลาด
 
-    const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
-      params: { 
-        year: selectedYear.value, 
-        semester: selectedSemester.value,
-        staffId: staffId // ⭐️ ส่ง staffId ไปให้ Backend ⭐️
-      }
-    });
-    console.log('📊 Raw rating data from backend:', res.data.data);
+ const res = await axios.get('http://localhost:3000/secretary/rating-Appointment', {
+ params: { 
+ year: selectedYear.value, 
+ semester: selectedSemester.value,
+ staffId: staffId // ⭐️ ส่ง staffId ไปให้ Backend ⭐️
+ }
+});
+ console.log('📊 Raw rating data from backend:', res.data.data);
 
-    if (res.data.success && res.data.data) {
-      const f = parseFloat(res.data.data.friendliness) || 0;
-      const e = parseFloat(res.data.data.efficiency) || 0;
-      const c = parseFloat(res.data.data.communication) || 0;
-
-      ratings.value = { friendliness: f, efficiency: e, communication: c };
-    } else {
+if (res.data.success && res.data.data) {
+ratings.value = res.data.data.averages;
+ comments.value = res.data.data.comments;
+ } else {
       // เผื่อกรณีข้อมูลไม่มา (เช่น ไม่มี feedback) ให้ clear ค่าเก่า
       ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
+      comments.value = [];
     }
-  } catch (err) {
-    console.error('Failed to fetch ratings:', err);
+ } catch (err) {
+ console.error('Failed to fetch ratings:', err);
     // ถ้า error ก็ clear ค่า
     ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
-  }
+    comments.value = [];
+ }
 };
 
 // Load ratings on mount and watch changes
