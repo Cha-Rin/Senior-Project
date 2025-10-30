@@ -8,7 +8,7 @@ module.exports = (db) => {
   router.use(express.urlencoded({ extended: true }))
   
 // ✅ อนุญาต static file จาก uploads/
-router.use('/uploads', express.static(path.join(process.cwd(), 'BE/uploads')))
+router.use('/uploads', express.static(path.join(process.cwd(), 'uploads/')))
 
   // ---------------------- 📸 ตั้งค่า Upload ----------------------
 const multer = require('multer')
@@ -17,7 +17,8 @@ const multer = require('multer')
 // สร้าง storage แบบกำหนดชื่อไฟล์เอง
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, 'uploads/') // เก็บไว้ในโฟลเดอร์ BE/uploads/
+    // ✅ แบบที่ถูกต้อง (ใช้ path.join เหมือนบรรทัดที่ 11)
+cb(null, path.join(process.cwd(), 'uploads/'))
   },
   filename: (req, file, cb) => {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
@@ -44,7 +45,7 @@ const upload = multer({ storage })
       FROM user u
       LEFT JOIN user_category uc ON u.user_id = uc.user_id
       LEFT JOIN categories c ON uc.category_id = c.category_id
-      WHERE u.role = 2
+      WHERE u.role = 2 
       GROUP BY u.user_id
     `
     db.query(sql, (err, results) => {
