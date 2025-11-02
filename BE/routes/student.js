@@ -289,17 +289,20 @@ router.get('/appointments/for-feedback', authMiddleware, (req, res) => {
   }
 
   const sql = `
-    SELECT 
-      a.appointment_id AS id, 
-      a.appointment_date AS date, 
-      COALESCE(c.type, 'Unknown') AS topic, 
-      a.student_note AS note
-    FROM appointment a
-    LEFT JOIN categories c ON c.category_id = a.category_id
-    WHERE a.user_id = ?
-      AND a.status = 1
-    ORDER BY a.appointment_date DESC
-  `;
+  SELECT 
+    a.appointment_id AS id, 
+    a.appointment_date AS date, 
+    COALESCE(c.type, 'Unknown') AS topic, 
+    a.student_note AS note
+  FROM appointment a
+  LEFT JOIN categories c ON c.category_id = a.category_id
+  LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id  -- ✅ ต้องมี
+  WHERE a.user_id = ?
+    AND a.status = 1
+    AND f.appointment_id IS NULL
+  ORDER BY a.appointment_date DESC
+`;
+;
 
   db.query(sql, [userId], (err, rows) => {
     if (err) {
@@ -367,10 +370,9 @@ router.get('/appointment/:id/for-feedback', (req, res) => {
 });
 
 // ✅ GET: ดึงหัวข้อของ user
+// ✅ GET: ดึงเฉพาะหัวข้อของ appointment ที่อนุมัติแล้วและยังไม่มี feedback
 router.get('/appointment-topics', authMiddleware, (req, res) => {
-  const userId = req.user.user_id || req.user.id; // ✅ รองรับทั้งสองรูปแบบ
-  console.log('📥 User ID from token (appointment-topics):', userId);
-
+  const userId = req.user.user_id || req.user.id;
   if (!userId) {
     return res.status(400).json({ success: false, message: 'invalid_user_id' });
   }
@@ -379,31 +381,30 @@ router.get('/appointment-topics', authMiddleware, (req, res) => {
     SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
     FROM appointment a
     LEFT JOIN categories c ON c.category_id = a.category_id
+    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
     WHERE a.user_id = ?
-      AND a.status = 1   -- ✅ เฉพาะที่อนุมัติแล้ว
-    ORDER BY topic
+      AND a.status = 1
+      AND f.appointment_id IS NULL   -- ✅ ยังไม่มี feedback
+    ORDER BY topic;
   `;
 
   db.query(sql, [userId], (err, rows) => {
     if (err) {
-      console.error('❌ fetch topics error:', err);
+      console.error('❌ fetch appointment topics error:', err);
       return res.status(500).json({ success: false, message: 'db_error' });
     }
 
     if (!rows.length) {
-      console.warn('⚠️ No topics found for user:', userId);
       return res.json({ success: false, message: 'Not found' });
     }
 
-    const topics = rows.map(r => r.topic).filter(Boolean);
-    console.log('✅ Topics fetched for user', userId, ':', topics);
-
     res.json({
       success: true,
-      topics,
+      topics: rows.map(r => r.topic).filter(Boolean),
     });
   });
 });
+
 
 // -----------------------------------Feedback Document -----------------------------------------
 // GET: ดึงเอกสารทั้งหมดที่ยังไม่มี feedback และอนุมัติแล้ว
@@ -478,12 +479,16 @@ router.get('/documents/for-feedback', authMiddleware, (req, res) => {
       d.document_id AS id, 
       DATE(d.finish_date) AS date, 
       COALESCE(c.type, 'Unknown') AS topic, 
-      d.student_note AS note
+      d.student_note AS note,
+      CASE WHEN f.document_id IS NULL THEN 0 ELSE 1 END AS has_feedback  -- ✅ flag
     FROM document_tracking d
     LEFT JOIN categories c ON c.category_id = d.category_id
+    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id  -- ✅ ต้องมี join
     WHERE d.user_id = ?
-      AND d.status = 2  -- เฉพาะเอกสารอนุมัติ
+      AND d.status = 2              -- ✅ 2 = อนุมัติแล้ว
+      AND f.document_id IS NULL     -- ✅ ยังไม่มี feedback
     ORDER BY d.finish_date DESC
+  
   `;
 
   db.query(sql, [userId], (err, rows) => {
@@ -548,6 +553,7 @@ router.get('/documents/:id/for-feedback', authMiddleware, (req, res) => {
 
 // GET: ดึงหัวข้อของ user สำหรับเอกสาร
 // GET /student/document-topics
+//หัวข้อ drop-down ในหน้าทำแบบประเมิน แสดงเฉพาะหัวข้อที่ยังไม่ได้ทำ
 router.get('/document-topics', authMiddleware, (req, res) => {
   const userId = req.user.id;
   if (!userId) {
@@ -582,6 +588,42 @@ router.get('/document-topics', authMiddleware, (req, res) => {
   });
 });
 
+
+
+
+// ✅ GET: ดึงหัวข้อของ user สำหรับเอกสารทั้งหมด (ไม่จำกัดว่ามี feedback แล้วหรือยัง)
+//  อันนี้จะค้างหัวข้อที่เคยทำรายการไว้ แม้จะทำแบบประเมินไปแล้ว
+// router.get('/document-topics', authMiddleware, (req, res) => {
+//   const userId = req.user.id;
+//   if (!userId) {
+//     return res.status(400).json({ success: false, message: 'invalid_user_id' });
+//   }
+
+//   const sql = `
+//     SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
+//     FROM document_tracking d
+//     LEFT JOIN categories c ON c.category_id = d.category_id
+//     WHERE d.user_id = ?
+//       AND d.status = 2    -- ✅ เฉพาะเอกสารที่อนุมัติแล้ว
+//     ORDER BY topic;
+//   `;
+
+//   db.query(sql, [userId], (err, rows) => {
+//     if (err) {
+//       console.error('❌ fetch document topics error:', err);
+//       return res.status(500).json({ success: false, message: 'db_error' });
+//     }
+
+//     if (!rows.length) {
+//       return res.json({ success: false, message: 'Not found' });
+//     }
+
+//     res.json({
+//       success: true,
+//       topics: rows.map(r => r.topic).filter(Boolean),
+//     });
+//   });
+// });
 
 
 return router
