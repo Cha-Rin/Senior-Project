@@ -11,27 +11,30 @@
     />
     <div>
       <h3 class="font-bold">{{ name }}</h3>
-      <p class="text-yellow-600">⭐ {{ rating.toFixed(2) }}</p>
+      <p class="text-yellow-600 text-lg font-semibold">
+        ⭐ {{ displayRating }}
+      </p>
     </div>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { computed } from 'vue'
 
 const props = defineProps({
   id: [String, Number],
   name: String,
   avatar: String,
   rating: {
-    type: Number,
+    type: [Number, String],
     default: 0
   }
 })
 
 const router = useRouter()
 
-// ✅ ใช้ route name ให้ตรงกับ router ของ admin (/admin/staff-rating/:id)
+// ✅ ฟังก์ชันกดการ์ดเพื่อไปหน้ารายละเอียด
 const goToDetail = () => {
   router.push({
     name: 'StaffRatingView',
@@ -42,4 +45,10 @@ const goToDetail = () => {
     }
   })
 }
+
+// ✅ แปลงค่าที่ส่งมาจาก backend ให้เป็นตัวเลขทศนิยม 1 ตำแหน่งเสมอ
+const displayRating = computed(() => {
+  const val = Number(props.rating)
+  return isNaN(val) ? '0.0' : val.toFixed(1)
+})
 </script>
