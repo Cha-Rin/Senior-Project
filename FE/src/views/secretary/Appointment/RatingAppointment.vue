@@ -82,7 +82,11 @@
               </div>
             </div>
 
-            <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Export</button>
+            <button 
+  @click="exportToExcel" 
+  class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+  Export
+</button>
           </div>
 
           <!-- Comments Container -->
@@ -251,5 +255,58 @@ ratings.value = res.data.data.averages;
 
 // Load ratings on mount and watch changes
 watch([selectedSemester, selectedYear], fetchRatings)
+const exportToExcel = () => {
+  console.log('Exporting to Excel...');
 
-</script>
+  // 1. ดึงข้อมูลปัจจุบัน
+  const year = selectedYear.value;
+  const sem = selectedSemester.value;
+  const r = ratings.value; // { friendliness: '4.50', ... }
+  const avg = ratingsAverage.value; // '4.2'
+
+  // 2. สร้างเนื้อหาไฟล์ CSV (String)
+  
+  // \uFEFF คือ "BOM" - จำเป็นมากสำหรับ Excel 
+  // เพื่อให้เปิดไฟล์ .csv แล้วอ่านภาษาไทยไม่เพี้ยน
+  let csvContent = '\uFEFF'; 
+
+  // -- ส่วนสรุป --
+  csvContent += 'สรุปผลการประเมิน\n'; // \n คือขึ้นบรรทัดใหม่
+  csvContent += `ปีการศึกษา,${year},เทอม,${sem}\n`;
+  csvContent += `คะแนนเฉลี่ยรวม,${avg}\n\n`;
+
+  // -- ส่วนข้อมูลกราฟ --
+  csvContent += 'ข้อมูลกราฟ (คะแนนเฉลี่ยรายข้อ)\n';
+  csvContent += 'หัวข้อ,คะแนน\n';
+  csvContent += `Staff Friendliness,${r.friendliness}\n`;
+  csvContent += `Service Efficiency,${r.efficiency}\n`;
+  csvContent += `Communication,${r.communication}\n\n`;
+
+  // -- ส่วนความคิดเห็น --
+  csvContent += 'ความคิดเห็นทั้งหมด\n';
+  csvContent += 'ความคิดเห็น,คะแนน(ถ้ามี)\n';
+  
+  comments.value.forEach(comment => {
+    // จัดการ comment ที่อาจจะมีลูกน้ำ (,) ข้างใน
+    const text = `"${comment.text.replace(/"/g, '""')}"`; 
+    const stars = comment.stars || 'N/A'; // (จากโค้ด Appointment คุณมี .stars)
+    csvContent += `${text},${stars}\n`;
+  });
+
+  // 3. สร้าง "Blob" และจำลองการคลิกดาวน์โหลด
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  
+  // ตั้งชื่อไฟล์
+  link.download = `rating_export_${year}_${sem}.csv`; 
+
+  document.body.appendChild(link); // (จำเป็นสำหรับ Firefox)
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(link.href);
+};
+
+// Load ratings on mount and watch changes
+watch([selectedSemester, selectedYear], fetchRatings)
+</script> 

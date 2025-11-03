@@ -17,6 +17,7 @@ import Historytest from '../views/student/Appointment/historytest.vue'
 import TopicTracking from '../views/student/Document/TopicTracking.vue'
 import CheckStatusdoc from '../views/student/Document/CheckStatus.vue'
 import HistoryDocument from '../views/student/Document/HistoryDocument.vue'
+import NewHistory from '../views/student/Document/NewHistory.vue'
 // Feedback pages
 import FeedbackForm from '../components/student/Feedback.vue'
 import AppointmentsFeedback from '../views/student/AppointmentsFeedback.vue'
@@ -44,7 +45,8 @@ export default [
     children: [
       { path: 'topictrack', name: 'TopicTrack', component: TopicTracking },
       { path: 'check', name: 'CheckStatusDoc', component: CheckStatusdoc },
-      { path: 'history', name: 'HistoryDoc', component: HistoryDocument }
+      { path: 'history', name: 'HistoryDoc', component: HistoryDocument },
+      { path: 'Newhistory', name: 'Newhistory', component: NewHistory }
     ]
   },
 

@@ -1,7 +1,6 @@
 <template>
   <SecreLayout>
     <div class="p-8 min-h-screen bg-gray-50">
-      <!-- Header Bar -->
       <div class="flex justify-between items-center mb-6 p-4 bg-white rounded-xl shadow">
         <div class="flex items-center gap-4">
           <img :src="user.avatar" alt="User Avatar" class="w-12 h-12 rounded-full" />
@@ -13,79 +12,81 @@
 
         <div class="flex gap-4">
           <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-            <option value="1">Semester 1</option>
-            <option value="2">Semester 2</option>
+            <option 
+              v-for="semester in semesterOptions" 
+              :key="semester.value" 
+              :value="semester.value">
+              {{ semester.text }}
+            </option>
           </select>
           <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-            <option value="2568">2568</option>
-            <option value="2567">2567</option>
-            <option value="2566">2566</option>
+            <option 
+              v-for="year in yearOptions" 
+              :key="year" 
+              :value="year">
+              {{ year }}
+            </option>
           </select>
         </div>
       </div>
 
-      <!-- Main Card -->
       <div class="bg-indigo-600 text-white rounded-2xl p-8 shadow-lg flex flex-col gap-8">
-        <!-- Overall Rating -->
         <div class="flex items-center gap-6">
-          <span class="text-5xl font-bold">{{ ratingsAverage }}</span>
-          <div class="flex text-2xl">
-            <span v-for="i in 5" :key="i" :class="i <= 4 ? 'text-yellow-400' : 'text-gray-300'">★</span>
+          <span class="text-5xl font-bold">
+            {{ ratingsEmpty ? '0.0' : ratingsAverage }}
+          </span>
           </div>
-        </div>
 
-        <!-- Content Row -->
         <div class="flex flex-wrap gap-6">
-          <!-- Chart Container -->
           <div class="flex-1 min-w-[300px] bg-white text-gray-800 rounded-xl p-6 shadow">
             <div class="text-lg font-bold text-center mb-4">Rating</div>
 
-            <Barchart
-              :labels="['Service Provider', 'Service Delivery', 'Facilities']"
-              :data="[ratings.provider, ratings.delivery, ratings.facilities]"
-              :colors="['#1f6feb', '#f59e0b', '#ef4444']"
-            />
+            <template v-if="ratingsEmpty">
+              <div class="text-center text-gray-500 py-16">
+                ยังไม่มี feedback สำหรับเทอมนี้ 😔
+              </div>
+            </template>
 
-            <!-- Legend -->
+            <template v-else>
+              <Barchart
+                :labels="['Staff Friendliness', 'Service Efficiency', 'Communication']"
+                :data="[ratings.friendliness, ratings.efficiency, ratings.communication]"
+                :colors="['#10b981', '#3b82f6', '#f59e0b']"
+              />
+            </template>
+
             <div class="flex flex-wrap justify-center gap-6 mt-4 text-xs">
               <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-sm" style="background:#1f6feb"></div>
-                <span>Service Provider</span>
+                <div class="w-3 h-3 rounded-sm" style="background:#10b981"></div>
+                <span>Staff Friendliness</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="w-3 h-3 rounded-sm" style="background:#3b82f6"></div>
+                <span>Service Efficiency</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="w-3 h-3 rounded-sm" style="background:#f59e0b"></div>
-                <span>Service Delivery</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <div class="w-3 h-3 rounded-sm" style="background:#ef4444"></div>
-                <span>Facilities</span>
+                <span>Communication</span>
               </div>
             </div>
 
             <button class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Export</button>
           </div>
 
-          <!-- Comments Container -->
-          <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col">
-            <div class="flex justify-between items-center mb-4">
-              <span class="text-lg font-bold">Comment</span>
-              <select v-model="selectedTopic" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-                <option value="course-registration">Course registration</option>
-                <option value="advising">Advising session</option>
-                <option value="internship">Internship approval</option>
-              </select>
-            </div>
-
+          <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
             <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
-              <div v-for="(comment, i) in filteredComments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
+              
+              <div v-for="(comment, i) in comments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
                 <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
                 <div class="flex-1">
-                  <div class="flex text-sm mb-1">
-                    <span v-for="j in 5" :key="j" :class="j <= comment.stars ? 'text-yellow-400' : 'text-gray-300'">★</span>
-                  </div>
                   <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
                 </div>
               </div>
+
+              <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
+                ไม่มีคอมเมนต์ในเทอมนี้
+              </div>
+
             </div>
           </div>
         </div>
@@ -96,67 +97,163 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted} from 'vue'
+// ⭐️ [แก้ไข] เพิ่ม watch
+import { ref, computed, onMounted, watch } from 'vue' 
 import jwt_decode from 'jwt-decode'
 import axios from 'axios'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 import Barchart from '@/components/secretary/Barchart.vue'
 
-const selectedSemester = ref('1')
-const selectedYear = ref('2568')
-const selectedTopic = ref('course-registration')
+// (Imports รูป... เหมือนเดิม)
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
-const ratings = {
-  provider: 4.8,
-  delivery: 2.0,
-  facilities: 2.9
-}
+import userimg from '@/assets/user.png' // ⭐️ เพิ่ม userimg
+
+// ⭐️ [แก้ไข] State ของ Dropdown
+const selectedSemester = ref(null) 
+const selectedYear = ref(null)
+// const selectedTopic = ref('course-registration') // ⭐️ [ลบ]
+
+// ⭐️ [เพิ่ม] State สำหรับเก็บ Options
+const semesterOptions = ref([])
+const yearOptions = ref([])
+
+// ⭐️ [ลบ] ratings (Static)
+// const ratings = { provider: 4.8, ... }
+
+// ⭐️ [เพิ่ม] ratings (Dynamic) (เหมือน Appointment)
+const ratings = ref({
+  friendliness: 0,
+  efficiency: 0,
+  communication: 0
+})
+
+// (ฟังก์ชัน getUserAvatar ... เหมือนเดิม)
 function getUserAvatar(userId) {
   switch(userId) {
     case 2: return Aoi;
     case 4: return Lek;
     case 3: return Ang;
     case 6: return phum;
-    default: return defaultImg;
+    default: return userimg; // ⭐️ เปลี่ยนเป็น userimg
   }
 }
 
-// ค่าเฉลี่ย
-const ratingsAverage = ((ratings.provider + ratings.delivery + ratings.facilities) / 3).toFixed(1)
+// ⭐️ [เพิ่ม] ratingsEmpty (เหมือน Appointment)
+const ratingsEmpty = computed(() =>
+ (Number(ratings.value.friendliness) + 
+  Number(ratings.value.efficiency) + 
+  Number(ratings.value.communication)) === 0
+)
 
-const comments = [
-  { topic: 'course-registration', stars: 5, text: 'She is kind and works very quickly.' },
-  { topic: 'course-registration', stars: 4, text: 'The service was decent and followed the standard process. However, there\'s still room for improvement in terms of speed and convenience to make the experience smoother and more efficient.' },
-  { topic: 'course-registration', stars: 5, text: 'Very helpful and professional!' },
-  { topic: 'advising', stars: 3, text: 'Good advice but took too long.' }
-]
-const user = ref({
-  name: '',
-  avatar: ''
+// ⭐️ [แก้ไข] Computed average (เหมือน Appointment)
+const ratingsAverage = computed(() => {
+  if (ratingsEmpty.value) return '0.0'
+  const r = ratings.value
+  const f = Number(r.friendliness) || 0
+  const e = Number(r.efficiency) || 0
+  const c = Number(r.communication) || 0
+  return ((f + e + c) / 3).toFixed(1)
 })
+
+// ⭐️ [ลบ] comments (Static)
+// const comments = [ ... ]
+
+// ⭐️ [เพิ่ม] comments (Dynamic)
+const comments = ref([])
+
+const user = ref({ name: '', avatar: '' })
+
+// ⭐️ [แก้ไข] onMounted (เหมือน Appointment)
 onMounted(async () => {
   try {
     const token = localStorage.getItem('authToken');
     if (!token) return;
-
     const decoded = jwt_decode(token);
     const userId = Number(decoded.user_id);
-
     const res = await axios.get(`http://localhost:3000/profile/${userId}`);
     
-    // กำหนดค่า user.value จาก response
     user.value = res.data;
-
-    // เพิ่ม avatar ให้ user.value
     user.value.avatar = getUserAvatar(userId);
 
-    console.log('โหลดข้อมูลผู้ใช้สำเร็จ:', user.value);
+    // ⭐️ [เพิ่ม] เรียกฟังก์ชันดึงข้อมูล
+    await fetchDropdownOptions()
+    await fetchRatings()
+
   } catch (err) {
     console.error('ไม่สามารถโหลดข้อมูลผู้ใช้:', err);
   }
 });
-const filteredComments = computed(() => comments.filter(c => c.topic === selectedTopic.value))
+
+// ⭐️ [ลบ] filteredComments
+// const filteredComments = computed(() => ...)
+
+// ⭐️ [เพิ่ม] ฟังก์ชัน fetchDropdownOptions (เหมือน Appointment)
+const fetchDropdownOptions = async () => {
+  try {
+    // 4.1 ดึง "รายการตัวเลือก"
+    const optionsRes = await axios.get('http://localhost:3000/academic/academic-options')
+    if (optionsRes.data.success) {
+      semesterOptions.value = optionsRes.data.data.semesters
+      yearOptions.value = optionsRes.data.data.years
+    }
+
+    // 4.2 ดึง "ค่าปัจจุบัน"
+    const currentRes = await axios.get('http://localhost:3000/academic/current')
+    if (currentRes.data.success) {
+      // 4.3 ตั้งค่า v-model (Default)
+      selectedSemester.value = currentRes.data.data.semester
+      selectedYear.value = currentRes.data.data.academic_year
+    }
+  } catch (err) {
+    console.error('❌ ไม่สามารถโหลดข้อมูล Dropdown:', err)
+    // ถ้าพลาด, ก็ยังตั้งค่าสำรองไว้
+    selectedSemester.value = '1'
+    selectedYear.value = '2568' 
+  }
+}
+
+// ⭐️ [เพิ่ม] ฟังก์ชัน fetchRatings
+const fetchRatings = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    const decoded = jwt_decode(token);
+    const staffId = Number(decoded.user_id); 
+
+    if (!staffId) return; 
+    if (!selectedYear.value || !selectedSemester.value) {
+      console.warn('...รอข้อมูล Dropdown ก่อน...')
+      return; 
+    }
+
+    // ⭐️⭐️⭐️ [แก้ไข] เปลี่ยน URL เป็น /rating-Document ⭐️⭐️⭐️
+    const res = await axios.get('http://localhost:3000/secretary/rating-Document', { 
+      params: { 
+        year: selectedYear.value, 
+        semester: selectedSemester.value,
+        staffId: staffId 
+      }
+    });
+    console.log('📊 Raw rating data (Document):', res.data.data);
+
+    if (res.data.success && res.data.data) {
+      ratings.value = res.data.data.averages;
+      comments.value = res.data.data.comments;
+    } else {
+      ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
+      comments.value = [];
+    }
+  } catch (err) {
+    console.error('Failed to fetch ratings (Document):', err);
+    ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
+    comments.value = [];
+  }
+};
+
+// ⭐️ [เพิ่ม] watch (เหมือน Appointment)
+watch([selectedSemester, selectedYear], fetchRatings)
+
 </script>

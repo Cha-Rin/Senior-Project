@@ -55,7 +55,8 @@
         <SidebarItem icon="home" label="Homepage" to="/student/path" />
         <SidebarItem icon="user" label="Choose Topic" to="/student/document/topictrack" />
         <SidebarItem icon="check-circle" label="Check Status" to="/student/document/check" />
-        <SidebarItem icon="clock" label="History" to="/student/document/history" />
+        <!-- <SidebarItem icon="clock" label="History" to="/student/document/history" /> -->
+        <SidebarItem icon="clock" label="History" to="/student/document/Newhistory" />
         <SidebarItem icon="message-square" label="Feedback" to="/student/feedback/documents" />
 
 

@@ -1,136 +1,231 @@
-<template>
-  <div class="min-h-screen bg-white p-8">
-    <h1 class="text-2xl font-bold mb-4">History</h1>
+<template> 
+  <div class="page-content">
+    <h1 class="text-4xl font-bold py-8 mb-6 bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+      History
+      <WeekPicker @weekSelected="onWeekChange" />
+    </h1>
 
-    <!-- Staff info -->
-    <div v-if="staff" class="flex items-center gap-4 mb-6">
-      <img :src="avatar" alt="avatar" class="h-16 w-16 rounded-full border border-gray-300" />
-      <div class="text-gray-600 text-lg">{{ staff.firstName }} {{ staff.lastNam }}</div>
-    </div>
-
-    <!-- Tabs -->
-    <div class="flex space-x-4 border-b mb-6">
-      <button
+    <!-- ✅ TAB BUTTONS -->
+    <div class="flex gap-4 mb-6">
+      <button 
         @click="activeTab = 'appointment'"
-        :class="activeTab === 'appointment' ? activeTabClass : inactiveTabClass"
+        :class="[
+          'px-4 py-2 rounded-lg font-semibold transition',
+          activeTab === 'appointment' 
+            ? 'bg-indigo-600 text-white shadow' 
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
       >
         Appointment
       </button>
-      <button
+
+      <button 
         @click="activeTab = 'document'"
-        :class="activeTab === 'document' ? activeTabClass : inactiveTabClass"
+        :class="[
+          'px-4 py-2 rounded-lg font-semibold transition',
+          activeTab === 'document' 
+            ? 'bg-indigo-600 text-white shadow' 
+            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+        ]"
       >
-        Document Tracking
+        Document
       </button>
     </div>
 
-    <!-- รายการประวัติ -->
-    <div class="max-w-6xl mx-auto space-y-4">
-      <div v-if="activeData.length === 0" class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-        No {{ activeTab }} found.
-      </div>
-
-      <div v-else v-for="item in activeData" :key="item.appointment_id" class="history-item flex items-center justify-between p-5 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-        <div class="flex items-center gap-6">
-          <div class="font-bold text-lg text-indigo-700">{{ item.appointment_id }}</div>
-          <div class="text-gray-700 font-medium">{{ item.studentId }}</div>
-          <div class="text-gray-600 text-sm space-y-1">
-            <div class="font-medium">Date: {{ formatDateTime(item.appointment_date).date }}</div>
-            <div class="text-gray-500">Time: {{ formatDateTime(item.appointment_date).time }}</div>
+    <!-- ✅ DATE PICKER -->
+    <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
+      <div class="flex items-center gap-3">
+        <span class="text-violet-600 text-xl">📅</span>
+        <div class="relative" ref="calendarContainer">
+          <div 
+            @click="toggleCalendar"
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[240px]"
+          >
+            <span v-if="startDate && endDate">
+              {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate) }}
+            </span>
+            <span v-else class="text-gray-500">Choose date range</span>
           </div>
-          <div class="text-gray-800 font-medium">{{ item.topic }}</div>
-        </div>
-        <div>{{ item.student_note }}</div>
-        <div
-          class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
-          :class="{
-            'bg-rose-100 text-rose-800': item.status.code === 2,
-            'bg-emerald-100 text-emerald-800': item.status.code === 1,
-            'bg-orange-100 text-orange-800': item.status.code === 0,
-            'bg-blue-100 text-blue-800': item.status.code === 3
-          }"
-        >
-          <span v-if="item.status.code === 1">✅</span>
-          <span v-else-if="item.status.code === 2">❌</span>
-          <span v-else-if="item.status.code === 0">⏳</span>
-          <span v-else-if="item.status.code === 3">✔️</span>
-          {{ item.status.label }}
+
+          <div v-if="showCalendar" class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 w-80">
+            <div class="flex justify-between items-center mb-3">
+               <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded"></button>
+               <span class="font-medium">{{ currentMonthName }} {{ currentYear }}</span>
+               <button @click="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded">></button>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2">
+               <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+            </div>
+
+            <div class="grid grid-cols-7 gap-1">
+               <div 
+                 v-for="day in calendarDays" 
+                 :key="day.date" 
+                 :class="[
+                   'h-8 flex items-center justify-center rounded-md text-sm cursor-pointer',
+                   day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400',
+                   day.isSelected ? 'bg-indigo-600 text-white' : '',
+                   day.isInRange ? 'bg-indigo-100' : '',
+                   day.isToday ? 'border border-indigo-500' : ''
+                 ]"
+                 @click="selectDate(day.date)"
+               >
+                 {{ day.day }}
+               </div>
+            </div>
+
+            <div class="mt-3 flex justify-end">
+               <button @click="resetDate" class="text-sm font-medium text-violet-600 hover:text-violet-800 underline">Reset</button>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
+
+    <!-- ✅ LIST -->
+    <div class="max-w-6xl mx-auto space-y-4">
+      
+      <div v-if="filteredByTab.length === 0" class="text-center py-10 text-gray-500 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto text-gray-400 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        No items found in selected date range.
+      </div>
+
+      <div v-else v-for="item in filteredByTab" :key="item.type + '-' + item.id">
+
+        <div class="history-item flex items-center justify-between p-5 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+          <div class="flex items-center gap-6">
+
+            <!-- ✅ เปลี่ยน prefix ตามประเภท -->
+            <div class="font-bold text-lg text-indigo-700">
+              {{ item.type === 'appointment' ? 'APP-' : 'DOC-' }}{{ item.id }}
+            </div>
+
+            <div class="text-gray-700 font-medium">{{ item.studentId }}</div>
+
+            <div class="text-gray-600 text-sm space-y-1">
+              <div class="font-medium">Date: {{ formatDateTime(item.event_date).date }}</div>
+              <div class="text-gray-500">Time: {{ formatDateTime(item.event_date).time }}</div>
+            </div>
+
+            <div class="text-gray-800 font-medium">{{ item.title }}</div>
+
+          </div>
+
+          <div>{{ item.student_note }}</div>
+
+          <div
+            class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
+            :class="{
+              'bg-rose-100 text-rose-800': item.status === 2,
+              'bg-emerald-100 text-emerald-800': item.status === 1,
+              'bg-orange-100 text-orange-800': item.status === 0,
+              'bg-blue-100 text-blue-800': item.status === 3
+            }"
+          >
+            <span v-if="item.status === 1">✅</span>
+            <span v-else-if="item.status === 2">❌</span>
+            <span v-else-if="item.status === 0">⏳</span>
+            <span v-else-if="item.status === 3">✔️</span>
+
+            {{ item.status === 1 ? 'Approve' : item.status === 2 ? 'Reject' : 'Pending' }}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { useHistory } from '@/components/together/useHistory'
+import WeekPicker from '@/components/secretary/weekpicker.vue'
 import axios from 'axios'
-import { useStaffStore } from './stores/staffStore'
-import jwtDecode from 'jwt-decode'
+const router = useRouter()
 const route = useRoute()
-const staffStore = useStaffStore()
 
-const activeTab = ref('appointment')
-const staffId = ref(route.params.id || null)
-const staff = computed(() => {
-  const s = staffStore.staffList.find(s => s.id === Number(staffId.value))
-  if (!s) return null
-  return {
-    ...s,
-    firstName: s.firstName || s.first_name,
-    lastName: s.lastName || s.last_name
+const calendarContainer = ref(null)
+
+const activeTab = ref('appointment')   // ✅ tab คุมประเภท
+
+// ✅ computed: แสดงตามแท็บ
+const filteredByTab = computed(() => {
+  if (activeTab.value === 'appointment') {
+    return history.value.filter(i => i.type === 'appointment')
   }
+  if (activeTab.value === 'document') {
+    return history.value.filter(i => i.type === 'document')
+  }
+  return history.value
 })
-const avatar = computed(() => staff?.value?.avatar || new URL('/src/assets/default.png', import.meta.url).href)
 
-const appointmentData = ref([])
-const documentData = ref([])
+const { 
+  history, 
+  startDate, 
+  endDate, 
+  showCalendar, 
+  currentMonth, 
+  currentYear, 
+  toggleCalendar, 
+  calendarDays, 
+  currentMonthName, 
+  resetDate, 
+  formatDateDisplay, 
+  formatDateTime, 
+  changeMonth, 
+  selectDate 
+} = useHistory()
 
-const activeData = computed(() =>
-  activeTab.value === 'appointment' ? appointmentData.value : documentData.value
-)
-
-const activeTabClass = 'pb-2 px-4 font-semibold text-blue-600 border-b-2 border-blue-600'
-const inactiveTabClass = 'pb-2 px-4 text-gray-500 hover:text-blue-500'
-
-// fetch history from backend
-// const fetchHistory = async () => {
-//   try {
-//     const token = localStorage.getItem('authToken')
-//     if (!token) throw new Error('No token found')
-
-//     const res = await axios.get('http://localhost:3000/history/historyall', {
-//       headers: { Authorization: `Bearer ${token}` },
-//       params: { staffId: staffId.value }
-//     })
-
-//     if (res.data.success) {
-//       // สำหรับตอนนี้ถือว่า API คืน appointment ทั้งหมด
-//       appointmentData.value = res.data.historyItems
-//       // ถ้ามี document data ให้ใส่ documentData.value = ...
-//     }
-//   } catch (err) {
-//     console.error(err)
-//   }
-// }
-
-const formatDateTime = (datetime) => {
-  const d = new Date(datetime)
-  return {
-    date: d.toLocaleDateString(),
-    time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-  }
+const onWeekChange = ([start,end]) => {
+  startDate.value = start
+  endDate.value = end
 }
 
+// ✅ โหลดข้อมูล
 onMounted(async () => {
-  const token = localStorage.getItem('authToken')
-  if (token) {
-    await staffStore.fetchStaffById(staffId.value, token)
-    await staffStore.fetchHistoryAll(token, staffId.value)
-    appointmentData.value = staffStore.historyRecords
+  const token = localStorage.getItem("authToken");
+  const role = localStorage.getItem("userRole");
+  console.log("ALL ROUTE PARAMS:", route.params)
+  const staffId = route.params.id; // ✅ ตรงนี้พอแล้ว
+
+  console.log("--- DEBUG HISTORY PAGE ---");
+  console.log("Role (from localStorage):", role);
+  console.log("Staff ID (from URL params):", staffId);
+  console.log("---------------------------");
+
+  try {
+    const res = await axios.get("http://localhost:3000/history/historyall", {
+      headers: { Authorization: `Bearer ${token}` },
+      params: { staffId: staffId } // ✅ ส่งตรง ๆ
+    });
+
+    history.value = res.data.historyItems;
+  } catch (err) {
+    console.error(err);
   }
-})
+});
+
+// ✅ ปิด calendar ถ้าคลิกข้างนอก
+const handleClickOutside = (e) => {
+  if(calendarContainer.value && !calendarContainer.value.contains(e.target)) {
+    showCalendar.value = false
+  }
+}
+onMounted(()=>document.addEventListener('click',handleClickOutside))
+onUnmounted(()=>document.removeEventListener('click',handleClickOutside))
 </script>
+
+<style scoped>
+.page-content {
+  padding: 2rem;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+</style>
