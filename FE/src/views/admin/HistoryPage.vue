@@ -6,31 +6,50 @@
     </h1>
 
     <!-- ✅ TAB BUTTONS -->
-    <div class="flex gap-4 mb-6">
-      <button 
-        @click="activeTab = 'appointment'"
-        :class="[
-          'px-4 py-2 rounded-lg font-semibold transition',
-          activeTab === 'appointment' 
-            ? 'bg-indigo-600 text-white shadow' 
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
-      >
-        Appointment
-      </button>
+    <!-- ✅ TAB + STATUS FILTER บรรทัดเดียว -->
+<div class="flex items-center justify-between mb-6">
 
-      <button 
-        @click="activeTab = 'document'"
-        :class="[
-          'px-4 py-2 rounded-lg font-semibold transition',
-          activeTab === 'document' 
-            ? 'bg-indigo-600 text-white shadow' 
-            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-        ]"
-      >
-        Document
-      </button>
-    </div>
+  <!-- LEFT: TAB BUTTONS -->
+  <div class="flex gap-4">
+    <button 
+      @click="activeTab = 'appointment'"
+      :class="[
+        'px-4 py-2 rounded-lg font-semibold transition',
+        activeTab === 'appointment' 
+          ? 'bg-indigo-600 text-white shadow' 
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      ]"
+    >
+      Appointment
+    </button>
+
+    <button 
+      @click="activeTab = 'document'"
+      :class="[
+        'px-4 py-2 rounded-lg font-semibold transition',
+        activeTab === 'document' 
+          ? 'bg-indigo-600 text-white shadow' 
+          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+      ]"
+    >
+      Document
+    </button>
+  </div>
+
+  <!-- RIGHT: STATUS FILTER -->
+  <select
+    v-model="statusFilter"
+    class="px-4 py-2 bg-white border rounded-lg shadow-sm min-w-[150px]"
+  >
+    <option value="all">All Status</option>
+    <option value="0">Pending</option>
+    <option value="1">Approve</option>
+    <option value="2">Reject</option>
+    <option value="3">Completed</option>
+  </select>
+
+</div>
+
 
     <!-- ✅ DATE PICKER -->
     <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
@@ -152,19 +171,28 @@ const router = useRouter()
 const route = useRoute()
 
 const calendarContainer = ref(null)
-
+const statusFilter = ref("all")
 const activeTab = ref('appointment')   // ✅ tab คุมประเภท
 
 // ✅ computed: แสดงตามแท็บ
 const filteredByTab = computed(() => {
-  if (activeTab.value === 'appointment') {
-    return history.value.filter(i => i.type === 'appointment')
+  let items = history.value
+
+  // ✅ กรองตามแท็บ
+  if (activeTab.value === "appointment") {
+    items = items.filter(i => i.type === "appointment")
+  } else if (activeTab.value === "document") {
+    items = items.filter(i => i.type === "document")
   }
-  if (activeTab.value === 'document') {
-    return history.value.filter(i => i.type === 'document')
+
+  // ✅ กรองสถานะ
+  if (statusFilter.value !== "all") {
+    items = items.filter(i => String(i.status) === statusFilter.value)
   }
-  return history.value
+
+  return items
 })
+
 
 const { 
   history, 
@@ -220,6 +248,7 @@ const handleClickOutside = (e) => {
 }
 onMounted(()=>document.addEventListener('click',handleClickOutside))
 onUnmounted(()=>document.removeEventListener('click',handleClickOutside))
+
 </script>
 
 <style scoped>

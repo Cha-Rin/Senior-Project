@@ -4,7 +4,18 @@
       History
       <WeekPicker @weekSelected="onWeekChange" />
     </h1>
-
+<div class="flex justify-end mb-4">
+  <select 
+    v-model="statusFilter"
+    class="px-4 py-2 bg-white border rounded-lg shadow-sm min-w-[150px]"
+  >
+    <option value="all">All Status</option>
+    <option value="0">Pending</option>
+    <option value="1">Approve</option>
+    <option value="2">Reject</option>
+    <option value="3">Completed</option>
+  </select>
+</div>
     <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
       <div class="flex items-center gap-3">
         <span class="text-violet-600 text-xl">📅</span>
@@ -111,7 +122,7 @@ import WeekPicker from '@/components/secretary/weekpicker.vue'
 const router = useRouter()
 
 const calendarContainer = ref(null)
-
+const statusFilter = ref("all")
 const onWeekChange = ([start,end]) => {
   startDate.value = start
   endDate.value = end
@@ -123,14 +134,23 @@ const props = defineProps({
   }
 })
 const filteredItemsByType = computed(() => {
-  if (props.type === 'appointment') {
-    return history.value.filter(i => i.type === 'appointment')
+  let items = history.value
+
+  // ✅ กรองตาม type (จาก props)
+  if (props.type === "appointment") {
+    items = items.filter(i => i.type === "appointment")
+  } else if (props.type === "document") {
+    items = items.filter(i => i.type === "document")
   }
-  if (props.type === 'document') {
-    return history.value.filter(i => i.type === 'document')
+
+  // ✅ กรองตามสถานะ
+  if (statusFilter.value !== "all") {
+    items = items.filter(i => String(i.status) === statusFilter.value)
   }
-  return history.value
+
+  return items
 })
+
 
 const { 
   history, 
