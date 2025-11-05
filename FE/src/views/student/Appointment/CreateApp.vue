@@ -12,7 +12,11 @@
 
 
     <!-- ✅ ตารางแยก component -->
-    <ScheduleTable :unavailable-slots="unavailable" :closed-slots="closed" />
+    <StudentScheduleView 
+    v-if="staffIdToView"
+    :staffId="staffIdToView" 
+    @update:unavailableData="onUnavailableDataUpdate"
+/>
 
     <div class="bg-blue-900 text-white w-full max-w-xs p-4 rounded-xl space-y-3 mb-10">
       <!-- เลือกวัน -->
@@ -20,14 +24,28 @@
             <input type="date" v-model="selectedDate" class="border rounded p-1 w-full text-black" />
         </label>
         <!-- เลือกเวลา -->
-        <label class="block">Time:
-            <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
-              <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
-              <option v-for="slot in timeSlots" :key="slot" :value="slot">
-                {{ slot }}
-              </option>
-      </select>
-        </label>
+        <label class="block">
+  Time:
+  <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
+    <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
+
+    <option
+      v-for="slot in availableTimeSlots"
+      :key="slot"
+      :value="slot"
+    >
+      {{ slot }}
+    </option>
+
+    <option
+      v-if="selectedDate && availableTimeSlots.length === 0"
+      disabled
+    >
+      -- ไม่ว่าง/เป็นวันหยุด --
+    </option>
+  </select>
+</label>
+
       </div>
       <button  @click="goToConfirm" class="bg-blue-600 text-white px-4 py-2 rounded">Next</button>
     </div>
@@ -35,13 +53,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import boy from '@/assets/boy.png'
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
+import StudentScheduleView from '@/components/student/StudentScheduleView.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -53,32 +72,56 @@ const staffAvatar = ref('')
 const displayName = ref('')
 const imageSrc = ref('')
 const note = ref('')
+const staffIdToView = ref(null)
 
-const topicQuery = route.query.topic
-const category_id = route.query.category_id
-// ✅ สร้างตัวแปรแบบ reactive ให้ Vue จัดการได้
 const selectedDate = ref('')
 const selectedSlot = ref('')
 
-const unavailable = ref([
-  [1, 1], [2, 0], [4, 3], [6, 2], [7, 4]
-])
+// ✅ เก็บ unavailable slot (Set)
+const unavailableMasterSet = ref(new Set())
 
-const closed = ref([
-  [4, 0], [4, 1], [4, 2], [4, 3], [4, 4]
-])
+// ✅ รับ emit จาก child
+const onUnavailableDataUpdate = (dataFromChild) => {
+  console.log("Parent received unavailable data:", dataFromChild.size)
+  unavailableMasterSet.value = dataFromChild
+}
 
-// ✅ สร้างช่วงเวลาที่กำหนดไว้ล่วงหน้า
+// ✅ ตารางเวลา (ต้องตรงกับ child)
 const timeSlots = [
-  '08:00 - 09:00 AM',
-  '09:00 - 10:00 AM',
-  '10:00 - 11:00 AM',
-  '11:00 - 12:00 PM',
-  '13:00 - 14:00 PM',
-  '14:00 - 15:00 PM',
-  '15:00 - 16:00 PM'
+  '08:00 - 09:00',
+  '09:00 - 10:00',
+  '10:00 - 11:00',
+  '11:00 - 12:00',
+  '12:00 - 13:00',
+  '13:00 - 14:00',
+  '14:00 - 15:00',
+  '15:00 - 16:00'
 ]
+const LUNCH_ROW_INDEX = 4
 
+// ✅ Helper: Convert YYYY-MM-DD → dayIndex
+const getDayIndexFromDateString = (dateStr) => {
+  if (!dateStr) return -1
+  const d = new Date(`${dateStr}T12:00:00`)
+  const js = d.getDay()
+  if (js === 0 || js === 6) return -1
+  return js - 1
+}
+
+// ✅ Filter Available Time Slots
+const availableTimeSlots = computed(() => {
+  const dayIndex = getDayIndexFromDateString(selectedDate.value)
+  if (dayIndex === -1) return []
+
+  return timeSlots.filter((slot, timeIndex) => {
+    if (timeIndex === LUNCH_ROW_INDEX) return false
+    const key = `${timeIndex},${dayIndex}`
+    const isUnavailable = unavailableMasterSet.value.has(key)
+    return !isUnavailable
+  })
+})
+
+// ✅ Push ไปหน้า Confirm
 function goToConfirm() {
   if (!selectedDate.value || !selectedSlot.value) {
     alert('กรุณาเลือกวันและช่วงเวลา')
@@ -98,73 +141,57 @@ function goToConfirm() {
   })
 }
 
-
+// ✅ โหลดข้อมูลพนักงาน
 onMounted(() => {
-  // 🟡 map category_id เป็น topic ที่ใช้ภายใน
+  const category_id = route.query.category_id
+
   switch (category_id) {
     case '1':
     case 1:
       selectedTopic.value = 'Student_Activities'
       displayName.value = 'Pakpoom Lamprasert'
       imageSrc.value = phum
+      staffIdToView.value = 6
       break
+
     case '2':
     case 2:
       selectedTopic.value = 'Cooperative_Education'
       displayName.value = 'Unicorn Support'
       imageSrc.value = boy
+      staffIdToView.value = 5
       break
+
     case '3':
     case 3:
       selectedTopic.value = 'Installment_Payment'
       displayName.value = 'Tatchamay Wahnchaisiri'
       imageSrc.value = Ang
+      staffIdToView.value = 3
       break
+
     case '4':
     case 4:
       selectedTopic.value = 'Registration_work'
       displayName.value = 'Porntip Panya'
       imageSrc.value = Aoi
+      staffIdToView.value = 2
       break
-      case '5':
-     case 5:
-       selectedTopic.value = 'Graduate_studies'
-       displayName.value = 'Rattikarn Nanglae'
-       imageSrc.value = Lek
-       break
-     default:
-       selectedTopic.value = 'N/A'
-       displayName.value = 'Default Name'
-       imageSrc.value = user
+
+    case '5':
+    case 5:
+      selectedTopic.value = 'Graduate_studies'
+      displayName.value = 'Rattikarn Nanglae'
+      imageSrc.value = Lek
+      staffIdToView.value = 4
+      break
+
+    default:
+      selectedTopic.value = 'N/A'
+      displayName.value = 'Default Name'
+      imageSrc.value = boy
+      staffIdToView.value = null
   }
 })
-
-//  case '4':
-//     case 4:
-//       selectedTopic.value = 'Registration_work'
-//       displayName.value = 'Support'
-//       imageSrc.value = unicorn
-//       break
-//     default:
-//       selectedTopic.value = 'N/A'
-//       displayName.value = 'Default Name'
-//       imageSrc.value = user
-
-// function goToConfirm() {
-//   router.push({
-//     name: 'ConfirmAppointment',
-//     query: {
-//       name: displayName.value,
-//       avatar: imageSrc.value,
-//       date: selectedDate.value?.full || 'N/A',
-//       time: selectedTime.value || 'N/A',
-//       topic: selectedTopic.value || 'N/A',
-//       note: note.value
-//     }
-//   })
-// }
-
-// function goNext() {
-//   router.push('/student/appointment/confirm')
-// }
 </script>
+

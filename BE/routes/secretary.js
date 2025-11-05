@@ -311,6 +311,163 @@ router.get('/rating-Document', (req, res) => {
     });
   });
 });
+// ------------------------------------------ Staff Off-time -----------------------------------------------------
+router.post("/offtime", async (req, res) => {
+    const { staff_id, date, start_time, end_time } = req.body;
+
+    try {
+        const [rows] = await db.promise().query(
+            "SELECT role FROM users WHERE user_id = ?",
+            [staff_id]
+        );
+
+        if (rows.length === 0 || rows[0].role !== 2) {
+            return res.status(403).json({
+                success: false,
+                message: "Only staff (role = 2) can create off-time."
+            });
+        }
+
+        // ✅ ผ่านแล้ว → บันทึกลง off_time
+        await db.promise().query(
+            "INSERT INTO off_time (staff_id, date, start_time, end_time) VALUES (?, ?, ?, ?)",
+            [staff_id, date, start_time, end_time]
+        );
+
+        return res.json({ success: true, message: "Off-time created." });
+
+    } catch (err) {
+        console.error("Error creating off-time:", err);
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+//  เพิ่มเวลาหยุดงานของเจ้าหน้าที่
+router.post('/add', authMiddleware, async (req, res) => {
+  try {
+    const { staff_id, date, start_time, end_time } = req.body;
+
+    if (!staff_id || !date || !start_time || !end_time) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    // ✅ ตรวจ role = 2
+    const [rows] = await db.promise().query(
+      "SELECT role FROM user WHERE user_id = ?",
+      [staff_id]
+    );
+
+    if (rows.length === 0 || rows[0].role !== 2) {
+      return res.status(403).json({
+        success: false,
+        message: "Only staff (role = 2) can create off-time."
+      });
+    }
+
+    // ✅ Insert into DB
+    await db.promise().query(
+      `INSERT INTO off_time (staff_id, date, start_time, end_time)
+       VALUES (?, ?, ?, ?)`,
+      [staff_id, date, start_time, end_time || null]
+    );
+
+    res.json({ success: true, message: "Off-time added" });
+
+  } catch (err) {
+    console.error("🔥 Error adding off-time:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+//  ดึงรายการเวลาหยุดงานของเจ้าหน้าที่ในสัปดาห์นั้น
+// ✅ ดึงรายการ off-time
+router.get('/list', authMiddleware, async (req, res) => {
+  try {
+    const { weekStart, weekEnd } = req.query;
+
+    if (!weekStart || !weekEnd) {
+      return res.status(400).json({
+        success: false,
+        message: "weekStart and weekEnd are required"
+      });
+    }
+
+    console.log("✅ Fetch off-time:", weekStart, weekEnd);
+
+    const [rows] = await db.promise().query(
+      `SELECT off_time_id, staff_id, 	date, start_time, end_time
+       FROM off_time
+       WHERE 	date BETWEEN ? AND ?
+       ORDER BY 	date, start_time`,
+      [weekStart, weekEnd]
+    );
+
+    res.json({ success: true, items: rows });
+
+  } catch (err) {
+    console.error("🔥 Error fetching off-time:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ✅ ลบ off-time
+router.post('/delete', authMiddleware, async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No ids provided"
+      });
+    }
+
+    await db.promise().query(
+      `DELETE FROM off_time WHERE off_time_id IN (?)`,
+      [ids]
+    );
+
+    res.json({ success: true, message: "Off-time deleted" });
+
+  } catch (err) {
+    console.error("🔥 Error deleting off-time:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ------------------------------------------ Public Off-time สำหรับแสดงผลให้นักศึกษา -----------------------------------------------------
+// ✅ ดึง off-time (สำหรับ Public/นักเรียน)
+router.get('/public/list', async (req, res) => {
+  try {
+    // 1. รับ staffId เพิ่มจาก req.query
+    const { weekStart, weekEnd, staffId } = req.query;
+
+    // 2. ตรวจสอบพารามิเตอร์
+    if (!weekStart || !weekEnd || !staffId) {
+      return res.status(400).json({
+        success: false,
+        message: "weekStart, weekEnd, and staffId are required"
+      });
+    }
+
+    // 3. Query พร้อมเงื่อนไข staff_id
+    const [rows] = await db.promise().query(
+      `SELECT date, start_time
+       FROM off_time
+       WHERE CAST(date AS DATE) BETWEEN ? AND ?
+       AND staff_id = ?
+       ORDER BY date, start_time`,
+      [weekStart, weekEnd, staffId]
+    );
+
+    res.json({ success: true, items: rows });
+
+  } catch (err) {
+    console.error("🔥 Error fetching public off-time:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
 
  return router;
 }
