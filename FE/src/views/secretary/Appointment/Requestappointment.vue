@@ -8,9 +8,10 @@
 
       <div class="max-w-5xl mx-auto">
         <!-- Header -->
-        <div class="grid grid-cols-6 gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl px-6 py-4 shadow-lg">
+        <div class="grid grid-cols-7 gap-4 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold rounded-2xl px-6 py-4 shadow-lg">
           <div>No</div>
           <div>ID</div>
+          <div>NAME</div>
           <div>Date &amp; Time</div>
           <div>Topic</div>
           <div>Note</div>
@@ -22,7 +23,7 @@
           <div
             v-for="(item, i) in requests"
             :key="item.no"
-            class="grid grid-cols-6 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
+            class="grid grid-cols-7 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
           >
             <!-- No -->
             <div class="text-lg md:text-xl font-extrabold tracking-wide text-indigo-700">
@@ -31,6 +32,9 @@
 
             <!-- ID -->
             <div class="text-gray-700 font-medium">{{ item.studentId }}</div>
+
+            <!-- NAME -->
+             <div>{{ item.name }}</div>
 
             <!-- Date & Time -->
             <div class="text-gray-700 space-y-1">
@@ -136,6 +140,7 @@ onMounted(async () => {
     requests.value = (data.requests || []).map(item => ({
       no: item.appointment_id,
       studentId: item.studentId,
+      name: `${item.name || ''} ${item.surname || ''}`.trim() || '—',
       date: formatDateTime(item.appointment_date).date,
       time: formatDateTime(item.appointment_date).time,
       topic: item.topic,

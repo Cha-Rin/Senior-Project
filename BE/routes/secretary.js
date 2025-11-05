@@ -27,6 +27,8 @@ router.get('/appointmentRequests', authMiddleware, (req, res) => {
     SELECT 
       a.appointment_id,
       a.user_id AS studentId,
+      u.name,
+      u.surname,
       a.appointment_date,
       c.type AS topic,
       a.student_note,
@@ -34,6 +36,7 @@ router.get('/appointmentRequests', authMiddleware, (req, res) => {
   FROM appointment a
   JOIN user_category uc ON a.category_id = uc.category_id
   JOIN categories c ON a.category_id = c.category_id
+  JOIN user u ON a.user_id = u.user_id
   WHERE uc.user_id = ? AND a.status = 0
   ORDER BY a.appointment_date ASC
   `;

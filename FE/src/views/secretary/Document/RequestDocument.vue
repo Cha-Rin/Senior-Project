@@ -7,6 +7,33 @@
         Request Document
       </h1>
 
+      <!-- ✅ ป๊อบอัพสำหรับเลือกเหตุผล -->
+      <div v-if="showRejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">เลือกเหตุผลที่ปฏิเสธเอกสาร</h3>
+
+          <div class="space-y-3 mb-6">
+            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <input type="radio" v-model="selectedReason" value="ข้อมูลในเอกสารผิด" class="mr-3">
+              ข้อมูลในเอกสารผิด
+            </label>
+            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
+              <input type="radio" v-model="selectedReason" value="ข้อมูลในเอกสารไม่ครบถ้วน" class="mr-3">
+              ข้อมูลในเอกสารไม่ครบถ้วน
+            </label>
+          </div>
+
+          <div class="flex gap-3">
+            <button @click="confirmReject" class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2">
+              ยืนยัน
+            </button>
+            <button @click="cancelReject" class="flex-1 px-4 py-2 bg-rose-500 border border-gray-300 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2">
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ตารางรายการคำขอ -->
       <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         <!-- ✅ Header ตารางใช้พื้นหลัง gradient อ่อน -->
@@ -83,6 +110,11 @@ const requests = ref([
   { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' }
 ])
 
+// ✅ 1. state สำหรับ Pop-up
+const showRejectModal = ref(false)
+const selectedReason = ref('')
+const currentRejectItem = ref(null) // เก็บ item ที่กำลังจะ reject
+
 // ✅ ใช้ splice เพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
 const approve = (item) => {
   const index = requests.value.findIndex(r => r.no === item.no)
@@ -91,12 +123,37 @@ const approve = (item) => {
   }
 }
 
+// ✅ 2. แก้ฟังก์ชัน reject → เปิด Pop-up
 const reject = (item) => {
-  const index = requests.value.findIndex(r => r.no === item.no)
-  if (index !== -1) {
-    requests.value.splice(index, 1, { ...item, status: 'Rejected' })
-  }
+  currentRejectItem.value = item
+  showRejectModal.value = true
 }
+
+// ✅ 3. ฟังก์ชันยืนยันการ Reject
+const confirmReject = async () => {
+  if (!selectedReason.value) return alert('กรุณาเลือกเหตุผล')
+
+  const index = requests.value.findIndex(r => r.no === currentRejectItem.value.no)
+  if (index !== -1) {
+    // ✅ อัปเดต status และเพิ่ม field rejectionReason
+    requests.value.splice(index, 1, { 
+      ...currentRejectItem.value, 
+      status: 'Rejected',
+      rejectionReason: selectedReason.value // ⭐️ เพิ่มเหตุผล
+    })
+  }
+
+  // ✅ ปิด Pop-up
+  showRejectModal.value = false
+  selectedReason.value = ''
+}
+
+// ✅ 4. ฟังก์ชันยกเลิก
+const cancelReject = () => {
+  showRejectModal.value = false
+  selectedReason.value = ''
+}
+
 </script>
 
 <style scoped>
