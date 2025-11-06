@@ -27,8 +27,7 @@ router.get('/appointmentRequests', authMiddleware, (req, res) => {
     SELECT 
       a.appointment_id,
       a.user_id AS studentId,
-      u.name,
-      u.surname,
+      CONCAT(u.name, ' ', u.surname) AS full_name,
       a.appointment_date,
       c.type AS topic,
       a.student_note,

@@ -49,6 +49,7 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         SELECT 
           'appointment' AS type,
           a.appointment_id AS id,
+          CONCAT(s.name, ' ', s.surname) AS full_name,
           a.appointment_date AS event_date,
           c.type AS title,
           a.status,
@@ -56,6 +57,8 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
           a.user_id AS studentId
         FROM appointment AS a
         JOIN categories AS c ON a.category_id = c.category_id
+        JOIN user_category uc ON a.category_id = uc.category_id
+        JOIN user s ON uc.user_id = s.user_id
         WHERE a.user_id = ?
       `;
       appointmentParams = [userId];
@@ -64,11 +67,14 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         SELECT 
           'document' AS type,
           d.document_id AS id,
+          CONCAT(s.name, ' ', s.surname) AS full_name,
           d.submit_date AS event_date,
           d.status,
           d.student_note AS document_note,
           d.user_id AS studentId
         FROM document_tracking AS d
+        JOIN user_category uc ON d.category_id = uc.category_id
+        JOIN user s ON uc.user_id = s.user_id
         WHERE d.user_id = ?
       `;
       documentParams = [userId];
@@ -80,6 +86,7 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         SELECT 
           'appointment' AS type,
           a.appointment_id AS id,
+          CONCAT(u.name, ' ', u.surname) AS full_name,
           a.appointment_date AS event_date,
           c.type AS title,
           a.status,
@@ -88,6 +95,7 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         FROM appointment AS a
         JOIN categories AS c ON a.category_id = c.category_id
         JOIN user_category uc ON a.category_id = uc.category_id
+        JOIN user u ON a.user_id = u.user_id
         WHERE uc.user_id = ?
           AND a.status IN (1, 2)
       `;
@@ -97,12 +105,14 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         SELECT 
           'document' AS type,
           d.document_id AS id,
+          CONCAT(u.name, ' ', u.surname) AS full_name,
           d.submit_date AS event_date,
           d.status,
           d.student_note AS document_note,
           d.user_id AS studentId
         FROM document_tracking AS d
         JOIN user_category uc ON d.category_id = uc.category_id
+        JOIN user u ON d.user_id = u.user_id
         WHERE uc.user_id = ?
           AND d.status IN (1, 2)
       `;
@@ -120,14 +130,16 @@ const hasValidStaffId = Number.isInteger(staffIdNum) && staffIdNum > 0;
           'appointment' AS type,
           a.appointment_id AS id,
           a.user_id AS studentId,
+          CONCAT(u.name, ' ', u.surname) AS full_name,
           s.name AS staffName,
           c.type AS title,
           a.status,
           a.appointment_date AS event_date
         FROM appointment AS a
         JOIN user_category uc ON a.category_id = uc.category_id
-        JOIN user AS s ON uc.user_id = s.user_id
-        JOIN categories AS c ON a.category_id = c.category_id
+        JOIN user AS s ON uc.user_id = s.user_id         -- s = secretary
+        JOIN user AS u ON a.user_id = u.user_id          -- u = student
+        JOIN categories AS c ON a.category_id = c.category_id   
         ${hasValidStaffId ? 'WHERE s.user_id = ?' : 'WHERE 1=0'}
       `;
       appointmentParams = hasValidStaffId ? [staffIdNum] : [];
@@ -137,13 +149,14 @@ const hasValidStaffId = Number.isInteger(staffIdNum) && staffIdNum > 0;
           'document' AS type,
           d.document_id AS id,
           d.user_id AS studentId,
-          s.name AS staffName,
+          CONCAT(u.name, ' ', u.surname) AS full_name,
           d.student_note AS document_note,
           d.status,
           d.submit_date AS event_date
         FROM document_tracking AS d
         JOIN user_category uc ON d.category_id = uc.category_id
-        JOIN user AS s ON uc.user_id = s.user_id
+        JOIN user AS s ON uc.user_id = s.user_id         -- s = secretary
+        JOIN user AS u ON d.user_id = u.user_id          -- u = student
         ${hasValidStaffId ? 'WHERE s.user_id = ?' : 'WHERE 1=0'}
       `;
       documentParams = hasValidStaffId ? [staffIdNum] : [];

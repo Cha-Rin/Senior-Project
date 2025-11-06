@@ -140,7 +140,7 @@ onMounted(async () => {
     requests.value = (data.requests || []).map(item => ({
       no: item.appointment_id,
       studentId: item.studentId,
-      name: `${item.name || ''} ${item.surname || ''}`.trim() || '—',
+      name: item.full_name || '—',
       date: formatDateTime(item.appointment_date).date,
       time: formatDateTime(item.appointment_date).time,
       topic: item.topic,
