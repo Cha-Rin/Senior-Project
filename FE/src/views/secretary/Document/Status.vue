@@ -6,6 +6,45 @@
         Document Status
       </h1>
 
+      <!-- ✅ Pop-up สำหรับอัปโหลดไฟล์ก่อน Mark Complete -->
+      <div v-if="showCompleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-bold text-gray-800 mb-4">อัปโหลดเอกสารยืนยัน</h3>
+          <p class="text-sm text-gray-600 mb-4">กรุณาอัปโหลดไฟล์ภาพหรือ PDF เพื่อยืนยันว่าเอกสารเสร็จสมบูรณ์</p>
+
+          <!-- ช่องอัปโหลดไฟล์ -->
+          <div class="mb-4">
+            <input
+              type="file"
+              ref="fileInput"
+              @change="onFileChange"
+              accept=".jpg,.jpeg,.png,.pdf"
+              class="w-full px-4 py-2 border border-gray-300 rounded-lg cursor-pointer"
+            />
+            <div v-if="selectedFile" class="mt-2 text-sm text-green-600">
+              ✅ ไฟล์ที่เลือก: {{ selectedFile.name }}
+            </div>
+          </div>
+
+          <div class="flex gap-3">
+            <button
+              @click="confirmComplete"
+              :disabled="!selectedFile"
+              class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+              :class="{ 'opacity-50 cursor-not-allowed': !selectedFile }"
+            >
+              ยืนยัน
+            </button>
+            <button
+              @click="cancelComplete"
+              class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+            >
+              ยกเลิก
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- ตารางสถานะเอกสาร -->
       <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         <table class="w-full">
@@ -16,7 +55,6 @@
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Status</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Add File</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -30,52 +68,50 @@
                 <div class="flex flex-wrap gap-2 mb-2">
                   <span
                     v-if="item.status.includes('in-progress')"
-                    class="px-2.5 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full"
+                    class="px-3 py-1 text-xs font-medium bg-amber-100 text-amber-800 rounded-full"
                   >
                     In progress
                   </span>
                   <span
                     v-if="item.status.includes('complete')"
-                    class="px-2.5 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full"
+                    class="px-3 py-1 text-xs font-medium bg-emerald-100 text-emerald-800 rounded-full"
                   >
                     Complete
                   </span>
                   <span v-if="item.status.length === 0" class="text-gray-400 text-sm">—</span>
                 </div>
 
-                <!-- ปุ่มควบคุม -->
+                <!-- ปุ่มควบคุมแบบใหม่ -->
                 <div class="flex gap-2">
+                  <!-- ✅ ปุ่ม "In progress" สีส้ม → แสดงเฉพาะเมื่อไม่ใช่ Complete -->
                   <button
+                    v-if="!item.status.includes('complete')"
                     @click="toggleStatus(item, 'in-progress')"
-                    class="text-xs text-amber-700 hover:text-amber-900 font-medium underline"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-amber-500 text-white hover:bg-amber-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
-                    {{ item.status.includes('in-progress') ? 'Remove In progress' : 'Mark In progress' }}
+                   
+                    <span class="ml-1.5">In progress</span>
                   </button>
-                  <span class="text-gray-300">|</span>
+
+                  <!-- ✅ ปุ่ม "Complete" สีเขียว → แสดงเฉพาะเมื่อไม่ใช่ Complete -->
                   <button
-                    @click="toggleStatus(item, 'complete')"
-                    class="text-xs text-emerald-700 hover:text-emerald-900 font-medium underline"
+                    v-if="!item.status.includes('complete')"
+                    @click="openCompleteModal(item)"
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
-                    {{ item.status.includes('complete') ? 'Remove Complete' : 'Mark Complete' }}
+                   
+                    <span class="ml-1.5">Complete</span>
+                  </button>
+
+                  <!-- ✅ ปุ่ม "Complete" สีเขียว (แบบเดียว) → แสดงเมื่อเป็น Complete แล้ว -->
+                  <button
+                    v-else
+                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white shadow-md"
+                  >
+          
+                    <span class="ml-1.5">Complete</span>
                   </button>
                 </div>
-              </td>
-              <td class="px-6 py-4">
-                <button
-                  class="w-10 h-10 flex items-center justify-center bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors shadow-sm"
-                  title="Add File"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    class="w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    stroke-width="2"
-                  >
-                    <path d="M7 16V4m0 0L3 8m4-4l4 4m6 6l4 4M3 12l4-4" />
-                  </svg>
-                </button>
               </td>
             </tr>
           </tbody>
@@ -95,18 +131,63 @@ const documents = ref([
   { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: ['in-progress'] }
 ])
 
-// ✅ Toggle สถานะ: เพิ่มถ้ายังไม่มี, ลบถ้ามีอยู่แล้ว — พร้อมบังคับ Vue ให้ตรวจจับการเปลี่ยนแปลง
+// ✅ state สำหรับ Pop-up
+const showCompleteModal = ref(false)
+const selectedFile = ref(null)
+const currentCompleteItem = ref(null)
+const fileInput = ref(null)
+
+// ✅ เปิด Pop-up เมื่อกดปุ่ม "Complete"
+const openCompleteModal = (item) => {
+  // ถ้าสถานะเป็น "Complete" แล้ว → ไม่ทำอะไร
+  if (item.status.includes('complete')) return
+
+  currentCompleteItem.value = item
+  showCompleteModal.value = true
+}
+
+// ✅ จัดการไฟล์ที่อัปโหลด
+const onFileChange = (event) => {
+  const file = event.target.files[0]
+  if (file) {
+    selectedFile.value = file
+  } else {
+    selectedFile.value = null
+  }
+}
+
+// ✅ ยืนยันการ Mark Complete
+const confirmComplete = () => {
+  if (!selectedFile.value) {
+    alert('กรุณาเลือกไฟล์ก่อนยืนยัน')
+    return
+  }
+
+  // อัปเดตสถานะเป็น complete
+  toggleStatus(currentCompleteItem.value, 'complete')
+
+  // ปิด Pop-up และรีเซ็ต
+  showCompleteModal.value = false
+  selectedFile.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+// ✅ ยกเลิก
+const cancelComplete = () => {
+  showCompleteModal.value = false
+  selectedFile.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+// ✅ Toggle สถานะ
 const toggleStatus = (item, status) => {
   const index = item.status.indexOf(status)
   if (index === -1) {
-    // เพิ่มสถานะ
     item.status.push(status)
   } else {
-    // ลบสถานะ
     item.status.splice(index, 1)
   }
 
-  // ✅ บังคับให้ Vue รู้ว่า object นี้เปลี่ยนแล้ว
   const indexInArray = documents.value.findIndex(d => d.no === item.no)
   if (indexInArray !== -1) {
     documents.value.splice(indexInArray, 1, { ...item })
