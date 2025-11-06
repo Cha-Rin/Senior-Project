@@ -83,34 +83,18 @@
 
                 <!-- ปุ่มควบคุมแบบใหม่ -->
                 <div class="flex gap-2">
-                  <!-- ✅ ปุ่ม "In progress" สีส้ม → แสดงเฉพาะเมื่อไม่ใช่ Complete -->
-                  <button
-                    v-if="!item.status.includes('complete')"
-                    @click="toggleStatus(item, 'in-progress')"
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-amber-500 text-white hover:bg-amber-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-                  >
-                   
-                    <span class="ml-1.5">In progress</span>
-                  </button>
-
                   <!-- ✅ ปุ่ม "Complete" สีเขียว → แสดงเฉพาะเมื่อไม่ใช่ Complete -->
                   <button
                     v-if="!item.status.includes('complete')"
                     @click="openCompleteModal(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
-                   
+                
                     <span class="ml-1.5">Complete</span>
                   </button>
 
-                  <!-- ✅ ปุ่ม "Complete" สีเขียว (แบบเดียว) → แสดงเมื่อเป็น Complete แล้ว -->
-                  <button
-                    v-else
-                    class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white shadow-md"
-                  >
-          
-                    <span class="ml-1.5">Complete</span>
-                  </button>
+                  <!-- ✅ ไม่แสดงปุ่มไหนเลยเมื่อเป็น Complete -->
+                  <!-- ถ้าเป็น Complete → เหลือแค่ badge "Complete" อย่างเดียว -->
                 </div>
               </td>
             </tr>
@@ -179,13 +163,21 @@ const cancelComplete = () => {
   if (fileInput.value) fileInput.value.value = ''
 }
 
-// ✅ Toggle สถานะ
+// ✅ Toggle สถานะ (แก้ไขแล้ว!)
 const toggleStatus = (item, status) => {
-  const index = item.status.indexOf(status)
-  if (index === -1) {
-    item.status.push(status)
+  // ถ้า status คือ 'complete'
+  if (status === 'complete') {
+    // ลบ 'in-progress' ออกก่อน → แล้วเพิ่ม 'complete'
+    item.status = item.status.filter(s => s !== 'in-progress')
+    item.status.push('complete')
   } else {
-    item.status.splice(index, 1)
+    // ถ้า status คือ 'in-progress'
+    const index = item.status.indexOf(status)
+    if (index === -1) {
+      item.status.push(status)
+    } else {
+      item.status.splice(index, 1)
+    }
   }
 
   const indexInArray = documents.value.findIndex(d => d.no === item.no)
