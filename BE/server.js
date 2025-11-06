@@ -54,6 +54,9 @@ app.use('/history', historyRouter)
 
 const academicRoutes = require('./routes/academic.js')(db) 
 app.use('/academic', academicRoutes)
+
+const notiRoutes = require('./routes/Notification.js')(db) 
+app.use('/noti', notiRoutes)
 // ------------------------------------------ Log in -----------------------------------------
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;

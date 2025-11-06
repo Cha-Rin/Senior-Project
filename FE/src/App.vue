@@ -2,6 +2,8 @@
 import jwt_decode from "jwt-decode"
 import { useRouter } from 'vue-router'
 import { RouterView } from 'vue-router'
+import { useNotificationStore } from '@/stores/notificationStore'
+import { onMounted } from 'vue'
 const router = useRouter()
 setInterval(() => {
   const token = localStorage.getItem("authToken")
@@ -21,6 +23,13 @@ setInterval(() => {
     router.push({ name: "Login" })
   }
 }, 60 * 1000) // ตรวจทุก 1 นาที
+const notificationStore = useNotificationStore()
+onMounted(() => {
+  notificationStore.fetchPendingAppointments()
+  setInterval(() => {
+    notificationStore.fetchPendingAppointments()
+  }, 60000)
+})
 </script>
 
 <template>
