@@ -8,10 +8,15 @@
     <div class="flex justify-end mb-4">
       <select v-model="statusFilter" class="px-4 py-2 bg-white border rounded-lg shadow-sm min-w-[150px]">
         <option value="all">All Status</option>
-        <option value="0">Pending</option>
-        <option value="1">Approve</option>
-        <option value="2">Reject</option>
-        <option value="3">Completed</option>
+        
+        <option 
+          v-for="option in statusOptions" 
+          :key="option.value" 
+          :value="option.value"
+        >
+          {{ option.text }}
+        </option>
+
       </select>
     </div>
     <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
@@ -102,17 +107,12 @@
             <div class="text-gray-800 font-medium">{{ item.title }}</div>
           </div>
           <div>{{ item.student_note }}</div>
-          <div class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5" :class="{
-            'bg-rose-100 text-rose-800': item.status === 2,
-            'bg-emerald-100 text-emerald-800': item.status === 1,
-            'bg-orange-100 text-orange-800': item.status === 0,
-            'bg-blue-100 text-blue-800': item.status.code === 3
-          }">
-            <span v-if="item.status === 1">✅</span>
-            <span v-else-if="item.status === 2">❌</span>
-            <span v-else-if="item.status === 0">⏳</span>
-            <span v-else-if="item.status.code === 3">✔️</span>
-            {{ item.status === 1 ? 'Approve' : item.status === 2 ? 'Reject' : 'Pending' }}
+          <div 
+            class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
+            :class="getBadgeClass(item)"
+          >
+            <span>{{ getBadgeIcon(item) }}</span>
+            {{ getBadgeText(item) }}
           </div>
         </div>
 
@@ -158,7 +158,92 @@ const filteredItemsByType = computed(() => {
 
   return items
 })
-
+const statusOptions = computed(() => {
+  if (props.type === 'document') {
+    // --- สถานะของระบบเอกสาร ---
+    return [
+      { value: '0', text: 'Pending' },
+      { value: '1', text: 'In Progress' },
+      { value: '2', text: 'Complete' },
+      { value: '3', text: 'Reject' }
+    ];
+  } else {
+    // --- สถานะของระบบนัดหมาย (ดั้งเดิม) ---
+    // (ใช้สำหรับ props.type === 'appointment' และ 'all')
+    return [
+      { value: '0', text: 'Pending' },
+      { value: '1', text: 'Approve' },
+      { value: '2', text: 'Reject' },
+      { value: '3', text: 'Completed' }
+    ];
+  }
+});
+function getBadgeClass(item) {
+  const status = item.status;
+  if (item.type === 'document') {
+    // --- Logic สีของระบบเอกสาร ---
+    switch (status) {
+      case 0: return 'bg-orange-100 text-orange-800'; // Pending
+      case 1: return 'bg-blue-100 text-blue-800';     // In Progress
+      case 2: return 'bg-emerald-100 text-emerald-800'; // Complete
+      case 3: return 'bg-rose-100 text-rose-800';       // Reject
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  } else {
+    // --- Logic สีของระบบนัดหมาย (แก้ไขโค้ดเดิมที่เช็ก .code) ---
+    switch (status) {
+      case 0: return 'bg-orange-100 text-orange-800'; // Pending
+      case 1: return 'bg-emerald-100 text-emerald-800'; // Approve
+      case 2: return 'bg-rose-100 text-rose-800';       // Reject
+      case 3: return 'bg-blue-100 text-blue-800';       // Completed
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
+}
+function getBadgeIcon(item) {
+  const status = item.status;
+  if (item.type === 'document') {
+    // --- Logic ไอคอนของระบบเอกสาร ---
+    switch (status) {
+      case 0: return '⏳'; // Pending
+      case 1: return '⚙️'; // In Progress
+      case 2: return '✅'; // Complete
+      case 3: return '❌'; // Reject
+      default: return '?';
+    }
+  } else {
+    // --- Logic ไอคอนของระบบนัดหมาย (แก้ไขโค้ดเดิมที่เช็ก .code) ---
+    switch (status) {
+      case 0: return '⏳'; // Pending
+      case 1: return '✅'; // Approve
+      case 2: return '❌'; // Reject
+      case 3: return '✔️'; // Completed
+      default: return '?';
+    }
+  }
+}
+function getBadgeText(item) {
+  const status = item.status;
+  if (item.type === 'document') {
+    // --- Logic ข้อความของระบบเอกสาร ---
+    switch (status) {
+      case 0: return 'Pending';
+      case 1: return 'In Progress';
+      case 2: return 'Complete';
+      case 3: return 'Reject';
+      default: return 'Unknown';
+    }
+  } else {
+    // --- Logic ข้อความของระบบนัดหมาย (แก้ไขโค้ดเดิมที่แสดงไม่ครบ) ---
+    switch (status) {
+      case 0: return 'Pending';
+      case 1: return 'Approve';
+      case 2: return 'Reject';
+      case 3: return 'Completed';
+      default: return 'Unknown';
+    }
+  }
+}
 
 const {
   history,

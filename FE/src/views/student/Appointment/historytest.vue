@@ -1,5 +1,5 @@
 <template>
-    <Historyshere />
+    <Historyshere type="appointment"/>
   <!-- <div class="page-content px-4 sm:px-8 pb-10 py-8">
     <h1
       class="text-2xl sm:text-4xl font-bold mb-4 sm:mb-6 bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent pt-6 sm:pt-8 flex flex-col sm:flex-row items-start sm:items-center gap-2"

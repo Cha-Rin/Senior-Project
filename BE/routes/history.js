@@ -114,7 +114,7 @@ router.get('/historyall', authMiddleware, async (req, res) => { // 1. ต้อ�
         JOIN user_category uc ON d.category_id = uc.category_id
         JOIN user u ON d.user_id = u.user_id
         WHERE uc.user_id = ?
-          AND d.status IN (1, 2)
+          AND d.status IN (1, 2, 3)
       `;
       documentParams = [userId];
     }
