@@ -42,16 +42,18 @@
             <tr>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">No</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">ID</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">NAME</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
-              <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
+              <th class="px-6 py-4 text-medium text-sm font-bold text-indigo-800">Status</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
             <tr v-for="item in requests" :key="item.no" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ item.no }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.studentId }}</td>
-              <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
+              <td class="px-6 py-6 text-sm text-gray-700">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
               <td class="px-6 py-4 text-right">
                 <!-- ถ้ายัง Pending -->
@@ -101,60 +103,122 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
-const requests = ref([
-  { no: 'A001', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' },
-  { no: 'A002', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' },
-  { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: 'Pending' }
-])
+const requests = ref([])
 
-// ✅ 1. state สำหรับ Pop-up
 const showRejectModal = ref(false)
 const selectedReason = ref('')
-const currentRejectItem = ref(null) // เก็บ item ที่กำลังจะ reject
+const currentRejectItem = ref(null)
 
-// ✅ ใช้ splice เพื่อให้ Vue ตรวจจับการเปลี่ยนแปลง
-const approve = (item) => {
-  const index = requests.value.findIndex(r => r.no === item.no)
-  if (index !== -1) {
-    requests.value.splice(index, 1, { ...item, status: 'Approved' })
+const formatDate = (iso) => {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`
+}
+
+// ✅ โหลดข้อมูลเอกสารที่ Pending
+onMounted(async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) return
+
+  try {
+    const res = await fetch('http://localhost:3000/secretary/documentRequests', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const data = await res.json()
+
+    requests.value = (data.requests || []).map((item, index) => ({
+      no: item.document_id,
+      studentId: item.studentId,
+      name: item.full_name,
+      date: formatDate(item.submit_date),
+      topic: item.topic,
+      status:
+        item.status === 1
+          ? 'Approved'
+          : item.status === 2
+          ? 'Rejected'
+          : 'Pending'
+    }))
+  } catch (err) {
+    console.error('❌ Fetch error (documentRequests):', err)
+  }
+})
+
+// ✅ Approve
+const approve = async (item) => {
+  const token = localStorage.getItem('authToken')
+  try {
+    await fetch('http://localhost:3000/secretary/updateDocumentStatus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ document_id: item.no, status: 1 })
+    })
+
+    const index = requests.value.findIndex(r => r.no === item.no)
+    if (index !== -1)
+      requests.value.splice(index, 1, { ...item, status: 'Approved' })
+  } catch (err) {
+    console.error('❌ Approve failed:', err)
   }
 }
 
-// ✅ 2. แก้ฟังก์ชัน reject → เปิด Pop-up
+// ✅ เปิด modal เมื่อ Reject
 const reject = (item) => {
   currentRejectItem.value = item
   showRejectModal.value = true
 }
 
-// ✅ 3. ฟังก์ชันยืนยันการ Reject
+// ✅ Confirm Reject (ส่งเหตุผล)
 const confirmReject = async () => {
   if (!selectedReason.value) return alert('กรุณาเลือกเหตุผล')
 
-  const index = requests.value.findIndex(r => r.no === currentRejectItem.value.no)
-  if (index !== -1) {
-    // ✅ อัปเดต status และเพิ่ม field rejectionReason
-    requests.value.splice(index, 1, { 
-      ...currentRejectItem.value, 
-      status: 'Rejected',
-      rejectionReason: selectedReason.value // ⭐️ เพิ่มเหตุผล
+  const token = localStorage.getItem('authToken')
+  try {
+    await fetch('http://localhost:3000/secretary/updateDocumentStatus', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        document_id: currentRejectItem.value.no,
+        status: 2,
+        reason: selectedReason.value
+      })
     })
-  }
 
-  // ✅ ปิด Pop-up
-  showRejectModal.value = false
-  selectedReason.value = ''
+    const index = requests.value.findIndex(
+      r => r.no === currentRejectItem.value.no
+    )
+    if (index !== -1)
+      requests.value.splice(index, 1, {
+        ...currentRejectItem.value,
+        status: 'Rejected',
+        rejectionReason: selectedReason.value
+      })
+
+    showRejectModal.value = false
+    selectedReason.value = ''
+  } catch (err) {
+    console.error('❌ Reject failed:', err)
+  }
 }
 
-// ✅ 4. ฟังก์ชันยกเลิก
+// ✅ Cancel modal
 const cancelReject = () => {
   showRejectModal.value = false
   selectedReason.value = ''
 }
-
 </script>
+
+
+
 
 <style scoped>
 .page-content {

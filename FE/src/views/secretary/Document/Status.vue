@@ -52,6 +52,7 @@
             <tr>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">No</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">ID</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">NAME</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Status</th>
@@ -61,6 +62,7 @@
             <tr v-for="item in documents" :key="item.no" class="hover:bg-gray-50 transition-colors">
               <td class="px-6 py-4 text-sm font-bold text-indigo-700">{{ item.no }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.studentId }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-600">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
               <td class="px-6 py-4">
@@ -106,86 +108,119 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
-const documents = ref([
-  { no: 'A001', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: ['in-progress'] },
-  { no: 'A002', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: ['in-progress'] },
-  { no: 'A003', studentId: '65xxxxxxxx', date: '21 Apr 2025', topic: 'Course registration', status: ['in-progress'] }
-])
-
-// ✅ state สำหรับ Pop-up
+const documents = ref([])
 const showCompleteModal = ref(false)
 const selectedFile = ref(null)
 const currentCompleteItem = ref(null)
 const fileInput = ref(null)
 
-// ✅ เปิด Pop-up เมื่อกดปุ่ม "Complete"
-const openCompleteModal = (item) => {
-  // ถ้าสถานะเป็น "Complete" แล้ว → ไม่ทำอะไร
-  if (item.status.includes('complete')) return
+// ✅ แปลงวันที่
+const formatDate = iso => {
+  if (!iso) return '-'
+  const d = new Date(iso)
+  return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`
+}
 
+// ✅ ฟังก์ชันโหลดข้อมูลเอกสารทั้งหมด (แสดงเฉพาะที่ status = 1)
+const loadDocuments = async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) return
+
+  try {
+    const res = await fetch('http://localhost:3000/secretary/documentStatus', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+
+    documents.value = (data.documents || []).map(d => ({
+      no: d.document_id,
+      studentId: d.studentId,
+      name: d.full_name,
+      date: formatDate(d.submit_date),
+      topic: d.topic,
+      status:
+        d.status === 0 ? ['pending']
+        : d.status === 1 ? ['in-progress']
+        : d.status === 2 ? ['complete']
+        : []
+    }))
+  } catch (err) {
+    console.error('❌ Fetch document status:', err)
+  }
+}
+
+
+// ✅ โหลดข้อมูลเอกสารจาก API
+onMounted(loadDocuments)
+
+
+// ✅ เปิด modal
+const openCompleteModal = item => {
+  if (item.status.includes('complete')) return
   currentCompleteItem.value = item
   showCompleteModal.value = true
 }
 
-// ✅ จัดการไฟล์ที่อัปโหลด
-const onFileChange = (event) => {
-  const file = event.target.files[0]
-  if (file) {
-    selectedFile.value = file
-  } else {
-    selectedFile.value = null
-  }
+// ✅ เมื่อเลือกไฟล์
+const onFileChange = e => {
+  selectedFile.value = e.target.files[0] || null
 }
 
-// ✅ ยืนยันการ Mark Complete
-const confirmComplete = () => {
-  if (!selectedFile.value) {
-    alert('กรุณาเลือกไฟล์ก่อนยืนยัน')
-    return
+// ✅ ยืนยัน Complete (upload + update)
+const confirmComplete = async () => {
+  if (!selectedFile.value) return alert('กรุณาเลือกไฟล์ก่อนยืนยัน')
+
+  const token = localStorage.getItem('authToken')
+  const formData = new FormData()
+  formData.append('file', selectedFile.value)
+  formData.append('document_id', currentCompleteItem.value.no)
+
+  try {
+    const res = await fetch('http://localhost:3000/secretary/markDocumentComplete', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    })
+    const result = await res.json()
+    if (!result.success) throw new Error(result.message || 'Failed')
+
+    // ✅ รีโหลดข้อมูลใหม่หลังจากอัปเดตเสร็จ
+    await loadDocuments()
+
+  } catch (err) {
+    console.error('❌ Upload failed:', err)
   }
 
-  // อัปเดตสถานะเป็น complete
-  toggleStatus(currentCompleteItem.value, 'complete')
-
-  // ปิด Pop-up และรีเซ็ต
+  // ✅ ปิด modal และรีเซ็ตค่า
   showCompleteModal.value = false
   selectedFile.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
 
-// ✅ ยกเลิก
+
+
+// ✅ ยกเลิก modal
 const cancelComplete = () => {
   showCompleteModal.value = false
   selectedFile.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
 
-// ✅ Toggle สถานะ (แก้ไขแล้ว!)
+// ✅ Toggle สถานะ (ฝั่งหน้า)
 const toggleStatus = (item, status) => {
-  // ถ้า status คือ 'complete'
   if (status === 'complete') {
-    // ลบ 'in-progress' ออกก่อน → แล้วเพิ่ม 'complete'
-    item.status = item.status.filter(s => s !== 'in-progress')
-    item.status.push('complete')
+    item.status = ['complete']
   } else {
-    // ถ้า status คือ 'in-progress'
-    const index = item.status.indexOf(status)
-    if (index === -1) {
-      item.status.push(status)
-    } else {
-      item.status.splice(index, 1)
-    }
+    item.status = ['in-progress']
   }
-
-  const indexInArray = documents.value.findIndex(d => d.no === item.no)
-  if (indexInArray !== -1) {
-    documents.value.splice(indexInArray, 1, { ...item })
-  }
+  const idx = documents.value.findIndex(d => d.no === item.no)
+  if (idx !== -1) documents.value.splice(idx, 1, { ...item })
 }
 </script>
+
 
 <style scoped>
 .page-content {

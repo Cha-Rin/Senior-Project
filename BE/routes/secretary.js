@@ -222,6 +222,148 @@ friendliness: (totalFriendliness / count).toFixed(2),
 });
 
 // ------------------------------------------ Document -----------------------------------------------------
+
+// ==========================================================
+// 📄 GET /secretary/documentRequests  → ดึงคำขอเอกสารที่รออนุมัติ
+// ==========================================================
+router.get('/documentRequests', authMiddleware, (req, res) => {
+  const userId = req.user.id || req.user.user_id;
+  if (!userId) {
+    return res.status(400).json({ error: 'User ID not found in token' });
+  }
+
+  const sql = `
+    SELECT 
+      d.document_id,
+      d.user_id AS studentId,
+      CONCAT(u.name, ' ', u.surname) AS full_name,
+      d.submit_date,
+      c.type AS topic,
+      d.status
+    FROM document_tracking d
+    JOIN user_category uc ON d.category_id = uc.category_id
+    JOIN categories c ON d.category_id = c.category_id
+    JOIN user u ON d.user_id = u.user_id
+    WHERE uc.user_id = ? 
+      AND d.status = 0
+    ORDER BY d.submit_date DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) {
+      console.error('❌ SQL error (documentRequests):', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+    console.log('✅ Pending documents for secretary:', userId, '| Count:', results.length);
+    res.json({ requests: results });
+  });
+});
+
+
+// ==========================================================
+// 📄 POST /secretary/updateDocumentStatus  → อัปเดตสถานะเอกสาร
+// ==========================================================
+router.post('/updateDocumentStatus', authMiddleware, (req, res) => {
+  const { document_id, status, reason } = req.body;
+
+  if (![0, 1, 2].includes(Number(status))) {
+    return res.status(400).json({ error: 'Invalid status' });
+  }
+
+  const sql = `
+    UPDATE document_tracking 
+    SET status = ?, staff_note = ?
+    WHERE document_id = ?
+  `;
+
+  db.query(sql, [status, reason || null, document_id], (err, result) => {
+    if (err) {
+      console.error('❌ SQL error (updateDocumentStatus):', err);
+      return res.status(500).json({ error: 'Failed to update document status' });
+    }
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    res.json({ success: true });
+  });
+});
+
+
+// ==========================================================
+// 📄 GET /secretary/documentStatus  → ดึงเอกสารทั้งหมดของหมวดที่รับผิดชอบ
+// ==========================================================
+router.get('/documentStatus', authMiddleware, (req, res) => {
+  const userId = req.user.id || req.user.user_id;
+  if (!userId) return res.status(400).json({ error: 'User ID not found in token' });
+
+  const sql = `
+    SELECT 
+      d.document_id,
+      d.user_id AS studentId,
+      CONCAT(u.name, ' ', u.surname) AS full_name,
+      d.submit_date,
+      c.type AS topic,
+      d.status
+    FROM document_tracking d
+    JOIN user_category uc ON d.category_id = uc.category_id
+    JOIN categories c ON d.category_id = c.category_id
+    JOIN user u ON d.user_id = u.user_id
+    WHERE uc.user_id = ?
+    AND d.status = 1
+    ORDER BY d.submit_date DESC
+  `;
+
+  db.query(sql, [userId], (err, results) => {
+    if (err) return res.status(500).json({ error: 'Database error' });
+    res.json({ documents: results });
+  });
+});
+
+
+// ==========================================================
+// 📄 POST /secretary/markDocumentComplete  → อัปเดตสถานะ + อัปโหลดไฟล์
+// ==========================================================
+const multer = require('multer');
+const path = require('path');
+
+// ที่จัดเก็บไฟล์ (uploads/documents/)
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/documents'),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + '-' + file.originalname)
+});
+const upload = multer({ storage });
+
+
+
+// ==========================================================
+// 📄 POST /secretary/markDocumentComplete → อัปโหลดไฟล์ + เปลี่ยนสถานะเป็น 2 (Complete)
+// ==========================================================
+router.post('/markDocumentComplete', authMiddleware, upload.single('file'), (req, res) => {
+  const { document_id } = req.body;
+  const filePath = req.file ? `/uploads/documents/${req.file.filename}` : null;
+
+  if (!document_id || !filePath)
+    return res.status(400).json({ error: 'Missing document_id or file' });
+
+  const sql = `
+    UPDATE document_tracking
+    SET status = 2, image_path = ?, finish_date = NOW()
+    WHERE document_id = ?
+  `;
+
+  db.query(sql, [filePath, document_id], (err, result) => {
+    if (err) {
+      console.error('❌ SQL error (markDocumentComplete):', err);
+      return res.status(500).json({ error: 'Database error' });
+    }
+
+    console.log(`✅ Document ${document_id} marked as Complete`);
+    res.json({ success: true, message: 'Document marked complete', filePath });
+  });
+});
+
+
 // ------------------------------------------ Get history Document -----------------------------------------
 router.get('/rating-Document', (req, res) => {
   const { year, semester, staffId } = req.query;

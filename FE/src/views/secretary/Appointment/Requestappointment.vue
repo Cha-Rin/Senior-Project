@@ -21,7 +21,7 @@
         <!-- Rows -->
         <div class="mt-4 space-y-4">
           <div
-            v-for="(item, i) in requests"
+            v-for="(item, ) in requests"
             :key="item.no"
             class="grid grid-cols-7 gap-4 items-center bg-white rounded-2xl px-6 py-5 shadow-md hover:shadow-lg transition-shadow border border-gray-100"
           >
