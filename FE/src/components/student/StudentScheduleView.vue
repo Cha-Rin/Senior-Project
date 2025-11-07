@@ -213,7 +213,7 @@ const loadOffTime = async () => {
 
   try {
     const res = await axios.get(
-      'http://localhost:3000/secretary/public/list',
+      '/secretary/public/list',
       {
         params: {
           weekStart: selectedWeek.value.start,

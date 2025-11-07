@@ -11,11 +11,15 @@ export const useNotificationStore = defineStore('notifications', {
     hasPending: (state) => state.pendingAppointments.length > 0,
   },
   actions: {
-    async fetchPendingAppointments() {
+    async fetchPendingAppointments(userId) {
+      if (!userId) {
+      this.pendingAppointments = [];
+      return; 
+    }
       if (this.isLoading) return
       this.isLoading = true
       try {
-        const response = await fetch('http://localhost:3000/noti/pending-now')
+        const response = await fetch('/noti/pending-now?user_id=${userId}')
         const data = await response.json()
         this.pendingAppointments = data
         
@@ -28,7 +32,7 @@ export const useNotificationStore = defineStore('notifications', {
 
     async approveAppointment(appointmentId) {
       try {
-        await fetch(`http://localhost:3000/noti/${appointmentId}/approve`, { method: 'POST' })
+        await fetch(`/noti/${appointmentId}/approve`, { method: 'POST' })
 
         this.removeAppointmentFromList(appointmentId)
         
@@ -38,7 +42,7 @@ export const useNotificationStore = defineStore('notifications', {
     },
     async rejectAppointment(appointmentId) {
       try {
-        await fetch(`http://localhost:3000/noti/${appointmentId}/reject`, { method: 'POST' })
+        await fetch(`/noti/${appointmentId}/reject`, { method: 'POST' })
 
         this.removeAppointmentFromList(appointmentId)
         

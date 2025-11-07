@@ -295,7 +295,7 @@ onMounted(async () => {
 
 async function loadAppointmentsByUser (userId) {
   try {
-    const res = await fetch(`http://localhost:3000/student/users/${userId}/appointments/for-feedback?approved_set=1`)
+    const res = await fetch(`/student/users/${userId}/appointments/for-feedback?approved_set=1`)
     const data = await res.json()
     appointments.value = data?.items || []
     selectedAppointment.value = null
@@ -310,7 +310,7 @@ async function loadAppointmentsByUser (userId) {
 async function loadTopicsByUser (userId) {
   try {
     // ✅ ถ้าอยากให้หัวข้อจำกัดเฉพาะนัดที่พร้อมให้คะแนน: ใช้ scope=pending&approved_set=1
-    const res = await fetch(`http://localhost:3000/student/users/${userId}/appointment-topics?scope=all`)
+    const res = await fetch(`/student/users/${userId}/appointment-topics?scope=all`)
     const data = await res.json()
     topicOptions.value = Array.isArray(data?.topics) ? data.topics : []
   } catch (e) {
@@ -321,7 +321,7 @@ async function loadTopicsByUser (userId) {
 
 async function loadAllAppointments () {
   try {
-    const res = await fetch('http://localhost:3000/student//appointments_ALL')
+    const res = await fetch('/student//appointments_ALL')
     const data = await res.json()
     appointments.value = Array.isArray(data) ? data : (data.items || [])
   } catch (e) {
@@ -356,7 +356,7 @@ async function submitFeedback () {
       ratings: ratings.value,
       comment: note.value?.trim() || ''
     }
-    const res = await fetch('http://localhost:3000/student/feedback/appointments', {
+    const res = await fetch('/student/feedback/appointments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)

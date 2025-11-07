@@ -130,7 +130,7 @@ onMounted(async () => {
   if (!token) return
 
   try {
-    const res = await fetch('http://localhost:3000/secretary/appointmentRequests', {
+    const res = await fetch('/secretary/appointmentRequests', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
@@ -158,7 +158,7 @@ const setStatus = async (item, newStatus) => {
 
   try {
     const token = localStorage.getItem('authToken')
-    const res = await fetch('http://localhost:3000/secretary/updateAppointmentStatus', { // ✅ แก้เป็น localhost
+    const res = await fetch('/secretary/updateAppointmentStatus', { // ✅ แก้เป็น localhost
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

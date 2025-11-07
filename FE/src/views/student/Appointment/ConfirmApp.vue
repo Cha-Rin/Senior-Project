@@ -129,7 +129,7 @@ async function goToConfirm() {
   console.log('📦 Sending payload:', payload)
 
   try {
-    const res = await fetch('http://localhost:3000/student/appointments', {
+    const res = await fetch('/student/appointments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

@@ -14,85 +14,91 @@ module.exports = (db) => {
     }
     next()
   })
-//   นัดหมายปลอมสำรหับทดสอบ
-let mockAppointments = [
-  {
-    id: 1,
-    name: 'คุณสมชาย',
-    appointment_time: '2025-11-06T10:00:00+07:00', // 10 โมงเช้า (ผ่านมาแล้ว)
-    status: 0 // สถานะ: รอดำเนินการ
-  },
-  {
-    id: 2,
-    name: 'คุณสมหญิง',
-    appointment_time: '2025-11-06T23:00:00+07:00', // 5 ทุ่ม (ยังไม่ถึงเวลา)
-    status: 0
-  },
-  {
-    id: 3,
-    name: 'คุณวิชัย',
-    appointment_time: '2025-11-06T11:00:00+07:00', // 11 โมงเช้า (ผ่านมาแล้ว)
-    status: 0 // สถานะ: อนุมัติไปแล้ว
-  },
-  {
-    id: 4,
-    name: 'คุณพรทิพย์',
-    appointment_time: '2025-11-06T15:00:00+07:00', // บ่าย 3 (ผ่านมาแล้ว)
-    status: 0// สถานะ: รอดำเนินการ
-  }
-];
+
 // ----------------------------------------------------------------------------------------------------
 // API Endpoint สำหรับดึงนัดหมายที่ถึงเวลาแล้วและยังไม่อนุมัติ
 router.get('/pending-now', (req, res) => {
+  const secretaryId = req.query.user_id;
   const now = new Date(); // เวลาปัจจุบัน
+  if (!secretaryId) {
+    return res.status(400).json({ error: 'secretary_id is required' });
+  }
 
-  const pendingNow = mockAppointments.filter(app => {
-    const appointmentTime = new Date(app.appointment_time);
+  const sql = `
+    SELECT
+  a.id, -- หรือ a.appointment_id ตามที่คุณใช้
+  a.appointment_time, -- หรือ a.appointment_date
+  a.status,
+  CONCAT(u.first_name, ' ', u.last_name) AS fullname
+FROM
+  appointment AS a
+JOIN
+  user_category AS uc ON a.category_id = uc.category_id
+JOIN
+  user AS u ON a.user_id = u.id 
+WHERE
+  a.status = 0
+  AND a.appointment_time <= ?
+  AND uc.user_id = ? 
+  `;
+
+  db.query(sql, [now, secretaryId], (err, results) => {
+    if (err) {
+      console.error('SQL Error (pending-now):', err);
+      return res.status(500).json({ error: 'Database query failed' });
+    }
     
-    return app.status === 0 && appointmentTime <= now;
+    res.json(results);
   });
-
-  
-  console.log(`[${now.toLocaleTimeString()}] FE query: Found ${pendingNow.length} pending appointments.`);
-  res.json(pendingNow);
 });
 // ----------------------------------------------------------------------------------------------------
 // API Endpoint สำหรับอนุมัตินัดหมาย
 router.post('/:id/approve', (req, res) => {
- 
-  const idToApprove = parseInt(req.params.id, 10);
+  const idToApprove = req.params.id; // ID ที่มาจาก URL
 
- 
-  const appointment = mockAppointments.find(app => app.id === idToApprove);
+  const sql = `
+    UPDATE appointment 
+    SET status = 1 
+    WHERE appointment_id  = ?
+  `;
 
-  if (appointment) {
-    if (appointment.status === 2) {
-      return res.status(400).json({ message: 'This appointment was already rejected.' });
+  db.query(sql, [idToApprove], (err, result) => {
+    if (err) {
+      console.error('SQL Error (approve):', err);
+      return res.status(500).json({ error: 'Database update failed' });
     }
 
-    appointment.status = 1;
-    
-    console.log(`Appointment ID ${idToApprove} was APPROVED.`);
+    // ตรวจสอบว่ามีแถวที่ถูกอัปเดตจริงหรือไม่
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
     res.status(200).json({ message: 'Appointment approved successfully' });
-  } else {
-    res.status(404).json({ message: 'Appointment not found' });
-  }
+  });
 });
 // ----------------------------------------------------------------------------------------------------
 // API Endpoint สำหรับปฏิเสธนัดหมาย
 router.post('/:id/reject', (req, res) => {
-  const idToReject = parseInt(req.params.id, 10);
-  
-  const appointment = mockAppointments.find(app => app.id === idToReject);
+  const idToReject = req.params.id;
 
-  if (appointment) {
-    appointment.status = 2;
-    
-    console.log(`Appointment ID ${idToReject} was REJECTED.`);
+  const sql = `
+    UPDATE appointment 
+    SET status = 2 
+    WHERE appointment_id = ?
+  `;
+
+  db.query(sql, [idToReject], (err, result) => {
+    if (err) {
+      console.error('SQL Error (reject):', err);
+      return res.status(500).json({ error: 'Database update failed' });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
     res.status(200).json({ message: 'Appointment rejected successfully' });
-  } else {
-    res.status(404).json({ message: 'Appointment not found' });
-  }
+  });
 });
 
   return router;

@@ -48,9 +48,9 @@
               <div class="flex justify-end space-x-2">
                 <button
                   @click="notificationStore.approveAppointment(app.id)"
-                  class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition"
+                  class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
                 >
-                  อนุมัติ
+                  สำเร็จการนัดหมาย
                 </button>
                 <button
                   @click="notificationStore.rejectAppointment(app.id)"

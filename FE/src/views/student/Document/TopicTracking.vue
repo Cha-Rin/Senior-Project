@@ -67,7 +67,7 @@ onMounted(async () => {
       return
     }
 
-    const res = await fetch('http://localhost:3000/api/categories', {
+    const res = await fetch('/api/categories', {
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -107,7 +107,7 @@ const goNext = async () => {
 
     console.log('📦 Sending payload:', payload)
 
-    const res = await fetch('http://localhost:3000/student/documents', {
+    const res = await fetch('/student/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

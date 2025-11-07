@@ -124,7 +124,7 @@ onMounted(async () => {
   if (!token) return
 
   try {
-    const res = await fetch('http://localhost:3000/secretary/documentRequests', {
+    const res = await fetch('/secretary/documentRequests', {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()
@@ -151,7 +151,7 @@ onMounted(async () => {
 const approve = async (item) => {
   const token = localStorage.getItem('authToken')
   try {
-    await fetch('http://localhost:3000/secretary/updateDocumentStatus', {
+    await fetch('/secretary/updateDocumentStatus', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -180,7 +180,7 @@ const confirmReject = async () => {
 
   const token = localStorage.getItem('authToken')
   try {
-    await fetch('http://localhost:3000/secretary/updateDocumentStatus', {
+    await fetch('/secretary/updateDocumentStatus', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

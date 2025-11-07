@@ -236,7 +236,7 @@ const onCellClick = async (r, c) => {
 
       try {
         await axios.post(
-          "http://localhost:3000/secretary/add",
+          "/secretary/add",
           { staff_id: staffId, date, start_time, end_time },
           { headers: { Authorization: `Bearer ${authToken}` } }
         )
@@ -337,7 +337,7 @@ const loadOffTime = async () => {
   console.log("--- 🔄 Loading Off-Time for week:", selectedWeek.value.start);
 
   try {
-    const res = await axios.get("http://localhost:3000/secretary/list", {
+    const res = await axios.get("/secretary/list", {
       headers: { Authorization: `Bearer ${authToken}` },
       params: {
         weekStart: selectedWeek.value.start,
@@ -442,7 +442,7 @@ const deleteSelected = async () => {
     console.log("Deleting IDs:", idsToDelete); 
     
     await axios.post(
-      "http://localhost:3000/secretary/delete",
+      "/secretary/delete",
       { ids: idsToDelete }, 
       { headers: { Authorization: `Bearer ${authToken}` } }
     );

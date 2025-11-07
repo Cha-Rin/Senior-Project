@@ -287,7 +287,7 @@ export const useStaffStore = defineStore('staff', () => {
   // ✅ โหลด staff ทั้งหมด
 const fetchAllStaff = async (token) => {
   try {
-    const res = await axios.get('http://localhost:3000/admin/staffs', {
+    const res = await axios.get('/admin/staffs', {
       headers: { Authorization: `Bearer ${token}` }
     })
 console.log('📦 Response from /staff:', res.data)
@@ -312,7 +312,7 @@ console.log('📦 Response from /staff:', res.data)
   // ✅ ดึง staff รายคน
 async function fetchStaffById(staffId, token) {
   try {
-    const res = await fetch(`http://localhost:3000/admin/staff/${staffId}`, {
+    const res = await fetch(`/admin/staff/${staffId}`, {
       headers: { Authorization: `Bearer ${token}` }
     })
     const data = await res.json()
@@ -335,7 +335,7 @@ async function fetchStaffById(staffId, token) {
   // ✅ โหลดประวัติทั้งหมด (สำหรับ admin / staff)
   const fetchHistoryAll = async (token, staffId = null) => {
   try {
-    const res = await axios.get('http://localhost:3000/history/historyall', {
+    const res = await axios.get('/history/historyall', {
       headers: { Authorization: `Bearer ${token}` },
       params: staffId ? { staffId } : {}
     })

@@ -25,10 +25,15 @@ setInterval(() => {
 }, 60 * 1000) // ตรวจทุก 1 นาที
 const notificationStore = useNotificationStore()
 onMounted(() => {
-  notificationStore.fetchPendingAppointments()
-  setInterval(() => {
-    notificationStore.fetchPendingAppointments()
-  }, 60000)
+  const loggedInUserId = localStorage.getItem('userId'); 
+  if (loggedInUserId) {
+    notificationStore.fetchPendingAppointments(loggedInUserId);
+    setInterval(() => {
+      notificationStore.fetchPendingAppointments(loggedInUserId);
+    }, 60000);
+  } else {
+    console.log('ยังไม่ได้ล็อกอิน, จะไม่เริ่มการแจ้งเตือน');
+  }
 })
 </script>
 

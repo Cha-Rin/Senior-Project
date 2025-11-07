@@ -41,7 +41,7 @@ const categories = ref([])
 // 🔹 ดึงข้อมูลหมวดหมู่จาก API
 onMounted(async () => {
   try {
-    const res = await fetch('http://localhost:3000/api/categories')
+    const res = await fetch('/api/categories')
     const data = await res.json()
     categories.value = data
     

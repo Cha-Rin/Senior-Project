@@ -163,14 +163,14 @@ const editPreviewAvatar = ref(null)
 
 // โหลด staff
 async function fetchStaff() {
-  const res = await axios.get('http://localhost:3000/admin/staffs')
+  const res = await axios.get('/admin/staffs')
   if (res.data.success) staffList.value = res.data.data
 }
 
 
 // โหลด categories ตอนเปิดหน้า
 async function fetchCategories() {
-  const res = await axios.get('http://localhost:3000/admin/categories')
+  const res = await axios.get('/admin/categories')
   if (res.data.success) categoriesList.value = res.data.data
 }
 
@@ -196,7 +196,7 @@ async function saveNewStaff() {
   if (newStaff.value.avatar instanceof File) formData.append('avatar', newStaff.value.avatar)
 
   try {
-    const res = await axios.post('http://localhost:3000/admin/staffs', formData, {
+    const res = await axios.post('/admin/staffs', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     if (res.data.success) {
@@ -242,7 +242,7 @@ onMounted(() => {
 async function editStaff(staff) {
   try {
     // 1. ยิง API ไปเอา Category ID ของ Staff คนนี้
-    const res = await axios.get(`http://localhost:3000/admin/staff/${staff.id}/categories`)
+    const res = await axios.get(`/admin/staff/${staff.id}/categories`)
     
     // 2. สร้างตัวแปร categoryIds จากผลลัพธ์ (แปลงจาก [ {id: 5} ] เป็น [ 5 ])
     const categoryIds = res.data.data.map(c => c.category_id)
@@ -290,7 +290,7 @@ async function saveEdit() {
   console.log('📤 Sending edit form:', Object.fromEntries(formData))
 
   try {
-    const res = await axios.patch(`http://localhost:3000/admin/staffs/${id}/update`, formData, {
+    const res = await axios.patch(`/admin/staffs/${id}/update`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
     if (res.data.success) {
@@ -307,7 +307,7 @@ async function saveEdit() {
 // เปิดปิดสถานะ
 async function toggleStatus(staff) {
   const newStatus = staff.status ? 0 : 1
-  await axios.patch(`http://localhost:3000/admin/staffs/${staff.id}/status`, { status: newStatus })
+  await axios.patch(`/admin/staffs/${staff.id}/status`, { status: newStatus })
   staff.status = newStatus
 }
 

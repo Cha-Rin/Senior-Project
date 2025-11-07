@@ -53,7 +53,7 @@ const router = useRouter()
 //   console.log('📦 Loaded userId:', userId)
 
 //   try {
-//     const res = await fetch(`http://localhost:3000/student/appointments/id/${userId}`)
+//     const res = await fetch(`/student/appointments/id/${userId}`)
 //     const data = await res.json()
 //     const text = await res.text()
 //     if (!res.ok) { console.error('HTTP', res.status, text); return }
@@ -82,7 +82,7 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch('http://localhost:3000/student/appointments', {
+    const res = await fetch('/student/appointments', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
