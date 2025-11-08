@@ -1,16 +1,22 @@
-<!-- 📁 src/views/secretary/Document/Status.vue -->
 <template>
   <SecreLayout>
     <div class="page-content">
-      <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <h1
+        class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+      >
         Document Status
       </h1>
 
       <!-- ✅ Pop-up สำหรับอัปโหลดไฟล์ก่อน Mark Complete -->
-      <div v-if="showCompleteModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        v-if="showCompleteModal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      >
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4">อัปโหลดเอกสารยืนยัน</h3>
-          <p class="text-sm text-gray-600 mb-4">กรุณาอัปโหลดไฟล์ภาพหรือ PDF เพื่อยืนยันว่าเอกสารเสร็จสมบูรณ์</p>
+          <p class="text-sm text-gray-600 mb-4">
+            กรุณาอัปโหลดไฟล์ภาพหรือ PDF เพื่อยืนยันว่าเอกสารเสร็จสมบูรณ์
+          </p>
 
           <!-- ช่องอัปโหลดไฟล์ -->
           <div class="mb-4">
@@ -46,27 +52,49 @@
       </div>
 
       <!-- ตารางสถานะเอกสาร -->
-      <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+      <div
+        class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
+      >
         <table class="w-full">
           <thead class="bg-gradient-to-r from-indigo-50 to-purple-50">
             <tr>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">No</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">ID</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">NAME</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Status</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                No
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                ID
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                NAME
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                Date
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                Topic
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                Status
+              </th>
             </tr>
           </thead>
+
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="item in documents" :key="item.no" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 text-sm font-bold text-indigo-700">{{ item.no }}</td>
-              <td class="px-6 py-4 text-sm text-gray-700">{{ item.studentId }}</td>
+            <tr
+              v-for="item in paginatedDocuments"
+              :key="item.no"
+              class="hover:bg-gray-50 transition-colors"
+            >
+              <td class="px-6 py-4 text-sm font-bold text-indigo-700">
+                {{ item.no }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-700">
+                {{ item.studentId }}
+              </td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-600">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
               <td class="px-6 py-4">
-                <!-- แสดงสถานะปัจจุบันเป็น badge -->
                 <div class="flex flex-wrap gap-2 mb-2">
                   <span
                     v-if="item.status.includes('in-progress')"
@@ -80,92 +108,154 @@
                   >
                     Complete
                   </span>
-                  <span v-if="item.status.length === 0" class="text-gray-400 text-sm">—</span>
+                  <span
+                    v-if="item.status.length === 0"
+                    class="text-gray-400 text-sm"
+                    >—</span
+                  >
                 </div>
 
-                <!-- ปุ่มควบคุมแบบใหม่ -->
+                <!-- ปุ่ม Complete -->
                 <div class="flex gap-2">
-                  <!-- ✅ ปุ่ม "Complete" สีเขียว → แสดงเฉพาะเมื่อไม่ใช่ Complete -->
                   <button
                     v-if="!item.status.includes('complete')"
                     @click="openCompleteModal(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
-                
                     <span class="ml-1.5">Complete</span>
                   </button>
-
-                  <!-- ✅ ไม่แสดงปุ่มไหนเลยเมื่อเป็น Complete -->
-                  <!-- ถ้าเป็น Complete → เหลือแค่ badge "Complete" อย่างเดียว -->
                 </div>
+              </td>
+            </tr>
+
+            <tr v-if="documents.length === 0">
+              <td
+                colspan="6"
+                class="text-center py-10 text-gray-500 text-sm bg-gray-50"
+              >
+                ไม่มีข้อมูลสถานะเอกสาร
               </td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- ✅ Pagination -->
+      <div
+        v-if="totalPages > 1"
+        class="flex justify-center items-center mt-8 space-x-1"
+      >
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            'px-3 py-1 rounded text-sm',
+            page === currentPage
+              ? 'bg-indigo-600 text-white font-bold'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+          ]"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          v-if="currentPage < totalPages"
+          @click="goToPage(currentPage + 1)"
+          class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+        >
+          หน้าถัดไป
+        </button>
       </div>
     </div>
   </SecreLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
+// ------------------------------------------
+// STATE
+// ------------------------------------------
 const documents = ref([])
 const showCompleteModal = ref(false)
 const selectedFile = ref(null)
 const currentCompleteItem = ref(null)
 const fileInput = ref(null)
 
+// ✅ Pagination states
+const currentPage = ref(1)
+const itemsPerPage = 7
+
 // ✅ แปลงวันที่
-const formatDate = iso => {
+const formatDate = (iso) => {
   if (!iso) return '-'
   const d = new Date(iso)
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`
 }
 
-// ✅ ฟังก์ชันโหลดข้อมูลเอกสารทั้งหมด (แสดงเฉพาะที่ status = 1)
+// ✅ โหลดข้อมูลเอกสาร
 const loadDocuments = async () => {
   const token = localStorage.getItem('authToken')
   if (!token) return
 
   try {
     const res = await fetch('/secretary/documentStatus', {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
 
-    documents.value = (data.documents || []).map(d => ({
+    documents.value = (data.documents || []).map((d) => ({
       no: d.document_id,
       studentId: d.studentId,
       name: d.full_name,
       date: formatDate(d.submit_date),
       topic: d.topic,
       status:
-        d.status === 0 ? ['pending']
-        : d.status === 1 ? ['in-progress']
-        : d.status === 2 ? ['complete']
-        : []
+        d.status === 0
+          ? ['pending']
+          : d.status === 1
+          ? ['in-progress']
+          : d.status === 2
+          ? ['complete']
+          : [],
     }))
   } catch (err) {
     console.error('❌ Fetch document status:', err)
   }
 }
 
+// ✅ Pagination logic
+const paginatedDocuments = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return documents.value.slice(start, end)
+})
 
-// ✅ โหลดข้อมูลเอกสารจาก API
+const totalPages = computed(() =>
+  Math.ceil(documents.value.length / itemsPerPage)
+)
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// ✅ โหลดข้อมูลตอนเริ่มต้น
 onMounted(loadDocuments)
 
-
 // ✅ เปิด modal
-const openCompleteModal = item => {
+const openCompleteModal = (item) => {
   if (item.status.includes('complete')) return
   currentCompleteItem.value = item
   showCompleteModal.value = true
 }
 
 // ✅ เมื่อเลือกไฟล์
-const onFileChange = e => {
+const onFileChange = (e) => {
   selectedFile.value = e.target.files[0] || null
 }
 
@@ -182,25 +272,20 @@ const confirmComplete = async () => {
     const res = await fetch('/secretary/markDocumentComplete', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
-      body: formData
+      body: formData,
     })
     const result = await res.json()
     if (!result.success) throw new Error(result.message || 'Failed')
 
-    // ✅ รีโหลดข้อมูลใหม่หลังจากอัปเดตเสร็จ
     await loadDocuments()
-
   } catch (err) {
     console.error('❌ Upload failed:', err)
   }
 
-  // ✅ ปิด modal และรีเซ็ตค่า
   showCompleteModal.value = false
   selectedFile.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
-
-
 
 // ✅ ยกเลิก modal
 const cancelComplete = () => {
@@ -208,19 +293,7 @@ const cancelComplete = () => {
   selectedFile.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
-
-// ✅ Toggle สถานะ (ฝั่งหน้า)
-const toggleStatus = (item, status) => {
-  if (status === 'complete') {
-    item.status = ['complete']
-  } else {
-    item.status = ['in-progress']
-  }
-  const idx = documents.value.findIndex(d => d.no === item.no)
-  if (idx !== -1) documents.value.splice(idx, 1, { ...item })
-}
 </script>
-
 
 <style scoped>
 .page-content {

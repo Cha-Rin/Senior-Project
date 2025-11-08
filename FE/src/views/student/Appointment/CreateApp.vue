@@ -1,53 +1,62 @@
-<!-- src/views/CreateAppointment.vue -->
 <template>
-<div>
-    
-  
-  <div class="min-h-screen bg-white pt-20 px-4 py-2 flex flex-col items-center text-center">
-    <h1 class="text-xl font-semibold mb-4">Create an appointment</h1>
+  <div>
+    <div class="min-h-screen bg-white pt-20 px-4 py-2 flex flex-col items-center text-center">
+      <h1 class="text-xl font-semibold mb-4">Create an appointment</h1>
 
-    <!-- ⬇️ ใช้ binding src -->
-    <img :src="imageSrc" alt="Profile" class="w-24 h-24 mb-2" />
-    <p class="text-lg font-medium mb-4">{{ displayName }}</p>
+      <!-- 🔹 ข้อมูลพี่เลขา -->
+      <img :src="imageSrc" alt="Profile" class="w-24 h-24 mb-2 rounded-full" />
+      <p class="text-lg font-medium mb-4">{{ displayName }}</p>
 
+      <!-- 🔹 ตารางตารางเวลา -->
+      <StudentScheduleView 
+        v-if="staffIdToView"
+        :staffId="staffIdToView"
+        @update:unavailableData="onUnavailableDataUpdate"
+        @update:weekRange="onWeekRangeUpdate"
+      />
 
-    <!-- ✅ ตารางแยก component -->
-    <StudentScheduleView 
-    v-if="staffIdToView"
-    :staffId="staffIdToView" 
-    @update:unavailableData="onUnavailableDataUpdate"
-/>
-
-    <div class="bg-blue-900 text-white w-full max-w-xs p-4 rounded-xl space-y-3 mb-10">
-      <!-- เลือกวัน -->
-        <label class="block">Date:
-            <input type="date" v-model="selectedDate" class="border rounded p-1 w-full text-black" />
+      <!-- 🔹 ฟอร์มเลือกวันและเวลา -->
+      <div class="bg-blue-900 text-white w-full max-w-xs p-4 rounded-xl space-y-3 mb-10">
+        <!-- เลือกวัน -->
+        <label class="block text-left">
+          <span class="text-sm font-medium">Date:</span>
+          <input
+            type="date"
+            v-model="selectedDate"
+            :min="weekStartDate"
+            :max="weekEndDate"
+            class="border rounded p-1 w-full text-black"
+          />
         </label>
+
         <!-- เลือกเวลา -->
-        <label class="block">
-  Time:
-  <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
-    <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
+        <label class="block text-left">
+          <span class="text-sm font-medium">Time:</span>
+          <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
+            <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
 
-    <option
-      v-for="slot in availableTimeSlots"
-      :key="slot"
-      :value="slot"
-    >
-      {{ slot }}
-    </option>
+            <option
+              v-for="slot in availableTimeSlots"
+              :key="slot"
+              :value="slot"
+            >
+              {{ slot }}
+            </option>
 
-    <option
-      v-if="selectedDate && availableTimeSlots.length === 0"
-      disabled
-    >
-      -- ไม่ว่าง/เป็นวันหยุด --
-    </option>
-  </select>
-</label>
-
+            <option
+              v-if="selectedDate && availableTimeSlots.length === 0"
+              disabled
+            >
+              -- ไม่ว่าง/เป็นวันหยุด --
+            </option>
+          </select>
+        </label>
       </div>
-      <button  @click="goToConfirm" class="bg-blue-600 text-white px-4 py-2 rounded">Next</button>
+
+      <!-- ปุ่ม Next -->
+      <button @click="goToConfirm" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        Next
+      </button>
     </div>
   </div>
 </template>
@@ -55,38 +64,49 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import StudentScheduleView from '@/components/student/StudentScheduleView.vue'
+
+// 🔹 รูปพี่ๆ
 import boy from '@/assets/boy.png'
 import phum from '@/assets/P_Pong.png'
 import Aoi from '@/assets/P_Aoi.png'
 import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
-import StudentScheduleView from '@/components/student/StudentScheduleView.vue'
 
 const router = useRouter()
 const route = useRoute()
 const userId = localStorage.getItem('userId')
 
+// --------------------------------------------
+// 🔹 State
+// --------------------------------------------
 const selectedTopic = ref('')
-const staffName = ref('')
-const staffAvatar = ref('')
 const displayName = ref('')
 const imageSrc = ref('')
 const note = ref('')
 const staffIdToView = ref(null)
-
 const selectedDate = ref('')
 const selectedSlot = ref('')
 
-// ✅ เก็บ unavailable slot (Set)
-const unavailableMasterSet = ref(new Set())
+// --------------------------------------------
+// 🔹 Data จากตารางเวลา
+// --------------------------------------------
+const unavailableMasterSet = ref(new Set()) // ช่องที่ไม่ว่าง
+const weekStartDate = ref('')               // วันที่เริ่มต้นของสัปดาห์
+const weekEndDate = ref('')                 // วันที่สิ้นสุดของสัปดาห์
 
 // ✅ รับ emit จาก child
 const onUnavailableDataUpdate = (dataFromChild) => {
-  console.log("Parent received unavailable data:", dataFromChild.size)
   unavailableMasterSet.value = dataFromChild
 }
+const onWeekRangeUpdate = (range) => {
+  weekStartDate.value = range.start
+  weekEndDate.value = range.end
+}
 
-// ✅ ตารางเวลา (ต้องตรงกับ child)
+// --------------------------------------------
+// 🔹 ตารางเวลา
+// --------------------------------------------
 const timeSlots = [
   '08:00 - 09:00',
   '09:00 - 10:00',
@@ -99,16 +119,20 @@ const timeSlots = [
 ]
 const LUNCH_ROW_INDEX = 4
 
-// ✅ Helper: Convert YYYY-MM-DD → dayIndex
+// --------------------------------------------
+// 🔹 Helper: แปลงวันที่เป็น index วันจันทร์-ศุกร์
+// --------------------------------------------
 const getDayIndexFromDateString = (dateStr) => {
   if (!dateStr) return -1
   const d = new Date(`${dateStr}T12:00:00`)
   const js = d.getDay()
-  if (js === 0 || js === 6) return -1
+  if (js === 0 || js === 6) return -1 // ห้ามเลือกเสาร์-อาทิตย์
   return js - 1
 }
 
-// ✅ Filter Available Time Slots
+// --------------------------------------------
+// 🔹 Filter: เวลาที่ว่างในวันนั้น
+// --------------------------------------------
 const availableTimeSlots = computed(() => {
   const dayIndex = getDayIndexFromDateString(selectedDate.value)
   if (dayIndex === -1) return []
@@ -121,7 +145,9 @@ const availableTimeSlots = computed(() => {
   })
 })
 
-// ✅ Push ไปหน้า Confirm
+// --------------------------------------------
+// 🔹 Next: ไปหน้า Confirm
+// --------------------------------------------
 function goToConfirm() {
   if (!selectedDate.value || !selectedSlot.value) {
     alert('กรุณาเลือกวันและช่วงเวลา')
@@ -141,7 +167,9 @@ function goToConfirm() {
   })
 }
 
-// ✅ โหลดข้อมูลพนักงาน
+// --------------------------------------------
+// 🔹 โหลดข้อมูลพี่เลขา
+// --------------------------------------------
 onMounted(() => {
   const category_id = route.query.category_id
 
@@ -194,4 +222,3 @@ onMounted(() => {
   }
 })
 </script>
-

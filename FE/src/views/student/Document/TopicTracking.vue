@@ -1,41 +1,118 @@
+<!-- =======================================
+📄 File: TopicChoose.vue
+Version: เลือกหัวข้อ → กรอกหัวข้อย่อย → ส่ง → อัปโหลดรูป → แสดง doc ID
+======================================= -->
+
 <template>
-  <div class="relative">
-  
-  <div class="min-h-screen flex flex-col items-center bg-white pt-20 px-4">
-    
-    <!-- 🔹 Headline -->
-    <h1 class="text-2xl font-semibold mb-6">Choose Topic</h1>
+  <div class="min-h-screen bg-gray-50 pt-20 px-6">
+    <!-- 🔹 หัวข้อหน้า -->
+    <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
 
-    <!-- 🔹 Dropdown -->
-    <select
-  v-model="selectedCategoryId"
-  class="w-full max-w-xs sm:max-w-sm md:max-w-md lg:max-w-lg p-2 border border-gray-300 bg-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 mb-8">
-  <option disabled value="">Choose Main-Topic</option>
-  <option v-for="cat in categories" :key="cat.category_id" :value="cat.category_id">
-    {{ cat.type }}
-  </option>
-</select>
-
-    <!-- 🔹 Document Name Textarea -->
-    <div class="bg-white w-full p-4 shadow-md rounded-xl text-left mt-8 space-y-2">
-      <p class="text-sm font-semibold">Type document name</p>
-      <textarea
-        v-model="note"
-        placeholder="Comment..."
-        class="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none"
-        rows="3"
-      ></textarea>
+    <!-- 🔹 รายการหัวข้อหลัก -->
+    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+      <div
+        v-for="cat in categories"
+        :key="cat.category_id"
+        @click="selectCategory(cat)"
+        :class="[
+          'p-4 rounded-xl border shadow-md cursor-pointer transition',
+          selectedCategory?.category_id === cat.category_id
+            ? 'border-blue-600 bg-blue-50'
+            : 'border-gray-200 bg-white hover:shadow-lg'
+        ]"
+      >
+        <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
+        <p class="text-sm text-gray-500 mt-1">👩‍💼 {{ cat.staff_name || 'Unknown Staff' }}</p>
+      </div>
     </div>
 
-    <!-- 🔹 Button -->
-    <button
-      @click="goNext"
-      class="bg-blue-600 text-white font-semibold mt-4 px-6 py-2 rounded-full hover:bg-blue-700 transition"
+    <!-- 🔹 ฟอร์มกรอกหัวข้อย่อย (แสดงเมื่อเลือกหัวข้อแล้ว) -->
+    <div
+      v-if="selectedCategory"
+      class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
-      Send
-    </button>
-    
-  </div>
+      <p class="text-sm font-semibold mb-2">
+        พิมพ์หัวข้อย่อยของคุณ <span class="text-gray-400">(ตัวอย่างเช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
+      </p>
+      <textarea
+        v-model="subTopic"
+        placeholder="เช่น ลงทะเบียนเรียนเพิ่มเติม"
+        class="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none focus:ring-2 focus:ring-blue-400"
+        rows="3"
+      ></textarea>
+
+      <div class="text-center mt-4">
+        <button
+          @click="openCameraPopup"
+          class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-blue-700 transition"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+
+    <!-- ❗ Error Message -->
+    <p v-if="errorMessage" class="text-red-500 text-center mt-4">{{ errorMessage }}</p>
+
+    <!-- 🔸 Popup: ถ่ายรูป / อัปโหลด -->
+    <div
+      v-if="showCamera"
+      class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-6 rounded-xl shadow-lg w-96 text-center">
+        <h2 class="text-lg font-bold mb-4">📸 Upload your document photo</h2>
+
+        <input
+          type="file"
+          accept="image/*"
+          capture="environment"
+          @change="handleFile"
+          class="mb-4"
+        />
+
+        <div v-if="previewUrl" class="mb-4">
+          <img :src="previewUrl" class="w-full h-48 object-contain rounded-lg" />
+        </div>
+
+        <button
+          @click="submitDocument"
+          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+          :disabled="loading"
+        >
+          {{ loading ? 'Uploading...' : 'Submit' }}
+        </button>
+
+        <button
+          @click="showCamera = false"
+          class="ml-3 text-gray-600 underline text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+
+    <!-- 🔸 Popup: แสดง Document ID -->
+    <div
+      v-if="showDocId"
+      class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
+    >
+      <div class="bg-white p-6 rounded-xl shadow-lg text-center">
+        <h2 class="text-xl font-bold text-green-700 mb-3">
+          🎉 Document Created!
+        </h2>
+        <p class="text-lg">Your Document ID:</p>
+        <p class="text-3xl font-bold text-blue-600 my-3">#{{ createdDocId }}</p>
+        <p class="text-sm text-gray-600 mb-4">
+          Please write this ID on your document form.
+        </p>
+        <button
+          @click="closeDocIdPopup"
+          class="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700"
+        >
+          OK
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -45,106 +122,138 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 const categories = ref([])
-const note = ref('')
-const selectedCategoryId = ref('')
-const studentEmail = ref('')
-const submitDate = ref(new Date().toISOString().slice(0, 19).replace('T', ' '))
-const finishDate = ref('')
-const status = ref('Pending')
+const selectedCategory = ref(null)
+const subTopic = ref('')
 const errorMessage = ref('')
+const showCamera = ref(false)
+const previewUrl = ref('')
+const imageFile = ref(null)
+const loading = ref(false)
+const showDocId = ref(false)
+const createdDocId = ref('')
 
-// ✅ ดึง userId และ email จาก localStorage
+// ✅ user info
 const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
+const token = localStorage.getItem('authToken')
 
-// 🔹 โหลด categories
+// ------------------------------------------
+// 🔹 โหลดข้อมูลหมวดหมู่ + ชื่อพี่เลขา
+// ------------------------------------------
 onMounted(async () => {
   try {
-    const token = localStorage.getItem('authToken') // ✅ ใช้ key เดียวกันทุกไฟล์
-    if (!token) {
-      errorMessage.value = 'Please login again.'
-      router.push({ name: 'Login' })
-      return
-    }
-
-    const res = await fetch('/api/categories', {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+    const res = await fetch('/student/api/categories-with-staff', {
+      headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
     categories.value = data
   } catch (err) {
-    console.error('Failed to load categories:', err)
+    console.error(err)
+    errorMessage.value = 'Failed to load topics.'
   }
 })
 
-// ✅ ส่งข้อมูลเอกสาร
-const goNext = async () => {
+// ------------------------------------------
+// 🔹 เลือกหัวข้อหลัก
+// ------------------------------------------
+const selectCategory = (cat) => {
+  selectedCategory.value = cat
+  errorMessage.value = ''
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
+}
+
+// ------------------------------------------
+// 🔹 เปิด popup กล้อง / อัปโหลด
+// ------------------------------------------
+const openCameraPopup = () => {
+  if (!subTopic.value.trim())
+    return (errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยของคุณก่อนส่ง')
+  showCamera.value = true
+  errorMessage.value = ''
+}
+
+// ------------------------------------------
+// 🔹 handle file input
+// ------------------------------------------
+const handleFile = (e) => {
+  const file = e.target.files[0]
+  if (file) {
+    imageFile.value = file
+    previewUrl.value = URL.createObjectURL(file)
+  }
+}
+
+// ------------------------------------------
+// 🔹 submit document + upload image
+// ------------------------------------------
+const submitDocument = async () => {
+  if (!imageFile.value) return alert('Please upload a photo.')
+
+  loading.value = true
   try {
-    const token = localStorage.getItem('authToken')
-
-    if (!token || !userId) {
-      errorMessage.value = 'Please login again.'
-      router.push({ name: 'Login' })
-      return
-    }
-
-    if (!selectedCategoryId.value) {
-      errorMessage.value = 'Please select a topic.'
-      return
-    }
-
+    // 1️⃣ ส่งข้อมูลเอกสารไป backend
     const payload = {
-      user_id: userId, // ✅ เพิ่ม user_id เหมือนอีกระบบ
-      category_id: selectedCategoryId.value,
+      user_id: userId,
+      category_id: selectedCategory.value.category_id,
       student_email: email,
-      submit_date: submitDate.value,
-      finish_date: finishDate.value,
-      student_note: note.value,
-      status: 'pending'
+      student_note: subTopic.value,
+      status: 0, // Pending
+      submit_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      finish_date: '',
     }
-
-    console.log('📦 Sending payload:', payload)
 
     const res = await fetch('/student/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
     })
 
     const data = await res.json()
+    if (!data.success) throw new Error('Create document failed')
 
-    if (data.success) {
-      console.log('✅ Document request submitted:', data)
-      router.push({
-        path: 'check',
-        query: {
-          topic: selectedCategoryId.value,
-          date: submitDate.value,
-          status: 'Pending'
-        }
-      })
-    } else {
-      throw new Error(data.error || 'Unknown error')
-    }
+    // 2️⃣ อัปโหลดรูป
+    const docId = data.document_id
+    const formData = new FormData()
+    formData.append('photo', imageFile.value)
+    formData.append('document_id', docId)
+
+    await fetch('/student/upload-document-image', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    })
+
+    // 3️⃣ แสดง doc ID
+    loading.value = false
+    showCamera.value = false
+    createdDocId.value = docId
+    showDocId.value = true
   } catch (err) {
-    console.error('❌ API Error:', err)
-    errorMessage.value = 'Failed to submit request. Please try again.'
+    console.error(err)
+    errorMessage.value = 'Failed to submit document.'
+  } finally {
+    loading.value = false
   }
+}
+
+// ------------------------------------------
+// 🔹 ปิด popup แสดง doc id
+// ------------------------------------------
+const closeDocIdPopup = () => {
+  showDocId.value = false
+  router.push({ path: '/student/document/check' })
 }
 </script>
 
-
 <style scoped>
-/* Optional: force mobile max width */
-@media (min-width: 768px) {
-  .max-w-xs {
-    max-width: 300px;
-  }
+textarea {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 </style>
-

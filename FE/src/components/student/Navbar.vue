@@ -15,14 +15,20 @@
 
       <!-- Logo + Text -->
       <img src="@/assets/logo.jpg" alt="logo" class="h-8" />
-      <span class="text-sm font-semibold whitespace-nowrap hidden sm:inline">
-        สำนักวิชาเทคโนโลยีดิจิทัลประยุกต์
-      </span>
+      
     </div>
 
-    <!-- 🔹 ขวา: Language Switch + Login Icon -->
     <div class="flex items-center space-x-3">
-      <button @click="toggleLang" class="text-xs font-bold">
+      <!-- ชื่อผู้ใช้ -->
+      <p class="text-sm font-semibold hidden sm:block">
+        👩‍🎓 {{ studentName || 'Guest' }}
+      </p>
+
+      <!-- ปุ่มเปลี่ยนภาษา -->
+      <button
+        @click="toggleLang"
+        class="text-xs font-bold border border-white px-2 py-1 rounded hover:bg-white hover:text-[#003366] transition"
+      >
         {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
       </button>
      <button

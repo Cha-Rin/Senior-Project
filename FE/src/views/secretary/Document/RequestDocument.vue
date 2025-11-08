@@ -1,33 +1,83 @@
-<!-- 📁 src/views/secretary/Document/RequestDocument.vue -->
 <template>
   <SecreLayout>
     <div class="page-content">
-      <!-- ✅ หัวข้อใช้ gradient สีม่วง-น้ำเงิน -->
-      <h1 class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+      <!-- ✅ หัวข้อ -->
+      <h1
+        class="text-4xl font-bold mb-6 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+      >
         Request Document
       </h1>
 
       <!-- ✅ ป๊อบอัพสำหรับเลือกเหตุผล -->
-      <div v-if="showRejectModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div
+        v-if="showRejectModal"
+        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      >
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-          <h3 class="text-xl font-bold text-gray-800 mb-4">เลือกเหตุผลที่ปฏิเสธเอกสาร</h3>
+          <h3 class="text-xl font-bold text-gray-800 mb-4">
+            เลือกเหตุผลที่ปฏิเสธเอกสาร
+          </h3>
 
+          <!-- 🔹 รายการตัวเลือก -->
           <div class="space-y-3 mb-6">
-            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-              <input type="radio" v-model="selectedReason" value="ข้อมูลในเอกสารผิด" class="mr-3">
+            <label
+              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+            >
+              <input
+                type="radio"
+                v-model="selectedReason"
+                value="ข้อมูลในเอกสารผิด"
+                class="mr-3"
+              />
               ข้อมูลในเอกสารผิด
             </label>
-            <label class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-              <input type="radio" v-model="selectedReason" value="ข้อมูลในเอกสารไม่ครบถ้วน" class="mr-3">
+
+            <label
+              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+            >
+              <input
+                type="radio"
+                v-model="selectedReason"
+                value="ข้อมูลในเอกสารไม่ครบถ้วน"
+                class="mr-3"
+              />
               ข้อมูลในเอกสารไม่ครบถ้วน
             </label>
+
+            <!-- ✅ ตัวเลือก 'อื่นๆ' -->
+            <label
+              class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
+            >
+              <input
+                type="radio"
+                v-model="selectedReason"
+                value="อื่นๆ"
+                class="mr-3"
+              />
+              อื่นๆ (โปรดระบุ)
+            </label>
+
+            <!-- ✅ กล่องข้อความ เมื่อเลือก 'อื่นๆ' -->
+            <textarea
+              v-if="selectedReason === 'อื่นๆ'"
+              v-model="customReason"
+              rows="3"
+              placeholder="กรุณาพิมพ์เหตุผลของคุณ..."
+              class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-400 mt-2"
+            ></textarea>
           </div>
 
           <div class="flex gap-3">
-            <button @click="confirmReject" class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2">
+            <button
+              @click="confirmReject"
+              class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+            >
               ยืนยัน
             </button>
-            <button @click="cancelReject" class="flex-1 px-4 py-2 bg-rose-500 border border-gray-300 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2">
+            <button
+              @click="cancelReject"
+              class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+            >
               ยกเลิก
             </button>
           </div>
@@ -35,30 +85,51 @@
       </div>
 
       <!-- ตารางรายการคำขอ -->
-      <div class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        <!-- ✅ Header ตารางใช้พื้นหลัง gradient อ่อน -->
+      <div
+        class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
+      >
         <table class="w-full">
           <thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
             <tr>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">No</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">ID</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">NAME</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
-              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
-              <th class="px-6 py-4 text-medium text-sm font-bold text-indigo-800">Status</th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                No
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                ID
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                NAME
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                Date
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                Topic
+              </th>
+              <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">
+                Status
+              </th>
             </tr>
           </thead>
+
           <tbody class="divide-y divide-gray-100">
-            <tr v-for="item in requests" :key="item.no" class="hover:bg-gray-50 transition-colors">
-              <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ item.no }}</td>
-              <td class="px-6 py-4 text-sm text-gray-700">{{ item.studentId }}</td>
+            <tr
+              v-for="item in paginatedRequests"
+              :key="item.no"
+              class="hover:bg-gray-50 transition-colors"
+            >
+              <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                {{ item.no }}
+              </td>
+              <td class="px-6 py-4 text-sm text-gray-700">
+                {{ item.studentId }}
+              </td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
-              <td class="px-6 py-6 text-sm text-gray-700">{{ item.date }}</td>
+              <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
               <td class="px-6 py-4 text-right">
-                <!-- ถ้ายัง Pending -->
+                <!-- Pending -->
                 <template v-if="item.status === 'Pending'">
-                  <!-- ✅ ปุ่ม Approve → สีเขียว (emerald) + ไอคอน ✅ -->
                   <button
                     @click="approve(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2"
@@ -66,7 +137,6 @@
                     <span>✅</span>
                     <span class="ml-1.5">Approve</span>
                   </button>
-                  <!-- ✅ ปุ่ม Reject → สีแดง (rose) + ไอคอน ❌ -->
                   <button
                     @click="reject(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-500 text-white hover:bg-rose-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
@@ -76,7 +146,7 @@
                   </button>
                 </template>
 
-                <!-- ✅ สถานะ Approved → badge + ไอคอน -->
+                <!-- Approved -->
                 <span
                   v-else-if="item.status === 'Approved'"
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-100 text-emerald-800"
@@ -85,7 +155,7 @@
                   <span class="ml-1.5">Approved</span>
                 </span>
 
-                <!-- ✅ สถานะ Rejected → badge + ไอคอน -->
+                <!-- Rejected -->
                 <span
                   v-else
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-100 text-rose-800"
@@ -95,41 +165,100 @@
                 </span>
               </td>
             </tr>
+
+            <tr v-if="requests.length === 0">
+              <td
+                colspan="6"
+                class="text-center py-10 text-gray-500 text-sm bg-gray-50"
+              >
+                ไม่มีรายการคำขอเอกสาร
+              </td>
+            </tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- ✅ Pagination -->
+      <div
+        v-if="totalPages > 1"
+        class="flex justify-center items-center mt-8 space-x-1"
+      >
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[ 'px-3 py-1 rounded text-sm',
+            page === currentPage
+              ? 'bg-indigo-600 text-white font-bold'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700',
+          ]"
+        >
+          {{ page }}
+        </button>
+
+        <button
+          v-if="currentPage < totalPages"
+          @click="goToPage(currentPage + 1)"
+          class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+        >
+          หน้าถัดไป
+        </button>
       </div>
     </div>
   </SecreLayout>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
+// ------------------------------------------
+// 🔹 STATE
+// ------------------------------------------
 const requests = ref([])
-
 const showRejectModal = ref(false)
 const selectedReason = ref('')
+const customReason = ref('') // ✅ เพิ่มช่องข้อความ
 const currentRejectItem = ref(null)
 
+const currentPage = ref(1)
+const itemsPerPage = 7
+
+// ------------------------------------------
+// 🔹 Pagination
+// ------------------------------------------
+const paginatedRequests = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return requests.value.slice(start, end)
+})
+const totalPages = computed(() =>
+  Math.ceil(requests.value.length / itemsPerPage)
+)
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// ------------------------------------------
+// 🔹 โหลดข้อมูล
+// ------------------------------------------
 const formatDate = (iso) => {
   if (!iso) return '-'
   const d = new Date(iso)
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`
 }
-
-// ✅ โหลดข้อมูลเอกสารที่ Pending
 onMounted(async () => {
   const token = localStorage.getItem('authToken')
   if (!token) return
-
   try {
     const res = await fetch('/secretary/documentRequests', {
-      headers: { 'Authorization': `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-
-    requests.value = (data.requests || []).map((item, index) => ({
+    requests.value = (data.requests || []).map((item) => ({
       no: item.document_id,
       studentId: item.studentId,
       name: item.full_name,
@@ -140,14 +269,16 @@ onMounted(async () => {
           ? 'Approved'
           : item.status === 2
           ? 'Rejected'
-          : 'Pending'
+          : 'Pending',
     }))
   } catch (err) {
-    console.error('❌ Fetch error (documentRequests):', err)
+    console.error('❌ Fetch error:', err)
   }
 })
 
-// ✅ Approve
+// ------------------------------------------
+// 🔹 Approve / Reject
+// ------------------------------------------
 const approve = async (item) => {
   const token = localStorage.getItem('authToken')
   try {
@@ -155,28 +286,35 @@ const approve = async (item) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ document_id: item.no, status: 1 })
+      body: JSON.stringify({ document_id: item.no, status: 1 }),
     })
-
-    const index = requests.value.findIndex(r => r.no === item.no)
-    if (index !== -1)
-      requests.value.splice(index, 1, { ...item, status: 'Approved' })
+    const i = requests.value.findIndex((r) => r.no === item.no)
+    if (i !== -1) requests.value.splice(i, 1, { ...item, status: 'Approved' })
   } catch (err) {
     console.error('❌ Approve failed:', err)
   }
 }
 
-// ✅ เปิด modal เมื่อ Reject
 const reject = (item) => {
   currentRejectItem.value = item
   showRejectModal.value = true
 }
 
-// ✅ Confirm Reject (ส่งเหตุผล)
+// ✅ เมื่อกดยืนยันปฏิเสธ
 const confirmReject = async () => {
-  if (!selectedReason.value) return alert('กรุณาเลือกเหตุผล')
+  if (!selectedReason.value)
+    return alert('กรุณาเลือกเหตุผลก่อนดำเนินการ')
+
+  // ใช้ customReason ถ้าเลือก "อื่นๆ"
+  const finalReason =
+    selectedReason.value === 'อื่นๆ'
+      ? customReason.value.trim()
+      : selectedReason.value
+
+  if (selectedReason.value === 'อื่นๆ' && !finalReason)
+    return alert('กรุณาพิมพ์เหตุผลในช่องข้อความ')
 
   const token = localStorage.getItem('authToken')
   try {
@@ -184,41 +322,41 @@ const confirmReject = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         document_id: currentRejectItem.value.no,
         status: 2,
-        reason: selectedReason.value
-      })
+        reason: finalReason,
+      }),
     })
 
-    const index = requests.value.findIndex(
-      r => r.no === currentRejectItem.value.no
+    const idx = requests.value.findIndex(
+      (r) => r.no === currentRejectItem.value.no
     )
-    if (index !== -1)
-      requests.value.splice(index, 1, {
+    if (idx !== -1)
+      requests.value.splice(idx, 1, {
         ...currentRejectItem.value,
         status: 'Rejected',
-        rejectionReason: selectedReason.value
+        rejectionReason: finalReason,
       })
 
+    // ✅ ปิด modal และ reset ค่า
     showRejectModal.value = false
     selectedReason.value = ''
+    customReason.value = ''
   } catch (err) {
     console.error('❌ Reject failed:', err)
   }
 }
 
-// ✅ Cancel modal
+// ✅ ปิด modal
 const cancelReject = () => {
   showRejectModal.value = false
   selectedReason.value = ''
+  customReason.value = ''
 }
 </script>
-
-
-
 
 <style scoped>
 .page-content {

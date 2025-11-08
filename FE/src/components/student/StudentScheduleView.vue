@@ -2,6 +2,7 @@
   <div class="w-full max-w-[1000px]">
     <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
       <div class="flex items-center gap-4">
+        <!-- 🔹 Month selector -->
         <select
           v-model="selectedMonthYear"
           class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer"
@@ -11,6 +12,7 @@
           </option>
         </select>
 
+        <!-- 🔹 Week selector -->
         <div class="flex gap-2 items-center">
           <span class="text-sm text-gray-700">Week:</span>
           <div class="flex flex-wrap gap-1 max-w-[300px]">
@@ -30,6 +32,7 @@
       </div>
     </div>
 
+    <!-- 🔹 ตารางเวลา -->
     <div class="overflow-x-auto mb-6">
       <table class="min-w-[720px] border-collapse mx-auto">
         <thead>
@@ -56,12 +59,10 @@
               v-for="(d, c) in days"
               :key="d"
               class="w-28 h-12 border border-gray-300 relative"
-              :style="cellStyle(r,c)"
-            >
-            </td>
+              :style="cellStyle(r, c)"
+            ></td>
           </tr>
         </tbody>
-
       </table>
     </div>
   </div>
@@ -71,16 +72,20 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import axios from 'axios'
 
-const emit = defineEmits(['update:unavailableData'])
-// ✅ ใช้ defineProps แทน route
+/* -------------------------------------------------------
+   Props & Emits
+------------------------------------------------------- */
 const props = defineProps({
   staffId: {
     type: [String, Number],
     required: true
   }
 })
+const emit = defineEmits(['update:unavailableData', 'update:weekRange'])
 
-/* ตารางเวลา + วัน */
+/* -------------------------------------------------------
+   ตารางเวลา & วัน
+------------------------------------------------------- */
 const timeSlots = [
   '08:00 - 09:00',
   '09:00 - 10:00',
@@ -91,14 +96,15 @@ const timeSlots = [
   '14:00 - 15:00',
   '16:00 - 17:00'
 ]
-
 const days = ['mon', 'tue', 'wed', 'thu', 'fri']
 const LUNCH_ROW = 4
-
-const key = (r, c) => `${r},${c}`
 const reserved = ref(new Set())
 
-/* สี cell */
+const key = (r, c) => `${r},${c}`
+
+/* -------------------------------------------------------
+   สี cell
+------------------------------------------------------- */
 const cellStyle = (r, c) => {
   if (r === LUNCH_ROW)
     return { backgroundColor: '#e5e7eb', cursor: 'default' }
@@ -114,7 +120,9 @@ const cellStyle = (r, c) => {
   return { backgroundColor: '#fff', cursor: 'default' }
 }
 
-/* Helper Functions */
+/* -------------------------------------------------------
+   Helper functions
+------------------------------------------------------- */
 const getLocalDateString = (d) => {
   const year = d.getFullYear()
   const month = String(d.getMonth() + 1).padStart(2, '0')
@@ -139,7 +147,9 @@ const getDayIndexFromDate = (dateStr) => {
   return jsDayLocal - 1
 }
 
-/* Week / Month Picker */
+/* -------------------------------------------------------
+   Month / Week picker
+------------------------------------------------------- */
 const today = new Date()
 const currentYear = today.getFullYear()
 const currentMonth = today.getMonth()
@@ -152,17 +162,13 @@ const monthOptions = computed(() => {
       month: 'long',
       year: 'numeric'
     })
-    const value = `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, '0')}`
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     opts.push({ label, value })
   }
   return opts
 })
 
-const selectedMonthYear = ref(
-  `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`
-)
+const selectedMonthYear = ref(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`)
 
 const weeksInMonth = computed(() => {
   const [year, month] = selectedMonthYear.value.split('-').map(Number)
@@ -189,39 +195,44 @@ const weeksInMonth = computed(() => {
 })
 
 const selectedWeek = ref(null)
-const selectWeek = (w) => (selectedWeek.value = w)
 
 const formatDateShort = (iso) => {
   const [y, m, d] = iso.split('-')
   const date = new Date(y, m - 1, d)
-  return `${date.getDate()} ${date.toLocaleString('default', {
-    month: 'short'
-  })}`
+  return `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })}`
 }
 
-/* โหลด off-time */
+/* -------------------------------------------------------
+   เลือกสัปดาห์ + Emit ให้ parent
+------------------------------------------------------- */
+const selectWeek = (w) => {
+  selectedWeek.value = w
+  if (w?.start && w?.end) {
+    emit('update:weekRange', { start: w.start, end: w.end })
+  }
+}
+
+/* -------------------------------------------------------
+   โหลดข้อมูล off-time จาก backend
+------------------------------------------------------- */
 const loadOffTime = async () => {
   if (!selectedWeek.value || !props.staffId) {
     reserved.value.clear()
     emit('update:unavailableData', reserved.value)
+    emit('update:weekRange', { start: null, end: null })
     return
   }
 
-  console.log(
-    `Loading off-time for staff ${props.staffId}, week ${selectedWeek.value.start}`
-  )
+  console.log(`Loading off-time for staff ${props.staffId}, week ${selectedWeek.value.start}`)
 
   try {
-    const res = await axios.get(
-      '/secretary/public/list',
-      {
-        params: {
-          weekStart: selectedWeek.value.start,
-          weekEnd: selectedWeek.value.end,
-          staffId: props.staffId
-        }
+    const res = await axios.get('/secretary/public/list', {
+      params: {
+        weekStart: selectedWeek.value.start,
+        weekEnd: selectedWeek.value.end,
+        staffId: props.staffId
       }
-    )
+    })
 
     const newSet = new Set()
 
@@ -240,19 +251,21 @@ const loadOffTime = async () => {
       })
 
       if (timeIndex === -1) return
-
       newSet.add(`${timeIndex},${dayIndex}`)
     })
 
     reserved.value = newSet
-    console.log('✅ Reserved count:', reserved.value.size)
     emit('update:unavailableData', newSet)
+    emit('update:weekRange', { start: selectedWeek.value.start, end: selectedWeek.value.end })
+    console.log('✅ Reserved count:', reserved.value.size)
   } catch (err) {
     console.error('Error loading public off-time:', err)
   }
 }
 
-/* onMounted */
+/* -------------------------------------------------------
+   Lifecycle + Watchers
+------------------------------------------------------- */
 onMounted(() => {
   const now = new Date()
   const start = getMonday(now)
@@ -261,19 +274,25 @@ onMounted(() => {
   selectedWeek.value =
     weeksInMonth.value.find((w) => w.start === startStr) ||
     weeksInMonth.value[0]
+
+  if (selectedWeek.value) {
+    emit('update:weekRange', {
+      start: selectedWeek.value.start,
+      end: selectedWeek.value.end
+    })
+  }
 })
 
-/* Watchers */
-watch(
-  selectedWeek,
-  () => {
-    loadOffTime()
-  },
-  { immediate: true }
-)
+watch(selectedWeek, () => loadOffTime(), { immediate: true })
 
 watch(selectedMonthYear, () => {
   selectedWeek.value = weeksInMonth.value[0] || null
+  if (selectedWeek.value) {
+    emit('update:weekRange', {
+      start: selectedWeek.value.start,
+      end: selectedWeek.value.end
+    })
+  }
 })
 
 watch(
