@@ -486,9 +486,11 @@ router.post("/offtime", async (req, res) => {
     }
 });
 //  เพิ่มเวลาหยุดงานของเจ้าหน้าที่
+// ✅ เพิ่มเวลาหยุดงานของเจ้าหน้าที่ (ใช้ token แทนการส่ง staff_id)
 router.post('/add', authMiddleware, async (req, res) => {
   try {
-    const { staff_id, date, start_time, end_time } = req.body;
+    const { date, start_time, end_time } = req.body;
+    const staff_id = req.user.id || req.user.user_id; // ✅ อ่านจาก token
 
     if (!staff_id || !date || !start_time || !end_time) {
       return res.status(400).json({
@@ -510,7 +512,7 @@ router.post('/add', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ Insert into DB
+    // ✅ บันทึกข้อมูล
     await db.promise().query(
       `INSERT INTO off_time (staff_id, date, start_time, end_time)
        VALUES (?, ?, ?, ?)`,
@@ -526,11 +528,14 @@ router.post('/add', authMiddleware, async (req, res) => {
 });
 
 
+
 //  ดึงรายการเวลาหยุดงานของเจ้าหน้าที่ในสัปดาห์นั้น
 // ✅ ดึงรายการ off-time
+// ✅ ดึงรายการ off-time ของเจ้าหน้าที่ในสัปดาห์นั้น
 router.get('/list', authMiddleware, async (req, res) => {
   try {
     const { weekStart, weekEnd } = req.query;
+    const staffId = req.user.id || req.user.user_id; // ✅ อ่านจาก token
 
     if (!weekStart || !weekEnd) {
       return res.status(400).json({
@@ -539,14 +544,23 @@ router.get('/list', authMiddleware, async (req, res) => {
       });
     }
 
-    console.log("✅ Fetch off-time:", weekStart, weekEnd);
+    if (!staffId) {
+      return res.status(403).json({
+        success: false,
+        message: "Missing staffId in token"
+      });
+    }
+console.log("👤 Token user:", req.user);
+
+    console.log("✅ Fetch off-time for staff:", staffId, "| range:", weekStart, "to", weekEnd);
 
     const [rows] = await db.promise().query(
-      `SELECT off_time_id, staff_id, 	date, start_time, end_time
+      `SELECT off_time_id, staff_id, date, start_time, end_time
        FROM off_time
-       WHERE 	date BETWEEN ? AND ?
-       ORDER BY 	date, start_time`,
-      [weekStart, weekEnd]
+       WHERE staff_id = ? 
+         AND date BETWEEN ? AND ?
+       ORDER BY date, start_time`,
+      [staffId, weekStart, weekEnd]
     );
 
     res.json({ success: true, items: rows });
@@ -556,6 +570,7 @@ router.get('/list', authMiddleware, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 // ✅ ลบ off-time
 router.post('/delete', authMiddleware, async (req, res) => {
   try {
