@@ -303,7 +303,6 @@ const loadOffTime = async () => {
       params: {
         weekStart: selectedWeek.value.start,
         weekEnd: selectedWeek.value.end,
-        staffId: staffId,
         categoryId: categoryId // ✅ แยกตารางตาม category
       }
     })
