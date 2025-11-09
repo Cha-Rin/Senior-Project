@@ -1,11 +1,35 @@
 const express = require('express')
 const authMiddleware = require('../middleware/auth') ;
 const SECRET_KEY = 'mysecretkey'
+
+// ✅ 1. เพิ่ม 2 บรรทัดนี้
+const multer = require('multer')
+const path = require('path')
+
+// ✅ 2. เพิ่มส่วนตั้งค่า Multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/documents/') // ต้องสร้าง folder นี้รอไว้
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
+    cb(
+      null,
+      file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname)
+    )
+  },
+})
+const upload = multer({ storage: storage })
+
+// -----------------------------------------------------
+
 module.exports = (db) => {
   const router = express.Router()
 
-  router.use(express.json())
-  router.use(express.urlencoded({ extended: true }))
+  // ‼️ ลบ 2 บรรทัดนี้ออกจาก global (ถ้า route อื่นไม่ใช้ไฟล์)
+  // router.use(express.json())
+  // router.use(express.urlencoded({ extended: true }))
+  // หรือถ้าจะเก็บไว้ ให้เพิ่ม express.json() ใน route อื่นๆ ที่รับ json
 
   router.use((req, res, next) => {
     if (req.method === 'POST') {
@@ -117,39 +141,136 @@ router.post('/appointments', (req, res) => {
 // });
 
 //-------------------------------------- Student Documents ----------------------------------------
-router.post('/documents', authMiddleware, (req, res) => {
-  console.log('📩 Hit /documents')
-  console.log('✅ Received body:', req.body)
-  const {
-    user_id,
-    category_id,
-    student_email,
-    submit_date,
-    finish_date,
-    student_note,
-    status
-  } = req.body;
 
-  if (!user_id) {
-    return res.status(400).json({ error: 'user_id is required' });
-  }
-if (!req.body) {
-  return res.status(400).json({ error: 'Request body is missing' })
-}
+router.post(
+    '/documents',
+    authMiddleware,
+    upload.single('document_image'), // <-- เพิ่ม Middleware ของ Multer
+    (req, res) => {
+      console.log('📩 Hit /documents (with file upload)')
+      console.log('✅ Received body (text data):', req.body) // <-- ข้อมูล text
+      console.log('✅ Received file (image data):', req.file) // <-- ข้อมูลไฟล์
 
-  const sql = `INSERT INTO document_tracking
-    (user_id, category_id, student_email, status, submit_date, finish_date, student_note)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`
+      const {
+        user_id,
+        category_id,
+        student_email,
+        submit_date,
+        finish_date,
+        student_note,
+        status,
+      } = req.body // <-- ดึงข้อมูล text จาก req.body
 
-  db.query(sql, [user_id, category_id, student_email, status, submit_date, finish_date, student_note], (err, result) => {
-    if (err) {
-      console.error('SQL Error:', err)
-      return res.status(500).json({ error: 'Database insert failed' })
+      // (เช็ค req.body เหมือนเดิม)
+      if (!user_id) {
+        return res.status(400).json({ error: 'user_id is required' })
+      }
+      if (!student_note) {
+        return res
+          .status(400)
+          .json({ error: 'student_note (sub_topic) is required' })
+      }
+
+      // ✅ 4. เช็คว่ามีไฟล์ถูกอัปโหลดมาหรือไม่
+      if (!req.file) {
+        return res
+          .status(400)
+          .json({ error: 'document_image (file) is required' })
+      }
+
+      // ✅ 5. ดึง path ของไฟล์ (จากรูปที่คุณส่งมา คุณใช้ "image_path")
+      const imagePath = req.file.path
+
+      // ✅ 6. อัปเดต SQL ให้มี `image_path`
+      const sql = `INSERT INTO document_tracking
+        (user_id, category_id, student_email, status, submit_date, finish_date, student_note, image_path)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+
+      const params = [
+        user_id,
+        category_id,
+        student_email,
+        status,
+        submit_date,
+        finish_date,
+        student_note,
+        imagePath, // <-- เพิ่ม imagePath เข้าไป
+      ]
+
+      db.query(sql, params, (err, result) => {
+        if (err) {
+          console.error('SQL Error:', err)
+          return res.status(500).json({ error: 'Database insert failed' })
+        }
+
+        // ✅ 7. ส่ง "document_id" กลับไปให้ Frontend
+        // (สำคัญมากสำหรับ Modal ที่แสดง ID)
+        res.json({
+          success: true,
+          message: 'Document created',
+          document_id: result.insertId, // <-- ส่ง ID ที่เพิ่งสร้างกลับไป
+        })
+      })
     }
+  )
+// router.post('/documents', authMiddleware, (req, res) => {
+//   console.log('📩 Hit /documents')
+//   console.log('✅ Received body:', req.body)
+//   const {
+//     user_id,
+//     category_id,
+//     student_email,
+//     submit_date,
+//     finish_date,
+//     student_note,
+//     status
+//   } = req.body;
 
-    res.json({ success: true, message: 'Document created', data: { user_id } })
-  });
-});
+//   if (!user_id) {
+//     return res.status(400).json({ error: 'user_id is required' });
+//   }
+// if (!req.body) {
+//   return res.status(400).json({ error: 'Request body is missing' })
+// }
+
+//   const sql = `INSERT INTO document_tracking
+//     (user_id, category_id, student_email, status, submit_date, finish_date, student_note)
+//     VALUES (?, ?, ?, ?, ?, ?, ?)`
+
+//   db.query(sql, [user_id, category_id, student_email, status, submit_date, finish_date, student_note], (err, result) => {
+//     if (err) {
+//       console.error('SQL Error:', err)
+//       return res.status(500).json({ error: 'Database insert failed' })
+//     }
+
+//     res.json({ success: true, message: 'Document created', data: { user_id } })
+//   });
+// });
+// ===============================================================
+// 📘 GET /student/categories-with-staff
+// ดึงรายชื่อหมวดหมู่ + เจ้าหน้าที่ที่รับผิดชอบแต่ละหมวด
+// ===============================================================
+router.get('/categories-with-staff', (req, res) => {
+  const sql = `
+    SELECT 
+      c.category_id,
+      c.type,
+      CONCAT(u.name, ' ', u.surname) AS staff_name
+    FROM categories c
+    LEFT JOIN user_category uc ON c.category_id = uc.category_id
+    LEFT JOIN user u ON uc.user_id = u.user_id AND u.role = 2
+    ORDER BY c.category_id;
+  `
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('❌ Error fetching categories-with-staff:', err)
+      return res.status(500).json({ success: false, message: 'Database error' })
+    }
+    console.log('✅ categories-with-staff count:', rows.length)
+    res.json(rows)
+  })
+})
+
 //----------------------------------- chack status of documents ----------------------------------------
 router.get('/api/documents/:studentId', (req, res) => {
   const studentId = req.params.studentId

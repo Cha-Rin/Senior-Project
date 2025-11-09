@@ -228,7 +228,7 @@ const fetchRatings = async () => {
       return; 
     }
 
- const res = await axios.get('/secretary/rating-Appointment', {
+ const res = await axios.get('/api/secretary/rating-Appointment', {
  params: { 
  year: selectedYear.value, 
  semester: selectedSemester.value,

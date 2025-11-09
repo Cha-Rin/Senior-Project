@@ -226,7 +226,7 @@ const loadOffTime = async () => {
   console.log(`Loading off-time for staff ${props.staffId}, week ${selectedWeek.value.start}`)
 
   try {
-    const res = await axios.get('/secretary/public/list', {
+    const res = await axios.get('/api/secretary/public/list', {
       params: {
         weekStart: selectedWeek.value.start,
         weekEnd: selectedWeek.value.end,

@@ -142,7 +142,7 @@ const fetchRatings = async () => {
   loading.value = true
   try {
     // ✅ 1. เพิ่ม 'type: activeTab.value' เข้าไปใน params
-    const res = await axios.get(`/admin/staff/${staffId}/rating`, {
+    const res = await axios.get(`/api/admin/staff/${staffId}/rating`, {
       params: {
         year: selectedYear.value,
         semester: selectedSemester.value,
@@ -194,7 +194,7 @@ const fetchRatings = async () => {
 // ==============================
 const fetchComments = async () => {
   try {
-    const res = await axios.get(`/admin/staff/${staffId}/comments`, {
+    const res = await axios.get(`/api/admin/staff/${staffId}/comments`, {
       params: {
         type: activeTab.value,
         year: selectedYear.value,

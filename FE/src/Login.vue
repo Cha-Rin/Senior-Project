@@ -91,6 +91,24 @@ const login = async () => {
     localStorage.setItem('userRole', role)
     localStorage.setItem('userId', decoded.user_id)
     localStorage.setItem('email', decoded.email)
+    // ✅ ถ้าเป็นเลขา (role 2) — ดึง category_id ของพี่คนนั้นจาก backend
+if (role === 2) {
+  try {
+    const catRes = await fetch(`http://localhost:3000/api/staff/category/${decoded.user_id}`, {
+      headers: { Authorization: `Bearer ${data.token}` }
+    })
+    const catData = await catRes.json()
+    if (catData.success && catData.category_id) {
+      localStorage.setItem('categoryId', catData.category_id)
+      console.log(`✅ Saved category_id = ${catData.category_id}`)
+    } else {
+      console.warn('⚠️ No category found for this staff.')
+    }
+  } catch (catErr) {
+    console.error('❌ Failed to fetch category:', catErr)
+  }
+}
+
 
     await router.isReady()
     await nextTick()

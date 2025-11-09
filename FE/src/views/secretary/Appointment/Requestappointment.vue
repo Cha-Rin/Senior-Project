@@ -191,7 +191,7 @@ onMounted(async () => {
   if (!token) return
 
   try {
-    const res = await fetch('/secretary/appointmentRequests', {
+    const res = await fetch('/api/secretary/appointmentRequests', {
       headers: { Authorization: `Bearer ${token}` },
     })
     if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
@@ -224,7 +224,7 @@ const setStatus = async (item, newStatus) => {
 
   try {
     const token = localStorage.getItem('authToken')
-    const res = await fetch('/secretary/updateAppointmentStatus', {
+    const res = await fetch('/api/secretary/updateAppointmentStatus', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

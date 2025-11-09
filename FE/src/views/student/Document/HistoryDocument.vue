@@ -94,7 +94,7 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch('/student/document/history', {
+    const res = await fetch('/api/student/document/history', {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}` // ✅ ส่ง token

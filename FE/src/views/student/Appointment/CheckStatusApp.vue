@@ -82,7 +82,7 @@ onMounted(async () => {
   }
 
   try {
-    const res = await fetch('/student/appointments', {
+    const res = await fetch('/api/student/appointments', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

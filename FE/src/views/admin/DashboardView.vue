@@ -54,7 +54,7 @@ const chartData2 = reactive({
 // ✅ ดึงข้อมูลจำนวนผู้ใช้บริการต่อวัน
 const fetchWeeklySummary = async (start, end) => {
   try {
-    const res = await axios.get('/admin/weekly-summary', {
+    const res = await axios.get('/api/admin/weekly-summary', {
       params: { start, end }
     })
     if (res.data.success) {
@@ -72,7 +72,7 @@ const fetchWeeklySummary = async (start, end) => {
 // ✅ ดึงข้อมูลคะแนนเฉลี่ย
 const fetchAverageRating = async (start, end) => {
   try {
-    const res = await axios.get('/admin/average-rating' , {params: { start, end } })
+    const res = await axios.get('/api/admin/average-rating' , {params: { start, end } })
     if (res.data.success) {
       const avg = res.data.data
       chartData2.datasets[0].data = [
@@ -94,7 +94,7 @@ const fetchAverageRating = async (start, end) => {
 // ✅ ดึงข้อมูล staff
 const fetchStaffs = async () => {
   try {
-    const res = await axios.get('/admin/staffs')
+    const res = await axios.get('/api/admin/staffs')
     if (res.data.success) staffList.value = res.data.data
   } catch (err) {
     console.error('❌ Error fetching staff list:', err)

@@ -230,7 +230,7 @@ const fetchRatings = async () => {
     }
 
     // ⭐️⭐️⭐️ [แก้ไข] เปลี่ยน URL เป็น /rating-Document ⭐️⭐️⭐️
-    const res = await axios.get('/secretary/rating-Document', { 
+    const res = await axios.get('/api/secretary/rating-Document', { 
       params: { 
         year: selectedYear.value, 
         semester: selectedSemester.value,

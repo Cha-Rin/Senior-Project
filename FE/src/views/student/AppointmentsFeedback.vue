@@ -22,7 +22,7 @@ onMounted(async () => {
 
   try {
     console.log("🔑 Fetching approved topics (using token)")
-    const res = await fetch('/student/appointment-topics', {
+    const res = await fetch('/api/student/appointment-topics', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ onMounted(async () => {
 async function loadAppointments() {
   try {
     console.log("🔑 Fetching appointments (using token)")
-    const res = await fetch('/student/appointments/for-feedback?approved_set=1', {
+    const res = await fetch('/api/student/appointments/for-feedback?approved_set=1', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -76,7 +76,7 @@ async function handleSubmit(payload) {
   try {
     console.log("🧩 handleSubmit payload:", payload);
 
-    const res = await fetch('/student/feedback/appointments', {
+    const res = await fetch('/api/student/feedback/appointments', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

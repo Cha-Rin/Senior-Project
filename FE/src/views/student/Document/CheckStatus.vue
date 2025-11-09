@@ -86,7 +86,7 @@ onMounted(async () => {
   const userId = localStorage.getItem('userId')
   console.log('📦 Loaded userId:', userId)
   try {
-    const res = await fetch(`/student/api/documents/${userId}`)
+    const res = await fetch(`/api/student/api/documents/${userId}`)
     const data = await res.json()
 
     if (Array.isArray(data)) {

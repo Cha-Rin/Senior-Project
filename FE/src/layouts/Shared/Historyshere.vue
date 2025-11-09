@@ -270,7 +270,7 @@ onMounted(async () => {
   if (!userId) return
 
   try {
-    const res = await fetch(`/history/historyall`, {
+    const res = await fetch(`/api/history/historyall`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const data = await res.json()

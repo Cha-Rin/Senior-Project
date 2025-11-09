@@ -1,6 +1,6 @@
 <!-- =======================================
 📄 File: TopicChoose.vue
-Version: เลือกหัวข้อ → กรอกหัวข้อย่อย → ส่ง → อัปโหลดรูป → แสดง doc ID
+Version: ใช้งานได้สมบูรณ์ (Load category + staff name + upload)
 ======================================= -->
 
 <template>
@@ -8,8 +8,11 @@ Version: เลือกหัวข้อ → กรอกหัวข้อย
     <!-- 🔹 หัวข้อหน้า -->
     <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
 
-    <!-- 🔹 รายการหัวข้อหลัก -->
-    <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
+    <!-- 🔹 โหลดข้อมูล -->
+    <div v-if="loadingData" class="text-center text-gray-500">Loading topics...</div>
+
+    <!-- 🔹 แสดงหัวข้อหลัก -->
+    <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
       <div
         v-for="cat in categories"
         :key="cat.category_id"
@@ -22,17 +25,23 @@ Version: เลือกหัวข้อ → กรอกหัวข้อย
         ]"
       >
         <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
-        <p class="text-sm text-gray-500 mt-1">👩‍💼 {{ cat.staff_name || 'Unknown Staff' }}</p>
+        <p class="text-sm text-gray-500 mt-1">
+          👩‍💼 {{ cat.staff_name || 'ยังไม่มีเจ้าหน้าที่' }}
+        </p>
       </div>
     </div>
 
-    <!-- 🔹 ฟอร์มกรอกหัวข้อย่อย (แสดงเมื่อเลือกหัวข้อแล้ว) -->
+    <!-- ❗ Error Message -->
+    <p v-if="errorMessage" class="text-red-500 text-center mt-4">{{ errorMessage }}</p>
+
+    <!-- 🔹 ฟอร์มกรอกหัวข้อย่อย -->
     <div
       v-if="selectedCategory"
       class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
       <p class="text-sm font-semibold mb-2">
-        พิมพ์หัวข้อย่อยของคุณ <span class="text-gray-400">(ตัวอย่างเช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
+        พิมพ์หัวข้อย่อยของคุณ
+        <span class="text-gray-400">(ตัวอย่างเช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
       </p>
       <textarea
         v-model="subTopic"
@@ -50,9 +59,6 @@ Version: เลือกหัวข้อ → กรอกหัวข้อย
         </button>
       </div>
     </div>
-
-    <!-- ❗ Error Message -->
-    <p v-if="errorMessage" class="text-red-500 text-center mt-4">{{ errorMessage }}</p>
 
     <!-- 🔸 Popup: ถ่ายรูป / อัปโหลด -->
     <div
@@ -131,6 +137,7 @@ const imageFile = ref(null)
 const loading = ref(false)
 const showDocId = ref(false)
 const createdDocId = ref('')
+const loadingData = ref(true)
 
 // ✅ user info
 const userId = localStorage.getItem('userId')
@@ -142,14 +149,31 @@ const token = localStorage.getItem('authToken')
 // ------------------------------------------
 onMounted(async () => {
   try {
-    const res = await fetch('/student/api/categories-with-staff', {
+    console.log('📩 Fetching categories with staff...')
+    const res = await fetch('/api/student/categories-with-staff', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-    categories.value = data
+    console.log('✅ Response:', data)
+
+    // รองรับทั้ง array หรือ { data: [...] }
+    if (Array.isArray(data)) {
+      categories.value = data
+    } else if (data.data && Array.isArray(data.data)) {
+      categories.value = data.data
+    } else {
+      categories.value = []
+      console.warn('⚠️ Unexpected response format:', data)
+    }
+
+    if (categories.value.length === 0) {
+      errorMessage.value = 'ไม่พบข้อมูลหัวข้อหรือเจ้าหน้าที่ในระบบ'
+    }
   } catch (err) {
-    console.error(err)
-    errorMessage.value = 'Failed to load topics.'
+    console.error('❌ Error loading categories:', err)
+    errorMessage.value = 'Failed to load topics. Please try again later.'
+  } finally {
+    loadingData.value = false
   }
 })
 
@@ -166,8 +190,10 @@ const selectCategory = (cat) => {
 // 🔹 เปิด popup กล้อง / อัปโหลด
 // ------------------------------------------
 const openCameraPopup = () => {
-  if (!subTopic.value.trim())
-    return (errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยของคุณก่อนส่ง')
+  if (!subTopic.value.trim()) {
+    errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยของคุณก่อนส่ง'
+    return
+  }
   showCamera.value = true
   errorMessage.value = ''
 }
@@ -191,7 +217,6 @@ const submitDocument = async () => {
 
   loading.value = true
   try {
-    // 1️⃣ ส่งข้อมูลเอกสารไป backend
     const payload = {
       user_id: userId,
       category_id: selectedCategory.value.category_id,
@@ -202,7 +227,7 @@ const submitDocument = async () => {
       finish_date: '',
     }
 
-    const res = await fetch('/student/documents', {
+    const res = await fetch('/api/student/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,25 +239,22 @@ const submitDocument = async () => {
     const data = await res.json()
     if (!data.success) throw new Error('Create document failed')
 
-    // 2️⃣ อัปโหลดรูป
     const docId = data.document_id
     const formData = new FormData()
     formData.append('photo', imageFile.value)
     formData.append('document_id', docId)
 
-    await fetch('/student/upload-document-image', {
+    await fetch('/api/student/upload-document-image', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     })
 
-    // 3️⃣ แสดง doc ID
-    loading.value = false
     showCamera.value = false
     createdDocId.value = docId
     showDocId.value = true
   } catch (err) {
-    console.error(err)
+    console.error('❌ Submit error:', err)
     errorMessage.value = 'Failed to submit document.'
   } finally {
     loading.value = false

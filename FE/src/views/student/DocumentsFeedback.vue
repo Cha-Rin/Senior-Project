@@ -22,7 +22,7 @@ onMounted(async () => {
 
   try {
     console.log("🔑 Fetching approved topics")
-    const res = await fetch('/student/document-topics', {
+    const res = await fetch('/api/student/document-topics', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -48,7 +48,7 @@ onMounted(async () => {
 async function loadDocuments() {
   try {
     console.log("🔑 Fetching documents for feedback")
-    const res = await fetch('/student/documents/for-feedback', {
+    const res = await fetch('/api/student/documents/for-feedback', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -76,7 +76,7 @@ async function handleSubmit(payload) {
   try {
     console.log("🧩 handleSubmit payload:", payload)
 
-    const res = await fetch('/student/feedback/documents', {
+    const res = await fetch('/api/student/feedback/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

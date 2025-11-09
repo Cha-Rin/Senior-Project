@@ -201,7 +201,7 @@ const loadDocuments = async () => {
   if (!token) return
 
   try {
-    const res = await fetch('/secretary/documentStatus', {
+    const res = await fetch('/api/secretary/documentStatus', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
@@ -269,7 +269,7 @@ const confirmComplete = async () => {
   formData.append('document_id', currentCompleteItem.value.no)
 
   try {
-    const res = await fetch('/secretary/markDocumentComplete', {
+    const res = await fetch('/api/secretary/markDocumentComplete', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

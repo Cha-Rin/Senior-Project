@@ -199,7 +199,7 @@ const onCellClick = async (r, c) => {
 
     try {
       await axios.post(
-        '/secretary/add',
+        '/api/secretary/add',
         { staff_id: staffId, category_id: categoryId, date, start_time, end_time },
         { headers: { Authorization: `Bearer ${authToken}` } }
       )
@@ -298,7 +298,7 @@ const weekDates = computed(() => {
 const loadOffTime = async () => {
   if (!selectedWeek.value) return
   try {
-    const res = await axios.get('/secretary/list', {
+    const res = await axios.get('/api/secretary/list', {
       headers: { Authorization: `Bearer ${authToken}` },
       params: {
         weekStart: selectedWeek.value.start,
@@ -347,7 +347,7 @@ const deleteSelected = async () => {
   if (ids.length === 0) return
   try {
     await axios.post(
-      '/secretary/delete',
+      '/api/secretary/delete',
       { ids, category_id: categoryId }, // ✅ ส่ง category_id ให้ backend ด้วย
       { headers: { Authorization: `Bearer ${authToken}` } }
     )

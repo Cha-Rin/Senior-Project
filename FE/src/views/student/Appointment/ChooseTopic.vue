@@ -55,7 +55,7 @@ const token = localStorage.getItem('authToken')
 // ------------------------------------------
 onMounted(async () => {
   try {
-    const res = await fetch('/student/api/categories-with-staff', {
+    const res = await fetch('/api/student/categories-with-staff', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()

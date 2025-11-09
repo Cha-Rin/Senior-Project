@@ -229,7 +229,7 @@ onMounted(async () => {
   console.log("---------------------------");
 
   try {
-    const res = await axios.get("/history/historyall", {
+    const res = await axios.get("/api/history/historyall", {
       headers: { Authorization: `Bearer ${token}` },
       params: { staffId: staffId } // ✅ ส่งตรง ๆ
     });

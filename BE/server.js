@@ -41,22 +41,22 @@ app.use((err, req, res, next) => {
 // ------------------------------------------ Routes -----------------------------------------
 
 const studentRouter = require('./routes/student')(db)
-app.use('/student', studentRouter)
+app.use('/api/student', studentRouter)
 
 const secretaryRouter = require('./routes/secretary')(db)
-app.use('/secretary', secretaryRouter)
+app.use('/api/secretary', secretaryRouter)
 
 const adminRouter = require('./routes/admin')(db)
-app.use('/admin', adminRouter)
+app.use('/api/admin', adminRouter)
 
 const historyRouter = require('./routes/history')(db)
-app.use('/history', historyRouter)
+app.use('/api/history', historyRouter)
 
 const academicRoutes = require('./routes/academic.js')(db) 
-app.use('/academic', academicRoutes)
+app.use('/api/academic', academicRoutes)
 
 const notiRoutes = require('./routes/Notification.js')(db) 
-app.use('/noti', notiRoutes)
+app.use('/api/noti', notiRoutes)
 // ------------------------------------------ Log in -----------------------------------------
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
@@ -125,6 +125,7 @@ app.get('/api/categories', (req, res) => {
     res.json(results)
   })
 })
+
 
 // --------------------------------------- 404 Handler ---------------------------------------
 app.use((req, res) => {
