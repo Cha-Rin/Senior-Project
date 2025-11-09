@@ -119,7 +119,7 @@
     </div>
 
     <!-- ตาราง -->
-    <div class="max-w-6xl mx-auto mb-6">
+    <div class="max-w-6xl mx-auto mb-6 overflow-hidden rounded-xl shadow-lg border border-gray-200">
       <table
         class="w-full bg-white rounded-xl shadow-lg border border-gray-200"
       >
