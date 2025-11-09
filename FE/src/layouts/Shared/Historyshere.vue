@@ -263,26 +263,65 @@ const statusOptions = computed(() => {
 })
 
 // --------------------------
-// 🔹 กรองตามประเภทและสถานะ
+// 🔹 กรองตามประเภทและสถานะ + SORT ตามเงื่อนไขใหม่
 // --------------------------
 const filteredItemsByType = computed(() => {
-  let items = history.value || []
-  if (props.type === 'appointment') {
-    items = items.filter((i) => i.type === 'appointment')
-  } else if (props.type === 'document') {
-    items = items.filter((i) => i.type === 'document')
+  let items = history.value
+
+  // ✅ กรองตาม type (จาก props)
+  if (props.type === "appointment") {
+    items = items.filter(i => i.type === "appointment")
+  } else if (props.type === "document") {
+    items = items.filter(i => i.type === "document")
   }
-  if (statusFilter.value !== 'all') {
-    items = items.filter((i) => String(i.status) === statusFilter.value)
+
+  // ✅ กรองตามสถานะ
+  if (statusFilter.value !== "all") {
+    items = items.filter(i => String(i.status) === statusFilter.value)
   }
-  return items
+
+  // ✅ === SORT: ใกล้ถึงวันนี้ที่สุด → บนสุด, Reject → ล่างสุด ===
+  const now = Date.now()
+  return items.sort((a, b) => {
+    const isAReject = a.status === 2
+    const isBReject = b.status === 2
+
+    // กรณี: A เป็น Reject, B ไม่ใช่ → A ไปท้าย
+    if (isAReject && !isBReject) return 1
+    // กรณี: B เป็น Reject, A ไม่ใช่ → B ไปท้าย (A มาก่อน)
+    if (!isAReject && isBReject) return -1
+    // กรณี: ทั้งคู่ Reject หรือทั้งคู่ไม่ใช่ → เปรียบเทียบ "ระยะห่างจากวันนี้"
+
+    const timeA = new Date(a.event_date).getTime()
+    const timeB = new Date(b.event_date).getTime()
+
+    // คำนวณระยะห่างจากวันนี้ (ค่าบวก = ยังไม่ถึง, ค่าลบ = ผ่านมาแล้ว)
+    const diffA = timeA - now
+    const diffB = timeB - now
+
+    // เรียงจาก "ใกล้ที่สุด" → "ไกลที่สุด"
+    // ถ้าทั้งคู่ผ่านมาแล้ว → เรียงจากใหม่ไปเก่า (ล่าสุดที่ผ่านมาอยู่บน)
+    if (diffA <= 0 && diffB <= 0) {
+      return diffB - diffA // ผ่านมาแล้ว: เรียงจากใหม่ → เก่า
+    }
+    // ถ้าทั้งคู่ยังไม่ถึง → เรียงจากใกล้ → ไกล
+    if (diffA >= 0 && diffB >= 0) {
+      return diffA - diffB
+    }
+    // ถ้า A ยังไม่ถึง แต่ B ผ่านมาแล้ว → A มาก่อน
+    if (diffA >= 0 && diffB <= 0) {
+      return -1
+    }
+    // ถ้า B ยังไม่ถึง แต่ A ผ่านมาแล้ว → B มาก่อน
+    return 1
+  })
 })
 
 // --------------------------
 // 🔹 Pagination
 // --------------------------
 const currentPage = ref(1)
-const itemsPerPage = 6
+const itemsPerPage = 7
 const totalPages = computed(() =>
   Math.ceil(filteredItemsByType.value.length / itemsPerPage)
 )
