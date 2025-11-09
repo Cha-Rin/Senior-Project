@@ -1,5 +1,7 @@
+<!-- 📄 src/components/student/StudentScheduleView.vue -->
 <template>
   <div class="w-full max-w-[1000px]">
+    <!-- 🔹 Month & Week selector -->
     <div class="flex flex-wrap justify-center items-center gap-4 mb-4">
       <div class="flex items-center gap-4">
         <!-- 🔹 Month selector -->
@@ -34,27 +36,42 @@
 
     <!-- 🔹 ตารางเวลา -->
     <div class="overflow-x-auto mb-6">
-      <table class="min-w-[720px] border-collapse mx-auto">
+      <table class="min-w-[720px] border-collapse mx-auto shadow-md">
         <thead>
-          <tr>
-            <th class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300">
+          <tr class="border-b-4 border-indigo-200">
+            <th class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 font-semibold">
               Time
             </th>
+
+            <!-- 🔹 รวมวันและวันที่ในช่องเดียว -->
             <th
-              v-for="d in days"
+              v-for="(d, i) in days"
               :key="d"
-              class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 capitalize"
+              class="px-4 py-2 text-gray-700 border border-gray-300 capitalize font-semibold"
+              :class="[
+                i === 0 ? 'bg-[#FFF8D8]' : '',  // Mon - เหลืองอ่อน
+                i === 1 ? 'bg-[#FFE4E8]' : '',  // Tue - ชมพูอ่อน
+                i === 2 ? 'bg-[#E2F7E1]' : '',  // Wed - เขียวมิ้นต์
+                i === 3 ? 'bg-[#FFE8D8]' : '',  // Thu - ส้มพีช
+                i === 4 ? 'bg-[#D8EFFF]' : ''   // Fri - ฟ้าอ่อน
+              ]"
             >
-              {{ d }}
+              <div class="flex flex-col items-center">
+                <span class="text-gray-800 font-semibold">{{ d }}</span>
+                <span class="text-xs text-gray-600 font-normal">{{ weekDates[i] }}</span>
+              </div>
             </th>
           </tr>
         </thead>
 
         <tbody>
           <tr v-for="(slot, r) in timeSlots" :key="slot">
-            <td class="px-4 py-3 text-gray-800 border border-gray-300 whitespace-nowrap">
+            <!-- 🔹 คอลัมน์เวลา -->
+            <td class="px-4 py-3 text-gray-800 border border-gray-300 whitespace-nowrap font-medium bg-gray-50">
               {{ slot }}
             </td>
+
+            <!-- 🔹 ช่องเวลาของแต่ละวัน -->
             <td
               v-for="(d, c) in days"
               :key="d"
@@ -96,7 +113,7 @@ const timeSlots = [
   '14:00 - 15:00',
   '16:00 - 17:00'
 ]
-const days = ['mon', 'tue', 'wed', 'thu', 'fri']
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const LUNCH_ROW = 4
 const reserved = ref(new Set())
 
@@ -196,6 +213,25 @@ const weeksInMonth = computed(() => {
 
 const selectedWeek = ref(null)
 
+/* -------------------------------------------------------
+   ✅ วันที่ใต้หัวตาราง (Reactive)
+------------------------------------------------------- */
+const weekDates = computed(() => {
+  if (!selectedWeek.value) return []
+  const [y, m, d] = selectedWeek.value.start.split('-').map(Number)
+  const base = new Date(y, m - 1, d)
+  const dates = []
+  for (let i = 0; i < 5; i++) {
+    const dt = new Date(base)
+    dt.setDate(base.getDate() + i)
+    dates.push(dt.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }))
+  }
+  return dates
+})
+
+/* -------------------------------------------------------
+   ฟังก์ชัน format วันที่ย่อ
+------------------------------------------------------- */
 const formatDateShort = (iso) => {
   const [y, m, d] = iso.split('-')
   const date = new Date(y, m - 1, d)
@@ -223,7 +259,7 @@ const loadOffTime = async () => {
     return
   }
 
-  console.log(`Loading off-time for staff ${props.staffId}, week ${selectedWeek.value.start}`)
+  console.log(`📅 Loading off-time for staff ${props.staffId}, week ${selectedWeek.value.start}`)
 
   try {
     const res = await axios.get('/api/secretary/public/list', {

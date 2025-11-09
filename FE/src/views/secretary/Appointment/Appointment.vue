@@ -86,15 +86,22 @@
                   Time
                 </th>
                 <th
-                  v-for="(d, i) in days"
-                  :key="d"
-                  class="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 capitalize text-center"
-                >
-                  {{ d }}
-                  <div v-if="weekDates[i]" class="text-xs text-gray-500 font-normal">
-                    {{ weekDates[i] }}
-                  </div>
-                </th>
+              v-for="(d, i) in days"
+              :key="d"
+              class="px-4 py-2 text-gray-700 border border-gray-300 capitalize font-semibold"
+              :class="[
+                i === 0 ? 'bg-[#FFF8D8]' : '',  // Mon - เหลืองอ่อน
+                i === 1 ? 'bg-[#FFE4E8]' : '',  // Tue - ชมพูอ่อน
+                i === 2 ? 'bg-[#E2F7E1]' : '',  // Wed - เขียวมิ้นต์
+                i === 3 ? 'bg-[#FFE8D8]' : '',  // Thu - ส้มพีช
+                i === 4 ? 'bg-[#D8EFFF]' : ''   // Fri - ฟ้าอ่อน
+              ]"
+            >
+              <div class="flex flex-col items-center">
+                <span class="text-gray-800 font-semibold">{{ d }}</span>
+                <span class="text-xs text-gray-600 font-normal">{{ weekDates[i] }}</span>
+              </div>
+            </th>
               </tr>
             </thead>
 
