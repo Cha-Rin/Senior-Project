@@ -173,7 +173,7 @@ onMounted(async () => {
     if (!token) return;
     const decoded = jwt_decode(token);
     const userId = Number(decoded.user_id);
-    const res = await axios.get(`/profile/${userId}`);
+    const res = await axios.get(`/api/profile/${userId}`);
     
     user.value = res.data;
     user.value.avatar = getUserAvatar(userId);
@@ -194,14 +194,14 @@ onMounted(async () => {
 const fetchDropdownOptions = async () => {
   try {
     // 4.1 ดึง "รายการตัวเลือก"
-    const optionsRes = await axios.get('/academic/academic-options')
+    const optionsRes = await axios.get('/api/academic/academic-options')
     if (optionsRes.data.success) {
       semesterOptions.value = optionsRes.data.data.semesters
       yearOptions.value = optionsRes.data.data.years
     }
 
     // 4.2 ดึง "ค่าปัจจุบัน"
-    const currentRes = await axios.get('/academic/current')
+    const currentRes = await axios.get('/api/academic/current')
     if (currentRes.data.success) {
       // 4.3 ตั้งค่า v-model (Default)
       selectedSemester.value = currentRes.data.data.semester

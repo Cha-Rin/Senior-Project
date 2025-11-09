@@ -98,7 +98,7 @@ app.post('/api/login', (req, res) => {
   });
 });
 // ------------------------------------------ Profile -----------------------------------------
-app.get('/profile/:id', (req, res) => {
+app.get('/api/profile/:id', (req, res) => {
   const userId = Number(req.params.id); // แปลงเป็น number
   const sql = 'SELECT name, surname FROM user WHERE user_id = ?';
   db.query(sql, [userId], (err, result) => {
