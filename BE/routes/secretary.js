@@ -457,40 +457,55 @@ router.get('/rating-Document', (req, res) => {
 });
 // ------------------------------------------ Staff Off-time -----------------------------------------------------
 router.post("/offtime", async (req, res) => {
-    const { staff_id, date, start_time, end_time } = req.body;
+  const { staff_id, date, start_time, end_time } = req.body;
 
-    try {
-        const [rows] = await db.promise().query(
-            "SELECT role FROM users WHERE user_id = ?",
-            [staff_id]
-        );
+  try {
+    // ✅ ตรวจสอบว่าเป็น staff role = 2
+    const [roleRows] = await db.promise().query(
+      "SELECT role FROM user WHERE user_id = ?",
+      [staff_id]
+    );
 
-        if (rows.length === 0 || rows[0].role !== 2) {
-            return res.status(403).json({
-                success: false,
-                message: "Only staff (role = 2) can create off-time."
-            });
-        }
-
-        // ✅ ผ่านแล้ว → บันทึกลง off_time
-        await db.promise().query(
-            "INSERT INTO off_time (staff_id, date, start_time, end_time) VALUES (?, ?, ?, ?)",
-            [staff_id, date, start_time, end_time]
-        );
-
-        return res.json({ success: true, message: "Off-time created." });
-
-    } catch (err) {
-        console.error("Error creating off-time:", err);
-        res.status(500).json({ success: false, error: err.message });
+    if (roleRows.length === 0 || roleRows[0].role !== 2) {
+      return res.status(403).json({
+        success: false,
+        message: "Only staff (role = 2) can create off-time."
+      });
     }
+
+    // ✅ ดึง category_id ที่เชื่อมกับ user_id จาก user_category
+    const [catRows] = await db.promise().query(
+      "SELECT category_id FROM user_category WHERE user_id = ? LIMIT 1",
+      [staff_id]
+    );
+
+    if (catRows.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "This staff has no category assigned."
+      });
+    }
+
+    const category_id = catRows[0].category_id;
+
+    // ✅ บันทึกข้อมูลลง off_time พร้อม category_id
+    await db.promise().query(
+      "INSERT INTO off_time (staff_id, category_id, date, start_time, end_time) VALUES (?, ?, ?, ?, ?)",
+      [staff_id, category_id, date, start_time, end_time]
+    );
+
+    res.json({ success: true, message: "Off-time created successfully." });
+
+  } catch (err) {
+    console.error("🔥 Error creating off-time:", err);
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
+
 //  เพิ่มเวลาหยุดงานของเจ้าหน้าที่
-// ✅ เพิ่มเวลาหยุดงานของเจ้าหน้าที่ (ใช้ token แทนการส่ง staff_id)
 router.post('/add', authMiddleware, async (req, res) => {
   try {
-    const { date, start_time, end_time } = req.body;
-    const staff_id = req.user.id || req.user.user_id; // ✅ อ่านจาก token
+    const { staff_id, date, start_time, end_time } = req.body;
 
     if (!staff_id || !date || !start_time || !end_time) {
       return res.status(400).json({
@@ -512,7 +527,7 @@ router.post('/add', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ บันทึกข้อมูล
+    // ✅ Insert into DB
     await db.promise().query(
       `INSERT INTO off_time (staff_id, date, start_time, end_time)
        VALUES (?, ?, ?, ?)`,
@@ -528,45 +543,40 @@ router.post('/add', authMiddleware, async (req, res) => {
 });
 
 
-
 //  ดึงรายการเวลาหยุดงานของเจ้าหน้าที่ในสัปดาห์นั้น
 // ✅ ดึงรายการ off-time
-// ✅ ดึงรายการ off-time ของเจ้าหน้าที่ในสัปดาห์นั้น
 router.get('/list', authMiddleware, async (req, res) => {
   try {
-    const { weekStart, weekEnd } = req.query;
-    const staffId = req.user.id || req.user.user_id; // ✅ อ่านจาก token
+    const { weekStart, weekEnd, categoryId } = req.query;
+    const staffId = req.user.id || req.user.user_id;
 
-    if (!weekStart || !weekEnd) {
-      return res.status(400).json({
-        success: false,
-        message: "weekStart and weekEnd are required"
-      });
+    // ✅ ถ้า front-end ไม่ส่ง categoryId → ดึงจาก user_category
+    let catId = categoryId;
+    if (!catId) {
+      const [catRows] = await db.promise().query(
+        "SELECT category_id FROM user_category WHERE user_id = ? LIMIT 1",
+        [staffId]
+      );
+      catId = catRows.length ? catRows[0].category_id : null;
     }
 
-    if (!staffId) {
-      return res.status(403).json({
-        success: false,
-        message: "Missing staffId in token"
-      });
+    if (!catId) {
+      return res.status(400).json({ success: false, message: 'No category found for this staff.' });
     }
-console.log("👤 Token user:", req.user);
-
-    console.log("✅ Fetch off-time for staff:", staffId, "| range:", weekStart, "to", weekEnd);
 
     const [rows] = await db.promise().query(
-      `SELECT off_time_id, staff_id, date, start_time, end_time
-       FROM off_time
-       WHERE staff_id = ? 
-         AND date BETWEEN ? AND ?
-       ORDER BY date, start_time`,
-      [staffId, weekStart, weekEnd]
+      `SELECT o.off_time_id, o.staff_id, uc.category_id, o.date, o.start_time, o.end_time
+   FROM off_time o
+   JOIN user_category uc ON o.staff_id = uc.user_id
+   WHERE o.staff_id = ? AND uc.category_id = ?
+   AND o.date BETWEEN ? AND ?
+   ORDER BY o.date, o.start_time`,
+      [staffId, catId, weekStart, weekEnd]
     );
 
     res.json({ success: true, items: rows });
-
   } catch (err) {
-    console.error("🔥 Error fetching off-time:", err);
+    console.error('🔥 Error fetching off-time:', err);
     res.status(500).json({ success: false, message: err.message });
   }
 });

@@ -96,10 +96,12 @@ module.exports = (db) => {
             d.document_id AS id,
             CONCAT(s.name, ' ', s.surname) AS full_name,
             d.submit_date AS event_date,
+            c.type AS title,
             d.status,
             d.student_note AS student_note,
             d.user_id AS studentId
           FROM document_tracking AS d
+          JOIN categories AS c ON d.category_id = c.category_id
           JOIN user_category uc ON d.category_id = uc.category_id
           JOIN user s ON uc.user_id = s.user_id
           WHERE d.user_id = ?
@@ -134,10 +136,12 @@ module.exports = (db) => {
             d.document_id AS id,
             CONCAT(u.name, ' ', u.surname) AS full_name,
             d.submit_date AS event_date,
+            c.type AS title,
             d.status,
             d.student_note AS student_note,
             d.user_id AS studentId
           FROM document_tracking AS d
+          JOIN categories AS c ON d.category_id = c.category_id
           JOIN user_category uc ON d.category_id = uc.category_id
           JOIN user u ON d.user_id = u.user_id
           WHERE uc.user_id = ?

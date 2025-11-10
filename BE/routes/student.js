@@ -142,110 +142,77 @@ router.post('/appointments', (req, res) => {
 
 //-------------------------------------- Student Documents ----------------------------------------
 
+// -------------------------------------- Student Documents ----------------------------------------
 router.post(
-    '/documents',
-    authMiddleware,
-    upload.single('document_image'), // <-- เพิ่ม Middleware ของ Multer
-    (req, res) => {
-      console.log('📩 Hit /documents (with file upload)')
-      console.log('✅ Received body (text data):', req.body) // <-- ข้อมูล text
-      console.log('✅ Received file (image data):', req.file) // <-- ข้อมูลไฟล์
+  '/documents',
+  authMiddleware,
+  upload.single('photo'), // ✅ ต้องตรงกับชื่อที่ frontend ส่งมา (TopicChoose.vue ใช้ 'photo')
+  (req, res) => {
+    console.log('📩 Hit /documents (with file upload)')
+    console.log('✅ Received body (text data):', req.body)
+    console.log('✅ Received file (image data):', req.file)
 
-      const {
-        user_id,
-        category_id,
-        student_email,
-        submit_date,
-        finish_date,
-        student_note,
-        status,
-      } = req.body // <-- ดึงข้อมูล text จาก req.body
+    const {
+      user_id,
+      category_id,
+      student_email,
+      submit_date,
+      finish_date,
+      student_note,
+      status,
+    } = req.body
 
-      // (เช็ค req.body เหมือนเดิม)
-      if (!user_id) {
-        return res.status(400).json({ error: 'user_id is required' })
-      }
-      if (!student_note) {
-        return res
-          .status(400)
-          .json({ error: 'student_note (sub_topic) is required' })
-      }
-
-      // ✅ 4. เช็คว่ามีไฟล์ถูกอัปโหลดมาหรือไม่
-      if (!req.file) {
-        return res
-          .status(400)
-          .json({ error: 'document_image (file) is required' })
-      }
-
-      // ✅ 5. ดึง path ของไฟล์ (จากรูปที่คุณส่งมา คุณใช้ "image_path")
-      const imagePath = req.file.path
-
-      // ✅ 6. อัปเดต SQL ให้มี `image_path`
-      const sql = `INSERT INTO document_tracking
-        (user_id, category_id, student_email, status, submit_date, finish_date, student_note, image_path)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-
-      const params = [
-        user_id,
-        category_id,
-        student_email,
-        status,
-        submit_date,
-        finish_date,
-        student_note,
-        imagePath, // <-- เพิ่ม imagePath เข้าไป
-      ]
-
-      db.query(sql, params, (err, result) => {
-        if (err) {
-          console.error('SQL Error:', err)
-          return res.status(500).json({ error: 'Database insert failed' })
-        }
-
-        // ✅ 7. ส่ง "document_id" กลับไปให้ Frontend
-        // (สำคัญมากสำหรับ Modal ที่แสดง ID)
-        res.json({
-          success: true,
-          message: 'Document created',
-          document_id: result.insertId, // <-- ส่ง ID ที่เพิ่งสร้างกลับไป
-        })
-      })
+    // ✅ ตรวจสอบค่าใน body
+    if (!user_id) {
+      return res.status(400).json({ error: 'user_id is required' })
     }
-  )
-// router.post('/documents', authMiddleware, (req, res) => {
-//   console.log('📩 Hit /documents')
-//   console.log('✅ Received body:', req.body)
-//   const {
-//     user_id,
-//     category_id,
-//     student_email,
-//     submit_date,
-//     finish_date,
-//     student_note,
-//     status
-//   } = req.body;
+    if (!student_note) {
+      return res
+        .status(400)
+        .json({ error: 'student_note (sub_topic) is required' })
+    }
 
-//   if (!user_id) {
-//     return res.status(400).json({ error: 'user_id is required' });
-//   }
-// if (!req.body) {
-//   return res.status(400).json({ error: 'Request body is missing' })
-// }
+    // ✅ ตรวจสอบว่ามีไฟล์แนบมาหรือไม่
+    if (!req.file) {
+      return res.status(400).json({ error: 'photo (file) is required' })
+    }
 
-//   const sql = `INSERT INTO document_tracking
-//     (user_id, category_id, student_email, status, submit_date, finish_date, student_note)
-//     VALUES (?, ?, ?, ?, ?, ?, ?)`
+    // ✅ เก็บ path ของไฟล์ที่อัปโหลด
+    const imagePath = req.file.path
 
-//   db.query(sql, [user_id, category_id, student_email, status, submit_date, finish_date, student_note], (err, result) => {
-//     if (err) {
-//       console.error('SQL Error:', err)
-//       return res.status(500).json({ error: 'Database insert failed' })
-//     }
+    // ✅ เพิ่มข้อมูลลงฐานข้อมูล
+    const sql = `
+      INSERT INTO document_tracking
+        (user_id, category_id, student_email, status, submit_date, finish_date, student_note, image_path)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `
+    const params = [
+      user_id,
+      category_id,
+      student_email,
+      status,
+      submit_date,
+      finish_date,
+      student_note,
+      imagePath,
+    ]
 
-//     res.json({ success: true, message: 'Document created', data: { user_id } })
-//   });
-// });
+    db.query(sql, params, (err, result) => {
+      if (err) {
+        console.error('❌ SQL Error:', err)
+        return res.status(500).json({ error: 'Database insert failed' })
+      }
+
+      console.log('✅ Document inserted, ID:', result.insertId)
+      res.json({
+        success: true,
+        message: 'Document created',
+        document_id: result.insertId,
+      })
+    })
+  }
+)
+
 // ===============================================================
 // 📘 GET /student/categories-with-staff
 // ดึงรายชื่อหมวดหมู่ + เจ้าหน้าที่ที่รับผิดชอบแต่ละหมวด
@@ -272,33 +239,46 @@ router.get('/categories-with-staff', (req, res) => {
 })
 
 //----------------------------------- chack status of documents ----------------------------------------
-router.get('/api/documents/:studentId', (req, res) => {
-  const studentId = req.params.studentId
+router.get('/documents/:studentId', (req, res) => {
+  const studentId = req.params.studentId;
 
   const sql = `
-  SELECT 
-    d.document_id, 
-    c.type AS doc_title,         
-    d.submit_date, 
-    d.status,
-    d.student_note,
-    d.finish_date,
-    f.comment AS feedback         -- ✅ เปลี่ยนจาก f.feedback เป็น f.comment
-  FROM document_tracking d
-  LEFT JOIN categories c ON d.category_id = c.category_id
-  LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
-  WHERE d.user_id = ?
-`
-
+    SELECT 
+      d.document_id, 
+      c.type AS doc_title,         
+      d.submit_date, 
+      d.status,
+      d.student_note,
+      d.finish_date,
+      d.image_path,                -- ✅ เพิ่มตรงนี้
+      f.comment AS feedback
+    FROM document_tracking d
+    LEFT JOIN categories c ON d.category_id = c.category_id
+    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+    WHERE d.user_id = ?
+    ORDER BY d.submit_date DESC
+  `;
 
   db.query(sql, [studentId], (err, results) => {
     if (err) {
-      console.error(err)
-      return res.status(500).json({ success: false, message: 'Database error' })
+      console.error('🔥 Database error:', err);
+      return res.status(500).json({ success: false, message: 'Database error' });
     }
-    res.json(results)
-  })
-})
+
+    // ✅ แปลง path ให้พร้อมใช้งาน (เพิ่ม /uploads ถ้าจำเป็น)
+    const formatted = results.map((row) => ({
+      ...row,
+      image_path: row.image_path
+        ? row.image_path.startsWith('/')
+          ? row.image_path
+          : `/uploads/documents/${row.image_path}`
+        : null,
+    }));
+
+    res.json(formatted);
+  });
+});
+
 
 // ----------------------------------------- history document-----------------------------------------
 router.get('/document/history', authMiddleware, (req, res) => {
