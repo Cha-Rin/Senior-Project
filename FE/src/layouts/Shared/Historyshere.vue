@@ -25,19 +25,16 @@
     </div>
 
     <!-- ฟิลเตอร์วันที่ -->
-    <div
-      class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm"
-    >
+    <div class="bg-violet-50 rounded-xl px-5 py-3 mb-6 border border-violet-200 shadow-sm">
       <div class="flex items-center gap-3">
         <span class="text-violet-600 text-xl">📅</span>
         <div class="relative" ref="calendarContainer">
           <div
             @click="toggleCalendar"
-            class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[240px]"
+            class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[260px]"
           >
             <span v-if="startDate && endDate">
-              {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate)
-              }}
+              {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate) }}
             </span>
             <span v-else class="text-gray-500">Choose date range</span>
             <svg
@@ -62,33 +59,15 @@
             class="absolute top-full left-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 w-80"
           >
             <div class="flex justify-between items-center mb-3">
-              <button
-                @click="changeMonth(-1)"
-                class="p-1 hover:bg-gray-100 rounded"
-              >
-                ‹
-              </button>
-              <span class="font-medium"
-                >{{ currentMonthName }} {{ currentYear }}</span
-              >
-              <button
-                @click="changeMonth(1)"
-                class="p-1 hover:bg-gray-100 rounded"
-              >
-                ›
-              </button>
+              <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded">‹</button>
+              <span class="font-medium">{{ currentMonthName }} {{ currentYear }}</span>
+              <button @click="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded">›</button>
             </div>
-            <div
-              class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2"
-            >
-              <div>S</div>
-              <div>M</div>
-              <div>T</div>
-              <div>W</div>
-              <div>T</div>
-              <div>F</div>
-              <div>S</div>
+
+            <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2">
+              <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
             </div>
+
             <div class="grid grid-cols-7 gap-1">
               <div
                 v-for="day in calendarDays"
@@ -105,7 +84,15 @@
                 {{ day.day }}
               </div>
             </div>
-            <div class="mt-3 flex justify-end">
+
+            <div class="mt-3 flex justify-between">
+              <button
+                @click="selectTodayRange()"
+                class="text-sm font-medium text-gray-600 hover:text-gray-800"
+                title="เลือกเฉพาะวันนี้"
+              >
+                Today
+              </button>
               <button
                 @click="resetDate"
                 class="text-sm font-medium text-violet-600 hover:text-violet-800 underline"
@@ -120,53 +107,27 @@
 
     <!-- ตาราง -->
     <div class="max-w-6xl mx-auto mb-6 overflow-hidden rounded-xl shadow-lg border border-gray-200">
-      <table
-        class="w-full bg-white rounded-xl shadow-lg border border-gray-200"
-      >
+      <table class="w-full bg-white rounded-xl shadow-lg border border-gray-200">
         <thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
           <tr>
-            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
-              Date
-            </th>
-            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
-              Topic
-            </th>
-            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
-              Name
-            </th>
-            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
-              Note
-            </th>
-            <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">
-              Status
-            </th>
+            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
+            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
+            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
+            <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
+            <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
-          <tr
-            v-for="(item, index) in paginatedItems"
-            :key="item.id"
-            class="hover:bg-gray-50"
-          >
+          <tr v-for="item in paginatedItems" :key="item.id" class="hover:bg-gray-50">
             <td class="px-6 py-4 text-sm text-gray-700">
-              {{ formatDateTime(item.event_date).date }}
-              <br />
-              <span class="text-gray-500 text-xs">{{
-                formatDateTime(item.event_date).time
-              }}</span>
+              {{ formatDateTime(item.event_date).date }}<br />
+              <span class="text-gray-500 text-xs">{{ formatDateTime(item.event_date).time }}</span>
             </td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ item.title }}</td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              {{ item.full_name || '—' }}
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">
-              {{ item.student_note || '—' }}
-            </td>
+            <td class="px-6 py-4 text-sm text-gray-700">{{ item.full_name || '—' }}</td>
+            <td class="px-6 py-4 text-sm text-gray-700">{{ item.student_note || '—' }}</td>
             <td class="px-6 py-4 text-right">
-              <span
-                :class="getBadgeClass(item)"
-                class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
-              >
+              <span :class="getBadgeClass(item)" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium">
                 <span>{{ getBadgeIcon(item) }}</span>
                 {{ getBadgeText(item) }}
               </span>
@@ -176,10 +137,7 @@
       </table>
 
       <!-- ✅ Pagination -->
-      <div
-        v-if="totalPages > 1"
-        class="flex justify-center items-center mt-8 space-x-1"
-      >
+      <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-1">
         <button
           v-for="page in totalPages"
           :key="page"
@@ -207,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useHistory } from '@/components/together/useHistory'
 
@@ -215,15 +173,12 @@ const router = useRouter()
 const calendarContainer = ref(null)
 const statusFilter = ref('all')
 
-// Props สำหรับแยกประเภท (appointment/document)
+// Props: แยกประเภท (appointment/document)
 const props = defineProps({
-  type: {
-    type: String,
-    default: 'all'
-  }
+  type: { type: String, default: 'all' }
 })
 
-// ใช้ composable ดึงข้อมูล
+// ใช้ composable ดึงข้อมูล/ปฏิทิน
 const {
   history,
   startDate,
@@ -241,90 +196,84 @@ const {
   selectDate
 } = useHistory()
 
-// --------------------------
-// 🔹 ตัวเลือกสถานะ
-// --------------------------
-const statusOptions = computed(() => {
-  if (props.type === 'document') {
-    return [
-      { value: '0', text: 'Pending' },
-      { value: '1', text: 'In Progress' },
-      { value: '2', text: 'Complete' },
-      { value: '3', text: 'Reject' }
-    ]
-  } else {
-    return [
-      { value: '0', text: 'Pending' },
-      { value: '1', text: 'Approve' },
-      { value: '2', text: 'Reject' },
-      { value: '3', text: 'Completed' }
-    ]
-  }
-})
+// ✅ ปุ่ม Today: เลือกช่วงเป็นวันนี้เท่านั้น
+function selectTodayRange () {
+  const d = new Date()
+  const s = new Date(d); s.setHours(0,0,0,0)
+  const e = new Date(d); e.setHours(23,59,59,999)
+  startDate.value = s
+  endDate.value = e
+  showCalendar.value = false
+}
 
-// --------------------------
-// 🔹 กรองตามประเภทและสถานะ + SORT ตามเงื่อนไขใหม่
-// --------------------------
-const filteredItemsByType = computed(() => {
-  let items = history.value
-
-  // ✅ กรองตาม type (จาก props)
-  if (props.type === "appointment") {
-    items = items.filter(i => i.type === "appointment")
-  } else if (props.type === "document") {
-    items = items.filter(i => i.type === "document")
-  }
-
-  // ✅ กรองตามสถานะ
-  if (statusFilter.value !== "all") {
-    items = items.filter(i => String(i.status) === statusFilter.value)
-  }
-
-  // ✅ === SORT: ใกล้ถึงวันนี้ที่สุด → บนสุด, Reject → ล่างสุด ===
-  const now = Date.now()
-  return items.sort((a, b) => {
-    const isAReject = a.status === 2
-    const isBReject = b.status === 2
-
-    // กรณี: A เป็น Reject, B ไม่ใช่ → A ไปท้าย
-    if (isAReject && !isBReject) return 1
-    // กรณี: B เป็น Reject, A ไม่ใช่ → B ไปท้าย (A มาก่อน)
-    if (!isAReject && isBReject) return -1
-    // กรณี: ทั้งคู่ Reject หรือทั้งคู่ไม่ใช่ → เปรียบเทียบ "ระยะห่างจากวันนี้"
-
-    const timeA = new Date(a.event_date).getTime()
-    const timeB = new Date(b.event_date).getTime()
-
-    // คำนวณระยะห่างจากวันนี้ (ค่าบวก = ยังไม่ถึง, ค่าลบ = ผ่านมาแล้ว)
-    const diffA = timeA - now
-    const diffB = timeB - now
-
-    // เรียงจาก "ใกล้ที่สุด" → "ไกลที่สุด"
-    // ถ้าทั้งคู่ผ่านมาแล้ว → เรียงจากใหม่ไปเก่า (ล่าสุดที่ผ่านมาอยู่บน)
-    if (diffA <= 0 && diffB <= 0) {
-      return diffB - diffA // ผ่านมาแล้ว: เรียงจากใหม่ → เก่า
-    }
-    // ถ้าทั้งคู่ยังไม่ถึง → เรียงจากใกล้ → ไกล
-    if (diffA >= 0 && diffB >= 0) {
-      return diffA - diffB
-    }
-    // ถ้า A ยังไม่ถึง แต่ B ผ่านมาแล้ว → A มาก่อน
-    if (diffA >= 0 && diffB <= 0) {
-      return -1
-    }
-    // ถ้า B ยังไม่ถึง แต่ A ผ่านมาแล้ว → B มาก่อน
-    return 1
+// ✅ กรองตามช่วงวันที่ (หากยังไม่เลือกช่วง แสดงทั้งหมด)
+const filteredByDate = computed(() => {
+  if (!startDate.value || !endDate.value) return history.value
+  const start = new Date(startDate.value).setHours(0, 0, 0, 0)
+  const end = new Date(endDate.value).setHours(23, 59, 59, 999)
+  return history.value.filter(item => {
+    const t = new Date(item.event_date).getTime()
+    return t >= start && t <= end
   })
 })
 
-// --------------------------
+// 🔹 ตัวเลือกสถานะ
+const statusOptions = computed(() => {
+  return (props.type === 'document')
+    ? [
+        { value: '0', text: 'Pending' },
+        { value: '1', text: 'In Progress' },
+        { value: '2', text: 'Complete' },
+        { value: '3', text: 'Reject' }
+      ]
+    : [
+        { value: '0', text: 'Pending' },
+        { value: '1', text: 'Approve' },
+        { value: '2', text: 'Reject' },
+        { value: '3', text: 'Completed' }
+      ]
+})
+
+// 🔹 กรองตามประเภท + สถานะ + เรียงลำดับ
+const filteredItemsByType = computed(() => {
+  // ❗❗ ใช้ผลที่กรองตามช่วงวันที่เป็น “จุดเริ่มต้น”
+  let items = filteredByDate.value
+
+  // กรองตาม type (จาก props)
+  if (props.type === 'appointment') {
+    items = items.filter(i => i.type === 'appointment')
+  } else if (props.type === 'document') {
+    items = items.filter(i => i.type === 'document')
+  }
+
+  // กรองตามสถานะ
+  if (statusFilter.value !== 'all') {
+    items = items.filter(i => String(i.status) === statusFilter.value)
+  }
+
+  // เรียง: ใกล้วันนี้ที่สุดก่อน, Reject ไปท้าย
+  const now = Date.now()
+  return items.slice().sort((a, b) => {
+    const isAReject = (a.type === 'document' && a.status === 3) || (a.type === 'appointment' && a.status === 2)
+    const isBReject = (b.type === 'document' && b.status === 3) || (b.type === 'appointment' && b.status === 2)
+    if (isAReject && !isBReject) return 1
+    if (!isAReject && isBReject) return -1
+
+    const tA = new Date(a.event_date).getTime()
+    const tB = new Date(b.event_date).getTime()
+    const dA = tA - now
+    const dB = tB - now
+
+    if (dA <= 0 && dB <= 0) return dB - dA   // ผ่านมาแล้ว: ใหม่กว่าอยู่บน
+    if (dA >= 0 && dB >= 0) return dA - dB   // ยังไม่ถึง: ใกล้กว่าก่อน
+    return dA >= 0 ? -1 : 1
+  })
+})
+
 // 🔹 Pagination
-// --------------------------
 const currentPage = ref(1)
 const itemsPerPage = 7
-const totalPages = computed(() =>
-  Math.ceil(filteredItemsByType.value.length / itemsPerPage)
-)
+const totalPages = computed(() => Math.ceil(filteredItemsByType.value.length / itemsPerPage))
 const paginatedItems = computed(() => {
   const start = (currentPage.value - 1) * itemsPerPage
   const end = start + itemsPerPage
@@ -337,105 +286,74 @@ const goToPage = (page) => {
   }
 }
 
-// --------------------------
+// ✅ เปลี่ยนช่วงวันที่/สถานะ/ประเภท → กลับไปหน้า 1 เสมอ
+watch([startDate, endDate, statusFilter, () => props.type], () => {
+  currentPage.value = 1
+})
+
 // 🔹 Badge Styling
-// --------------------------
 function getBadgeClass(item) {
-  const status = item.status
+  const s = item.status
   if (item.type === 'document') {
-    switch (status) {
-      case 0:
-        return 'bg-orange-100 text-orange-800'
-      case 1:
-        return 'bg-blue-100 text-blue-800'
-      case 2:
-        return 'bg-emerald-100 text-emerald-800'
-      case 3:
-        return 'bg-rose-100 text-rose-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+    switch (s) {
+      case 0: return 'bg-orange-100 text-orange-800'
+      case 1: return 'bg-blue-100 text-blue-800'
+      case 2: return 'bg-emerald-100 text-emerald-800'
+      case 3: return 'bg-rose-100 text-rose-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   } else {
-    switch (status) {
-      case 0:
-        return 'bg-orange-100 text-orange-800'
-      case 1:
-        return 'bg-emerald-100 text-emerald-800'
-      case 2:
-        return 'bg-rose-100 text-rose-800'
-      case 3:
-        return 'bg-blue-100 text-blue-800'
-      default:
-        return 'bg-gray-100 text-gray-800'
+    switch (s) {
+      case 0: return 'bg-orange-100 text-orange-800'
+      case 1: return 'bg-emerald-100 text-emerald-800'
+      case 2: return 'bg-rose-100 text-rose-800'
+      case 3: return 'bg-blue-100 text-blue-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 }
-
 function getBadgeIcon(item) {
-  const status = item.status
+  const s = item.status
   if (item.type === 'document') {
-    switch (status) {
-      case 0:
-        return '⏳'
-      case 1:
-        return '⚙️'
-      case 2:
-        return '✅'
-      case 3:
-        return '❌'
-      default:
-        return '?'
+    switch (s) {
+      case 0: return '⏳'
+      case 1: return '⚙️'
+      case 2: return '✅'
+      case 3: return '❌'
+      default: return '?'
     }
   } else {
-    switch (status) {
-      case 0:
-        return '⏳'
-      case 1:
-        return '✅'
-      case 2:
-        return '❌'
-      case 3:
-        return '✔️'
-      default:
-        return '?'
+    switch (s) {
+      case 0: return '⏳'
+      case 1: return '✅'
+      case 2: return '❌'
+      case 3: return '✔️'
+      default: return '?'
     }
   }
 }
-
 function getBadgeText(item) {
-  const status = item.status
+  const s = item.status
   if (item.type === 'document') {
-    switch (status) {
-      case 0:
-        return 'Pending'
-      case 1:
-        return 'In Progress'
-      case 2:
-        return 'Complete'
-      case 3:
-        return 'Reject'
-      default:
-        return 'Unknown'
+    switch (s) {
+      case 0: return 'Pending'
+      case 1: return 'In Progress'
+      case 2: return 'Complete'
+      case 3: return 'Reject'
+      default: return 'Unknown'
     }
   } else {
-    switch (status) {
-      case 0:
-        return 'Pending'
-      case 1:
-        return 'Approve'
-      case 2:
-        return 'Reject'
-      case 3:
-        return 'Completed'
-      default:
-        return 'Unknown'
+    switch (s) {
+      case 0: return 'Pending'
+      case 1: return 'Approve'
+      case 2: return 'Reject'
+      case 3: return 'Completed'
+      default: return 'Unknown'
     }
   }
 }
 
-// --------------------------
 // 🔹 โหลดข้อมูลจาก API
-// --------------------------
 onMounted(async () => {
   const token = localStorage.getItem('authToken')
   if (!token) return
@@ -445,15 +363,12 @@ onMounted(async () => {
     })
     const data = await res.json()
     history.value = data.historyItems || []
-    if (history.value.length) resetDate()
   } catch (err) {
-    console.error(err)
+    console.error('❌ Fetch error:', err)
   }
 })
 
-// --------------------------
 // 🔹 ปิดปฏิทินเมื่อคลิกข้างนอก
-// --------------------------
 const handleClickOutside = (e) => {
   if (calendarContainer.value && !calendarContainer.value.contains(e.target)) {
     showCalendar.value = false

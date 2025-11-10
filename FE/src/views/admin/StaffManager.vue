@@ -2,8 +2,10 @@
 <template>
   <div class="p-6">
     <!-- 🔷 Header -->
-    <div class="flex justify-between items-center mb-4">
-      <h1 class="text-xl font-bold">Staff Management</h1>
+    <div class="flex justify-between items-center">
+        <h1
+        class="text-4xl md:text-5xl font-bold text-right mb-8 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"
+      >Staff Management</h1>
       <button @click="showAddForm = true" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
         Add
       </button>

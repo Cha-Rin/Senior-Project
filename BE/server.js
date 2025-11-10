@@ -1,63 +1,73 @@
-const express = require('express')
-const cors = require('cors')
+// ------------------------------------------ Imports -----------------------------------------
+const express = require('express');
+const cors = require('cors');
 const jwt = require("jsonwebtoken");
 const bodyParser = require("body-parser");
-const mysql = require('mysql2')
+const multer = require('multer');
+const mysql = require('mysql2');
+const path = require('path'); // ✅ ต้องมี
 const router = express.Router();
-const app = express()
-// const authMiddleware = require('./middleware/auth') ;
-app.use(cors())
-app.use(express.json()) 
-app.use(express.json({ limit: '1mb' }))  
-app.use(express.urlencoded({ extended: true }))
+const app = express();
+
+// ------------------------------------------ Middleware --------------------------------------
+app.use(cors());
+app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 const SECRET_KEY = "mysecretkey";
 
+// ------------------------------------------ Database ----------------------------------------
 const db = mysql.createPool({
   host: 'localhost',
   user: 'root',
   password: '',
   database: 'andtsp'
-})
+});
 
 db.getConnection((err, connection) => {
   if (err) {
-    console.error('Database connection failed:', err.stack)
-    return
+    console.error('❌ Database connection failed:', err.stack);
+    return;
   }
-  console.log('Connected to database.')
-  connection.release(); // คืน connection กลับ pool
-})
+  console.log('✅ Connected to database.');
+  connection.release();
+});
 
+// ------------------------------------------ Error Handling ----------------------------------
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && 'body' in err) {
-    console.error('❌ JSON parse error:', err.message)
-    return res.status(400).json({ success: false, message: 'Invalid JSON' })
+    console.error('❌ JSON parse error:', err.message);
+    return res.status(400).json({ success: false, message: 'Invalid JSON' });
   }
-  next(err)
-})
+  next(err);
+});
 
-// ------------------------------------------ Routes -----------------------------------------
+// ------------------------------------------ Routes Import -----------------------------------
+const studentRouter = require('./routes/student')(db);
+app.use('/api/student', studentRouter);
 
-const studentRouter = require('./routes/student')(db)
-app.use('/api/student', studentRouter)
+const secretaryRouter = require('./routes/secretary')(db);
+app.use('/api/secretary', secretaryRouter);
 
-const secretaryRouter = require('./routes/secretary')(db)
-app.use('/api/secretary', secretaryRouter)
+const adminRouter = require('./routes/admin')(db);
+app.use('/api/admin', adminRouter);
 
-const adminRouter = require('./routes/admin')(db)
-app.use('/api/admin', adminRouter)
+const historyRouter = require('./routes/history')(db);
+app.use('/api/history', historyRouter);
 
-const historyRouter = require('./routes/history')(db)
-app.use('/api/history', historyRouter)
+const academicRoutes = require('./routes/academic.js')(db);
+app.use('/api/academic', academicRoutes);
 
-const academicRoutes = require('./routes/academic.js')(db) 
-app.use('/api/academic', academicRoutes)
+const notiRoutes = require('./routes/Notification.js')(db);
+app.use('/api/noti', notiRoutes);
 
-const notiRoutes = require('./routes/Notification.js')(db) 
-app.use('/api/noti', notiRoutes)
-// ------------------------------------------ Log in -----------------------------------------
+// ------------------------------------------ Static Files ------------------------------------
+// ✅ เสิร์ฟโฟลเดอร์ uploads (อยู่ใน BE/ เดียวกับ server.js)
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// ------------------------------------------ Login -------------------------------------------
 app.post('/api/login', (req, res) => {
   const { email, password } = req.body;
   console.log('📩 Incoming:', email, password);
@@ -78,28 +88,66 @@ app.post('/api/login', (req, res) => {
     }
 
     const user = results[0];
-
-    // ✅ สร้าง token โดยใส่ user.id + role
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email, role: Number(user.role) },
       SECRET_KEY,
-      { expiresIn: '1h' } // หมดอายุใน 1 ชั่วโมง
+      { expiresIn: '1h' }
     );
 
     res.json({
       success: true,
-      token, // ส่ง token กลับ
+      token,
       user: {
-        id: user.id,
+        id: user.user_id,
         email: user.email,
         role: Number(user.role)
       }
     });
   });
 });
+
+// ------------------------------------------ Upload Config -----------------------------------
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    // 📂 บันทึกไฟล์ไว้ใน BE/uploads/documents
+    cb(null, path.join(__dirname, 'uploads/documents'));
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
+  }
+});
+const upload = multer({ storage });
+
+// ✅ Route สำหรับเพิ่มเอกสารพร้อมอัปโหลดไฟล์
+router.post('/api/tracking/add', upload.single('file'), async (req, res) => {
+  try {
+    const { user_id, category_id, status } = req.body;
+
+    let filePath = null;
+    if (req.file) {
+      // ✅ ป้องกัน path ซ้ำ uploads/uploads
+      filePath = `/uploads/documents/${req.file.filename}`.replace(
+        /(\/uploads\/documents\/)+/,
+        '/uploads/documents/'
+      );
+    }
+
+    await db.promise().query(
+      `INSERT INTO document_tracking (user_id, category_id, status, image_path)
+       VALUES (?, ?, ?, ?)`,
+      [user_id, category_id, status, filePath]
+    );
+
+    res.json({ success: true, message: '✅ Document added successfully.', path: filePath });
+  } catch (err) {
+    console.error('🔥 Error adding document:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // ------------------------------------------ Profile -----------------------------------------
 app.get('/api/profile/:id', (req, res) => {
-  const userId = Number(req.params.id); // แปลงเป็น number
+  const userId = Number(req.params.id);
   const sql = 'SELECT name, surname FROM user WHERE user_id = ?';
   db.query(sql, [userId], (err, result) => {
     if (err) return res.status(500).json({ error: 'Database error' });
@@ -108,30 +156,29 @@ app.get('/api/profile/:id', (req, res) => {
   });
 });
 
-// ------------------------------------------ Log out -----------------------------------------
+// ------------------------------------------ Logout ------------------------------------------
 app.post('/student/logout', (req, res) => {
-  // สำหรับ JWT ปกติ เราแค่บอก client ให้ลบ token
-  res.json({ success: true, message: 'Logged out successfully' })
-})
+  res.json({ success: true, message: 'Logged out successfully' });
+});
 
-// --------------------------------------- Catagories ---------------------------------------
+// ------------------------------------------ Categories --------------------------------------
 app.get('/api/categories', (req, res) => {
-  const sql = 'SELECT * FROM categories'
+  const sql = 'SELECT * FROM categories';
   db.query(sql, (err, results) => {
     if (err) {
-      console.error('Error fetching categories:', err)
-      return res.status(500).json({ error: 'Database error' })
+      console.error('Error fetching categories:', err);
+      return res.status(500).json({ error: 'Database error' });
     }
-    res.json(results)
-  })
-})
+    res.json(results);
+  });
+});
 
-
-// --------------------------------------- 404 Handler ---------------------------------------
+// ------------------------------------------ 404 Handler -------------------------------------
 app.use((req, res) => {
-  res.status(404).json({ success: false, message: 'Not found' })
-})
-// -------------------------------------------------------------------------------------------------
+  res.status(404).json({ success: false, message: 'Not found' });
+});
+
+// ------------------------------------------ Server Start ------------------------------------
 app.listen(3000, () => {
-  console.log('API server running on http://localhost:3000')
-})
+  console.log('🚀 API server running on http://localhost:3000');
+});

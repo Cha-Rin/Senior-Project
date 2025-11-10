@@ -270,7 +270,7 @@ router.get('/documents/:studentId', (req, res) => {
       ...row,
       image_path: row.image_path
         ? row.image_path.startsWith('/')
-          ? row.image_path
+          ?  `/${row.image_path}`
           : `/uploads/documents/${row.image_path}`
         : null,
     }));

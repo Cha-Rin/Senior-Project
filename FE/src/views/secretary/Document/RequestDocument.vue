@@ -84,7 +84,7 @@
         </div>
       </div>
 
-      <!-- ตารางรายการคำขอ -->
+      <!-- ✅ ตารางรายการคำขอ -->
       <div
         class="max-w-6xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200"
       >
@@ -98,13 +98,16 @@
                 ID
               </th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
-                NAME
+                Name
               </th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
                 Date
               </th>
               <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
                 Topic
+              </th>
+              <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">
+                File
               </th>
               <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">
                 Status
@@ -127,6 +130,27 @@
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
+
+              <!-- ✅ แสดงรูปภาพ/ไฟล์ -->
+              <td class="px-6 py-4 text-center">
+                <img
+                  v-if="isImage(item.image_path)"
+                  :src="getImageUrl(item.image_path)"
+                  alt="Document"
+                  class="h-16 w-16 rounded-lg object-cover border mx-auto shadow-sm hover:scale-105 transition-transform"
+                />
+                <a
+                  v-else-if="item.image_path"
+                  :href="getImageUrl(item.image_path)"
+                  target="_blank"
+                  class="text-blue-600 underline"
+                >
+                  View File
+                </a>
+                <span v-else class="text-gray-400 italic">No file</span>
+              </td>
+
+              <!-- ✅ ปุ่มสถานะ -->
               <td class="px-6 py-4 text-right">
                 <!-- Pending -->
                 <template v-if="item.status === 'Pending'">
@@ -134,15 +158,13 @@
                     @click="approve(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 mr-2"
                   >
-                    <span>✅</span>
-                    <span class="ml-1.5">Approve</span>
+                    ✅ Approve
                   </button>
                   <button
                     @click="reject(item)"
                     class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-500 text-white hover:bg-rose-600 shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                   >
-                    <span>❌</span>
-                    <span class="ml-1.5">Reject</span>
+                    ❌ Reject
                   </button>
                 </template>
 
@@ -151,8 +173,7 @@
                   v-else-if="item.status === 'Approved'"
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-emerald-100 text-emerald-800"
                 >
-                  <span>✅</span>
-                  <span class="ml-1.5">Approved</span>
+                  ✅ Approved
                 </span>
 
                 <!-- Rejected -->
@@ -160,15 +181,15 @@
                   v-else
                   class="inline-flex items-center px-4 py-2 text-sm font-medium rounded-xl bg-rose-100 text-rose-800"
                 >
-                  <span>❌</span>
-                  <span class="ml-1.5">Rejected</span>
+                  ❌ Rejected
                 </span>
               </td>
             </tr>
 
+            <!-- ✅ ไม่มีข้อมูล -->
             <tr v-if="requests.length === 0">
               <td
-                colspan="6"
+                colspan="7"
                 class="text-center py-10 text-gray-500 text-sm bg-gray-50"
               >
                 ไม่มีรายการคำขอเอกสาร
@@ -218,7 +239,7 @@ import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 const requests = ref([])
 const showRejectModal = ref(false)
 const selectedReason = ref('')
-const customReason = ref('') // ✅ เพิ่มช่องข้อความ
+const customReason = ref('')
 const currentRejectItem = ref(null)
 
 const currentPage = ref(1)
@@ -243,13 +264,14 @@ const goToPage = (page) => {
 }
 
 // ------------------------------------------
-// 🔹 โหลดข้อมูล
+// 🔹 โหลดข้อมูลจาก backend
 // ------------------------------------------
 const formatDate = (iso) => {
   if (!iso) return '-'
   const d = new Date(iso)
   return `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear() + 543}`
 }
+
 onMounted(async () => {
   const token = localStorage.getItem('authToken')
   if (!token) return
@@ -264,6 +286,7 @@ onMounted(async () => {
       name: item.full_name,
       date: formatDate(item.submit_date),
       topic: item.topic,
+      image_path: item.image_path || null, // ✅ เพิ่มภาพ
       status:
         item.status === 1
           ? 'Approved'
@@ -302,12 +325,10 @@ const reject = (item) => {
   showRejectModal.value = true
 }
 
-// ✅ เมื่อกดยืนยันปฏิเสธ
 const confirmReject = async () => {
   if (!selectedReason.value)
     return alert('กรุณาเลือกเหตุผลก่อนดำเนินการ')
 
-  // ใช้ customReason ถ้าเลือก "อื่นๆ"
   const finalReason =
     selectedReason.value === 'อื่นๆ'
       ? customReason.value.trim()
@@ -326,7 +347,7 @@ const confirmReject = async () => {
       },
       body: JSON.stringify({
         document_id: currentRejectItem.value.no,
-        status: 2,
+        status: 3, // ❌ เปลี่ยนเป็น Reject (3)
         reason: finalReason,
       }),
     })
@@ -341,7 +362,6 @@ const confirmReject = async () => {
         rejectionReason: finalReason,
       })
 
-    // ✅ ปิด modal และ reset ค่า
     showRejectModal.value = false
     selectedReason.value = ''
     customReason.value = ''
@@ -349,6 +369,24 @@ const confirmReject = async () => {
     console.error('❌ Reject failed:', err)
   }
 }
+
+// ------------------------------------------
+// 🔹 ตรวจประเภทไฟล์
+// ------------------------------------------
+const isImage = (path) => {
+  if (!path) return false
+  return /\.(png|jpg|jpeg|gif)$/i.test(path)
+}
+
+const getImageUrl = (path) => {
+  const baseURL = 'http://localhost:3000'; // ✅ backend port
+  if (!path) return `${baseURL}/uploads/documents/default.png`;
+  if (path.startsWith('http')) return path;
+  return path.startsWith('/uploads')
+    ? `${baseURL}${path}`
+    : `${baseURL}/uploads/documents/${path}`;
+};
+
 
 // ✅ ปิด modal
 const cancelReject = () => {

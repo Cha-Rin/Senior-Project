@@ -239,6 +239,7 @@ router.get('/documentRequests', authMiddleware, (req, res) => {
       CONCAT(u.name, ' ', u.surname) AS full_name,
       d.submit_date,
       c.type AS topic,
+      d.image_path,
       d.status
     FROM document_tracking d
     JOIN user_category uc ON d.category_id = uc.category_id
@@ -263,30 +264,46 @@ router.get('/documentRequests', authMiddleware, (req, res) => {
 // ==========================================================
 // 📄 POST /secretary/updateDocumentStatus  → อัปเดตสถานะเอกสาร
 // ==========================================================
+// ==========================================================
+// 📄 POST /secretary/updateDocumentStatus  → อัปเดตสถานะเอกสาร (รวม Reject)
+// ==========================================================
 router.post('/updateDocumentStatus', authMiddleware, (req, res) => {
   const { document_id, status, reason } = req.body;
 
-  if (![0, 1, 2].includes(Number(status))) {
+  // ✅ ตรวจสอบสถานะ: 0 = Pending, 1 = In Progress, 2 = Complete, 3 = Reject
+  if (![0, 1, 2, 3].includes(Number(status))) {
     return res.status(400).json({ error: 'Invalid status' });
   }
 
-  const sql = `
-    UPDATE document_tracking 
-    SET status = ?, staff_note = ?
-    WHERE document_id = ?
-  `;
+  // ✅ ถ้าเป็น Complete หรือ Reject → ใส่ finish_date
+  const finishDate = [2, 3].includes(Number(status)) ? new Date() : null;
 
-  db.query(sql, [status, reason || null, document_id], (err, result) => {
+ const sql = `
+  UPDATE document_tracking 
+  SET 
+    status = ?,
+    staff_note = ?,
+    finish_date = CASE WHEN ? IN (2,3) THEN NOW() ELSE finish_date END
+  WHERE document_id = ?
+`;
+
+
+
+  db.query(sql, [status, reason || null, finishDate, document_id], (err, result) => {
     if (err) {
       console.error('❌ SQL error (updateDocumentStatus):', err);
       return res.status(500).json({ error: 'Failed to update document status' });
     }
+
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Document not found' });
     }
-    res.json({ success: true });
+
+    console.log(`✅ Document ${document_id} updated → status ${status}`);
+    res.json({ success: true, message: 'Document status updated successfully' });
   });
 });
+
 
 
 // ==========================================================
@@ -382,8 +399,8 @@ router.get('/rating-Document', (req, res) => {
       fd.score_count3,
       fd.comment       
     FROM feedback_document fd
-    JOIN document d ON fd.document_id = d.document_id
-    JOIN academic_period ap ON DATE(d.created_at) BETWEEN ap.start_date AND ap.end_date
+    JOIN document_tracking d ON fd.document_id = d.document_id
+JOIN academic_period ap ON DATE(d.submit_date) BETWEEN ap.start_date AND ap.end_date
     JOIN user_category uc ON d.category_id = uc.category_id
     JOIN user s ON uc.user_id = s.user_id 
     WHERE 
@@ -637,6 +654,54 @@ router.get('/public/list', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
+
+// ==========================================================
+// 📚 Combined History (appointment + document)
+// ==========================================================
+router.get('/historyall', authMiddleware, async (req, res) => {
+  try {
+    const [appointments] = await db.promise().query(`
+      SELECT 
+        a.appointment_id AS id,
+        'appointment' AS type,
+        CONCAT(u.name, ' ', u.surname) AS full_name,
+        a.appointment_date AS event_date,
+        c.type AS title,
+        a.student_note,
+        a.status
+      FROM appointment a
+      JOIN user u ON a.user_id = u.user_id
+      JOIN categories c ON a.category_id = c.category_id
+      WHERE a.status IN (1, 2)
+    `)
+
+    const [documents] = await db.promise().query(`
+      SELECT 
+        d.document_id AS id,
+        'document' AS type,
+        CONCAT(u.name, ' ', u.surname) AS full_name,
+        d.submit_date AS event_date,
+        c.type AS title,
+        d.staff_note AS student_note,
+        d.status
+      FROM document_tracking d
+      JOIN user u ON d.user_id = u.user_id
+      JOIN categories c ON d.category_id = c.category_id
+      WHERE d.status IN (1, 2, 3)
+    `)
+
+    const all = [...appointments, ...documents].sort(
+      (a, b) => new Date(b.event_date) - new Date(a.event_date)
+    )
+
+    res.json({ success: true, historyItems: all })
+  } catch (err) {
+    console.error('🔥 Error fetching historyall:', err)
+    res.status(500).json({ success: false, message: err.message })
+  }
+})
+
 
  return router;
 }

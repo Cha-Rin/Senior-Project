@@ -30,12 +30,13 @@
       <span class="text-xl">📝</span>
       <span>Request Appointment</span>
 
-      <!-- 🔴 Badge -->
+      <!-- 🔴 Badge (แคป 99+) -->
       <span
         v-if="pendingCount > 0"
-        class="absolute right-5 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full"
+        class="badge"
+        :title="`${pendingCount} pending`"
       >
-        {{ pendingCount }}
+        {{ displayCount }}
       </span>
     </router-link>
 
@@ -71,7 +72,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
@@ -79,35 +80,99 @@ const router = useRouter()
 const pendingCount = ref(0)
 let intervalId = null
 
+// ✅ base URL (ถ้ามี Vite env จะใช้ค่านั้น, ไม่มีก็ใช้เส้นทาง proxy /api)
+const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+
 // 🚪 Logout
 const logout = () => {
   localStorage.removeItem('userRole')
   localStorage.removeItem('authToken')
+  localStorage.removeItem('token')
   router.push({ name: 'Login' })
 }
 
-// 🔔 ฟังก์ชันโหลดจำนวนรายการรออนุมัติ
+// 🔢 แสดงแบบ 99+
+const displayCount = computed(() => (pendingCount.value > 99 ? '99+' : pendingCount.value))
+
+// 🔔 โหลดจำนวนรายการรออนุมัติ
 const fetchPendingCount = async () => {
   try {
     const userId = localStorage.getItem('userId')
-    if (!userId) return
+    if (!userId) {
+      pendingCount.value = 0
+      return
+    }
 
-    const res = await axios.get(`http://localhost:3000/api/noti/pending-now?user_id=${userId}`)
-    pendingCount.value = res.data?.count || 0
+    // แนะนำให้ใช้ path แบบ proxy เพื่อเลี่ยง CORS: /api/noti/...
+    // ถ้าตั้ง VITE_API_BASE_URL จะกลายเป็น https://yourhost/api/noti/...
+    const url = `${API_BASE}/api/noti/pending-now?user_id=${encodeURIComponent(userId)}`
+    const res = await axios.get(url, {
+      // ส่ง token ถ้าจำเป็น
+      headers: {
+        Authorization: localStorage.getItem('authToken')
+          ? `Bearer ${localStorage.getItem('authToken')}`
+          : undefined
+      }
+    })
+
+    // รูปแบบที่รองรับ: { count: number } หรือ { success:true, count:number }
+    const count = Number(res.data?.count ?? 0)
+    pendingCount.value = Number.isFinite(count) && count >= 0 ? count : 0
   } catch (err) {
-    console.error('❌ Error fetching pending count:', err)
+    console.error('❌ Error fetching pending count:', err?.response?.data || err.message)
     pendingCount.value = 0
   }
 }
 
-// 🕒 โหลดครั้งแรก + ตั้ง interval ทุก 30 วิ
+// ⏱️ เริ่มอัปเดตทุก 30 วินาที และหยุดเมื่อแท็บถูกซ่อน
+const startPolling = () => {
+  stopPolling()
+  intervalId = setInterval(fetchPendingCount, 30_000)
+}
+const stopPolling = () => {
+  if (intervalId) {
+    clearInterval(intervalId)
+    intervalId = null
+  }
+}
+
+// 👀 หยุด/เริ่ม polling ตามการมองเห็นของแท็บ
+const onVisibility = () => {
+  if (document.hidden) stopPolling()
+  else {
+    fetchPendingCount()
+    startPolling()
+  }
+}
+
 onMounted(() => {
   fetchPendingCount()
-  intervalId = setInterval(fetchPendingCount, 30000)
+  startPolling()
+  document.addEventListener('visibilitychange', onVisibility)
 })
 
-// 🧹 เคลียร์ interval ตอนออกจากหน้า
 onUnmounted(() => {
-  if (intervalId) clearInterval(intervalId)
+  stopPolling()
+  document.removeEventListener('visibilitychange', onVisibility)
 })
 </script>
+
+<style scoped>
+.badge {
+  position: absolute;
+  right: 1.25rem;   /* right-5 */
+  top: 0.6rem;
+  min-width: 1.5rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  border-radius: 9999px;
+  background: #ef4444;   /* red-500 */
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.7rem;     /* text-xs */
+  line-height: 1.25rem;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  transform: translateY(-20%);
+}
+</style>

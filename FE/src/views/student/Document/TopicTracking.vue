@@ -1,8 +1,3 @@
-<!-- =======================================
-📄 File: TopicChoose.vue
-Version: ใช้งานได้สมบูรณ์ (Load category + staff name + upload)
-======================================= -->
-
 <template>
   <div class="min-h-screen bg-gray-50 pt-20 px-6">
     <!-- 🔹 หัวข้อหน้า -->
@@ -17,21 +12,19 @@ Version: ใช้งานได้สมบูรณ์ (Load category + staff
         v-for="cat in categories"
         :key="cat.category_id"
         @click="selectCategory(cat)"
-        :class="[
-          'p-4 rounded-xl border shadow-md cursor-pointer transition',
-          selectedCategory?.category_id === cat.category_id
-            ? 'border-blue-600 bg-blue-50'
+        :class="[ 
+          'p-4 rounded-xl border shadow-md cursor-pointer transition', 
+          selectedCategory?.category_id === cat.category_id 
+            ? 'border-blue-600 bg-blue-50' 
             : 'border-gray-200 bg-white hover:shadow-lg'
         ]"
       >
         <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
-        <p class="text-sm text-gray-500 mt-1">
-          👩‍💼 {{ cat.staff_name || 'ยังไม่มีเจ้าหน้าที่' }}
-        </p>
+        <p class="text-sm text-gray-500 mt-1">👩‍💼 {{ cat.staff_name || 'ยังไม่มีเจ้าหน้าที่' }}</p>
       </div>
     </div>
 
-    <!-- ❗ Error Message -->
+    <!-- ❗ Error -->
     <p v-if="errorMessage" class="text-red-500 text-center mt-4">{{ errorMessage }}</p>
 
     <!-- 🔹 ฟอร์มกรอกหัวข้อย่อย -->
@@ -41,7 +34,7 @@ Version: ใช้งานได้สมบูรณ์ (Load category + staff
     >
       <p class="text-sm font-semibold mb-2">
         พิมพ์หัวข้อย่อยของคุณ
-        <span class="text-gray-400">(ตัวอย่างเช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
+        <span class="text-gray-400">(เช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
       </p>
       <textarea
         v-model="subTopic"
@@ -60,37 +53,48 @@ Version: ใช้งานได้สมบูรณ์ (Load category + staff
       </div>
     </div>
 
-    <!-- 🔸 Popup: ถ่ายรูป / อัปโหลด -->
+    <!-- 🔸 Popup กล้อง -->
     <div
       v-if="showCamera"
       class="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
     >
-      <div class="bg-white p-6 rounded-xl shadow-lg w-96 text-center">
-        <h2 class="text-lg font-bold mb-4">📸 Upload your document photo</h2>
+      <div class="bg-white p-6 rounded-xl shadow-lg w-[380px] text-center">
+        <h2 class="text-lg font-bold mb-4">📸 Take a Photo of Your Document</h2>
 
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          @change="handleFile"
-          class="mb-4"
-        />
+        <!-- ✅ แสดงกล้อง -->
+        <div v-if="!capturedImage" class="relative">
+          <video ref="videoRef" autoplay playsinline class="rounded-lg w-full h-64 object-cover"></video>
+          <button
+            @click="capturePhoto"
+            class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700"
+          >
+            📷 Capture
+          </button>
+        </div>
 
-        <div v-if="previewUrl" class="mb-4">
-          <img :src="previewUrl" class="w-full h-48 object-contain rounded-lg" />
+        <!-- ✅ แสดงภาพหลังถ่าย -->
+        <div v-else class="flex flex-col items-center">
+          <img :src="capturedImage" class="w-full h-64 object-contain rounded-lg mb-3" />
+          <div class="space-x-2">
+            <button
+              @click="submitDocument"
+              class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              :disabled="loading"
+            >
+              {{ loading ? 'Uploading...' : 'Submit' }}
+            </button>
+            <button
+              @click="retakePhoto"
+              class="bg-gray-300 text-gray-800 px-4 py-2 rounded hover:bg-gray-400"
+            >
+              Retake
+            </button>
+          </div>
         </div>
 
         <button
-          @click="submitDocument"
-          class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
-          :disabled="loading"
-        >
-          {{ loading ? 'Uploading...' : 'Submit' }}
-        </button>
-
-        <button
-          @click="showCamera = false"
-          class="ml-3 text-gray-600 underline text-sm"
+          @click="closeCamera"
+          class="mt-4 text-gray-500 underline text-sm"
         >
           Cancel
         </button>
@@ -103,14 +107,10 @@ Version: ใช้งานได้สมบูรณ์ (Load category + staff
       class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
     >
       <div class="bg-white p-6 rounded-xl shadow-lg text-center">
-        <h2 class="text-xl font-bold text-green-700 mb-3">
-          🎉 Document Created!
-        </h2>
+        <h2 class="text-xl font-bold text-green-700 mb-3">🎉 Document Created!</h2>
         <p class="text-lg">Your Document ID:</p>
         <p class="text-3xl font-bold text-blue-600 my-3">#{{ createdDocId }}</p>
-        <p class="text-sm text-gray-600 mb-4">
-          Please write this ID on your document form.
-        </p>
+        <p class="text-sm text-gray-600 mb-4">Please write this ID on your document form.</p>
         <button
           @click="closeDocIdPopup"
           class="bg-blue-600 text-white px-5 py-2 rounded-full hover:bg-blue-700"
@@ -123,151 +123,154 @@ Version: ใช้งานได้สมบูรณ์ (Load category + staff
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
+
+// State
 const categories = ref([])
 const selectedCategory = ref(null)
 const subTopic = ref('')
 const errorMessage = ref('')
-const showCamera = ref(false)
-const previewUrl = ref('')
-const imageFile = ref(null)
-const loading = ref(false)
-const showDocId = ref(false)
-const createdDocId = ref('')
 const loadingData = ref(true)
 
-// ✅ user info
+// Camera
+const showCamera = ref(false)
+const videoRef = ref(null)
+const capturedImage = ref(null)
+const stream = ref(null)
+const loading = ref(false)
+
+// Document result
+const showDocId = ref(false)
+const createdDocId = ref('')
+
+// User info
 const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
 const token = localStorage.getItem('authToken')
 
-// ------------------------------------------
-// 🔹 โหลดข้อมูลหมวดหมู่ + ชื่อพี่เลขา
-// ------------------------------------------
+// ✅ โหลดหัวข้อและพี่เลขา
 onMounted(async () => {
   try {
-    console.log('📩 Fetching categories with staff...')
     const res = await fetch('/api/student/categories-with-staff', {
       headers: { Authorization: `Bearer ${token}` },
     })
     const data = await res.json()
-    console.log('✅ Response:', data)
-
-    // รองรับทั้ง array หรือ { data: [...] }
-    if (Array.isArray(data)) {
-      categories.value = data
-    } else if (data.data && Array.isArray(data.data)) {
-      categories.value = data.data
-    } else {
-      categories.value = []
-      console.warn('⚠️ Unexpected response format:', data)
-    }
-
-    if (categories.value.length === 0) {
-      errorMessage.value = 'ไม่พบข้อมูลหัวข้อหรือเจ้าหน้าที่ในระบบ'
-    }
+    categories.value = Array.isArray(data) ? data : data.data || []
   } catch (err) {
-    console.error('❌ Error loading categories:', err)
-    errorMessage.value = 'Failed to load topics. Please try again later.'
+    errorMessage.value = 'Failed to load topics.'
   } finally {
     loadingData.value = false
   }
 })
 
-// ------------------------------------------
-// 🔹 เลือกหัวข้อหลัก
-// ------------------------------------------
+// 🔹 เลือกหัวข้อ
 const selectCategory = (cat) => {
   selectedCategory.value = cat
   errorMessage.value = ''
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
 }
 
-// ------------------------------------------
-// 🔹 เปิด popup กล้อง / อัปโหลด
-// ------------------------------------------
-const openCameraPopup = () => {
+// 🔹 เปิดกล้อง
+const openCameraPopup = async () => {
   if (!subTopic.value.trim()) {
-    errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยของคุณก่อนส่ง'
+    errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
     return
   }
-  showCamera.value = true
-  errorMessage.value = ''
-}
-
-// ------------------------------------------
-// 🔹 handle file input
-// ------------------------------------------
-const handleFile = (e) => {
-  const file = e.target.files[0]
-  if (file) {
-    imageFile.value = file
-    previewUrl.value = URL.createObjectURL(file)
+  try {
+    showCamera.value = true
+    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    stream.value = s
+    videoRef.value.srcObject = s
+  } catch (err) {
+    console.error('🚫 Cannot access camera:', err)
+    alert('ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง')
+    showCamera.value = false
   }
 }
 
-// ------------------------------------------
-// 🔹 submit document + upload image
-// ------------------------------------------
-const submitDocument = async () => {
-  if (!imageFile.value) return alert('Please upload a photo.')
+// 🔹 ถ่ายภาพ
+const capturePhoto = () => {
+  const video = videoRef.value
+  if (!video) return
+  const canvas = document.createElement('canvas')
+  canvas.width = video.videoWidth
+  canvas.height = video.videoHeight
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+  capturedImage.value = canvas.toDataURL('image/jpeg')
+  stopCamera()
+}
 
+// 🔹 ปิดกล้อง
+const stopCamera = () => {
+  if (stream.value) {
+    stream.value.getTracks().forEach((track) => track.stop())
+    stream.value = null
+  }
+}
+
+// 🔹 ถ่ายใหม่
+const retakePhoto = () => {
+  capturedImage.value = null
+  openCameraPopup()
+}
+
+// 🔹 ปิด popup
+const closeCamera = () => {
+  stopCamera()
+  showCamera.value = false
+  capturedImage.value = null
+}
+
+// 🔹 ส่งเอกสาร
+const submitDocument = async () => {
+  if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
   loading.value = true
   try {
-    const payload = {
-      user_id: userId,
-      category_id: selectedCategory.value.category_id,
-      student_email: email,
-      student_note: subTopic.value,
-      status: 0, // Pending
-      submit_date: new Date().toISOString().slice(0, 19).replace('T', ' '),
-      finish_date: '',
-    }
+    // แปลง base64 → file
+    const blob = await (await fetch(capturedImage.value)).blob()
+    const file = new File([blob], 'document.jpg', { type: 'image/jpeg' })
+
+    const formData = new FormData()
+    formData.append('photo', file)
+    formData.append('user_id', userId)
+    formData.append('category_id', selectedCategory.value.category_id)
+    formData.append('student_email', email)
+    formData.append('student_note', subTopic.value)
+    formData.append('status', 0)
+    formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
+    formData.append('finish_date', '')
 
     const res = await fetch('/api/student/documents', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    })
-
-    const data = await res.json()
-    if (!data.success) throw new Error('Create document failed')
-
-    const docId = data.document_id
-    const formData = new FormData()
-    formData.append('photo', imageFile.value)
-    formData.append('document_id', docId)
-
-    await fetch('/api/student/upload-document-image', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
     })
 
+    const data = await res.json()
+    if (!data.success) throw new Error('Create document failed')
+
+    createdDocId.value = data.document_id
     showCamera.value = false
-    createdDocId.value = docId
     showDocId.value = true
   } catch (err) {
     console.error('❌ Submit error:', err)
-    errorMessage.value = 'Failed to submit document.'
+    alert('อัปโหลดไม่สำเร็จ กรุณาลองใหม่')
   } finally {
     loading.value = false
   }
 }
 
-// ------------------------------------------
-// 🔹 ปิด popup แสดง doc id
-// ------------------------------------------
+// 🔹 ปิด popup Document ID
 const closeDocIdPopup = () => {
   showDocId.value = false
   router.push({ path: '/student/document/check' })
 }
+
+onUnmounted(() => stopCamera())
 </script>
 
 <style scoped>

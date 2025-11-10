@@ -3,7 +3,7 @@
     <div class="min-h-screen bg-white pt-20 px-4 flex flex-col items-center text-center">
       <h1 class="text-xl font-semibold mb-4">Check Status</h1>
 
-      <!-- ✅ มีข้อมูล -->
+      <!-- ✅ แสดงรายการเอกสาร -->
       <div v-if="paginatedDocuments.length > 0" class="w-full flex flex-col items-center">
         <div
           v-for="(doc, index) in paginatedDocuments"
@@ -11,7 +11,6 @@
           class="bg-white shadow-md w-full max-w-sm p-4 rounded-xl text-left mb-6 space-y-2"
         >
           <div class="flex justify-between items-center text-sm">
-            <p><strong>D00{{ (currentPage - 1) * itemsPerPage + index + 1 }}</strong></p>
             <p
               class="text-sm font-semibold"
               :class="{
@@ -23,9 +22,20 @@
               {{ mapStatus(doc.status) }}
             </p>
           </div>
+
           <p class="text-sm">📅 Date: {{ formatDate(doc.submit_date) }}</p>
           <p class="text-sm">📂 Topic: {{ doc.doc_title }}</p>
           <p class="text-sm">📝 Note: {{ doc.student_note }}</p>
+
+          <!-- 🖼️ ปุ่มดูรูป / ไฟล์แนบ -->
+          <div v-if="doc.image_path" class="mt-2">
+            <button
+              @click="openImage(doc.image_path)"
+              class="px-3 py-1 text-sm bg-indigo-500 text-white rounded hover:bg-indigo-600 transition"
+            >
+              🖼️ ดูรูป / ไฟล์แนบ
+            </button>
+          </div>
         </div>
 
         <!-- ✅ Pagination -->
@@ -62,8 +72,52 @@
         </div>
       </div>
 
-      <!-- ✅ ไม่มีข้อมูล -->
+      <!-- ❌ ไม่มีข้อมูล -->
       <p v-else class="text-gray-500 mt-10">ไม่มีรายการเอกสารที่พบ</p>
+    </div>
+
+    <!-- 🧩 Popup Modal -->
+    <div
+      v-if="showImageModal"
+      class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50"
+      @click.self="closeModal"
+    >
+      <div
+        class="relative bg-white rounded-2xl p-4 shadow-2xl w-auto max-w-6xl max-h-[90vh] flex flex-col items-center"
+      >
+        <!-- ปุ่มปิด -->
+        <button
+          @click="closeModal"
+          class="absolute top-2 right-3 text-gray-500 hover:text-gray-800 text-3xl font-bold"
+        >
+          ×
+        </button>
+
+        <!-- ✅ แสดงรูป -->
+        <div
+          v-if="isImage(selectedImage)"
+          class="flex justify-center items-center w-full h-full overflow-auto"
+        >
+          <img
+            :src="selectedImage"
+            alt="Document Image"
+            class="max-h-[80vh] max-w-full object-contain rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
+          />
+        </div>
+
+        <!-- ❗ ถ้าไม่ใช่รูป -->
+        <div v-else class="text-center mt-6">
+          <p class="text-gray-600 mb-3">ไม่ใช่ไฟล์ภาพ</p>
+          <a
+            :href="selectedImage"
+            download
+            target="_blank"
+            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+          >
+            📎 ดาวน์โหลดไฟล์แนบ
+          </a>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -74,36 +128,35 @@ import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
 const router = useRouter()
-const token = localStorage.getItem('token')
 const documents = ref([])
 
-// ✅ Pagination states
+// ✅ Pagination
 const currentPage = ref(1)
 const itemsPerPage = 7
+
+// ✅ Modal state
+const showImageModal = ref(false)
+const selectedImage = ref(null)
 
 // ✅ โหลดข้อมูลจาก backend
 onMounted(async () => {
   const userId = localStorage.getItem('userId')
-  console.log('📦 Loaded userId:', userId)
   try {
-    const res = await fetch(`/api/student/api/documents/${userId}`)
+    const res = await fetch(`/api/student/documents/${userId}`)
     const data = await res.json()
-
     if (Array.isArray(data)) {
       documents.value = sortByLatestDate(data)
     } else if (data.success && Array.isArray(data.documents)) {
       documents.value = sortByLatestDate(data.documents)
     } else {
       documents.value = []
-      console.warn('❗ No documents found for ID:', userId)
     }
   } catch (err) {
     console.error('❌ Failed to load documents:', err)
-    documents.value = []
   }
 })
 
-// ✅ เรียงจากวันล่าสุด → เก่าสุด
+// ✅ เรียงวันที่ใหม่ → เก่าสุด
 function sortByLatestDate(arr) {
   return arr.sort((a, b) => new Date(b.submit_date) - new Date(a.submit_date))
 }
@@ -122,7 +175,7 @@ function goToPage(page) {
   }
 }
 
-// ✅ Utility: แปลงวันที่ให้อ่านง่าย
+// ✅ Utility: แปลงวันที่
 function formatDate(isoString) {
   if (!isoString) return '-'
   const date = new Date(isoString)
@@ -147,4 +200,45 @@ function mapStatus(code) {
       return 'ไม่ทราบสถานะ'
   }
 }
+
+// ✅ เปิดภาพใน Popup
+function openImage(path) {
+  if (!path) return
+  const baseUrl = 'http://localhost:3000'
+
+  // ✅ แปลง backslash (\) เป็น forward slash (/) เพื่อป้องกัน path error
+  const cleanPath = path.replace(/\\/g, '/')
+
+  // ✅ ถ้ามี '/' ซ้ำข้างหน้าก็ตัดออกแค่ครั้งเดียว
+  const fullUrl = `${baseUrl}/${cleanPath.replace(/^\/+/, '')}`
+
+  selectedImage.value = fullUrl
+  showImageModal.value = true
+}
+
+
+// ✅ ปิด popup
+function closeModal() {
+  showImageModal.value = false
+  selectedImage.value = null
+}
+
+// ✅ ตรวจว่าเป็นไฟล์ภาพไหม
+function isImage(url) {
+  return /\.(jpg|jpeg|png|gif|webp)$/i.test(url)
+}
 </script>
+
+<style scoped>
+.fixed {
+  animation: fadeIn 0.2s ease-in-out;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+</style>
