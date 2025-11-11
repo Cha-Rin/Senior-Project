@@ -88,6 +88,13 @@ app.post('/api/login', (req, res) => {
     }
 
     const user = results[0];
+    // ✅ ตรวจสอบ status ของเลขา
+    if (user.role === 2 && user.status === 0) {
+      return res.status(403).json({
+        success: false,
+        message: 'No permission for this account.'
+      })
+    }
     const token = jwt.sign(
       { user_id: user.user_id, email: user.email, role: Number(user.role) },
       SECRET_KEY,

@@ -40,7 +40,8 @@ export default [
         name: 'History',
         component: () => import('@/views/admin/HistoryPage.vue'),
         props: true  // ✅ ให้ส่ง id เป็น prop เข้าไปได้
-}
+},
+
     ]
   }
 ]

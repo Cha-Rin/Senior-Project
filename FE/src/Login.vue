@@ -79,6 +79,13 @@ const login = async () => {
     })
 
     const data = await res.json()
+    
+    // 🛑 กรณีเลขา status = 0 → backend ส่ง 403 + message
+   if (data.message && data.message.includes('No permission')) {
+  errorMessage.value = 'This account has been disabled or has no permission.'
+  return
+}
+
     if (!data.success || !data.token) {
       errorMessage.value = 'Incorrect username or password.'
       return
