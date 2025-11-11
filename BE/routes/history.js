@@ -99,6 +99,8 @@ module.exports = (db) => {
             c.type AS title,
             d.status,
             d.student_note AS student_note,
+           COALESCE(d.image_complete, d.image_path) AS image_path,
+
             d.user_id AS studentId
           FROM document_tracking AS d
           JOIN categories AS c ON d.category_id = c.category_id
@@ -139,6 +141,7 @@ module.exports = (db) => {
             c.type AS title,
             d.status,
             d.student_note AS student_note,
+            COALESCE(d.image_complete, d.image_path) AS image_path,
             d.user_id AS studentId
           FROM document_tracking AS d
           JOIN categories AS c ON d.category_id = c.category_id
@@ -181,6 +184,8 @@ module.exports = (db) => {
             d.user_id AS studentId,
             CONCAT(u.name, ' ', u.surname) AS full_name,
             d.student_note AS student_note,
+            d.image_path,
+            d.image_complete,
             d.status,
             d.submit_date AS event_date
           FROM document_tracking AS d

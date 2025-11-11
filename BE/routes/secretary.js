@@ -343,7 +343,7 @@ router.get('/documentStatus', authMiddleware, (req, res) => {
 const multer = require('multer');
 const path = require('path');
 
-// ที่จัดเก็บไฟล์ (uploads/documents/)
+// ที่จัดเก็บไฟล์ (uploads/documents/) นักศึกษา>เลขา
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, 'uploads/documents'),
   filename: (req, file, cb) =>
@@ -351,34 +351,52 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// ที่จัดเก็บไฟล์ (uploads/documents/) เลขา>นักศึกษา
+const storageSec = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, 'uploads/uprequest'),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + '-' + file.originalname)
+})
+
+// ✅ ต้องใช้ key "storage" เท่านั้น
+const uploadSec = multer({ storage: storageSec })
 
 
 // ==========================================================
 // 📄 POST /secretary/markDocumentComplete → อัปโหลดไฟล์ + เปลี่ยนสถานะเป็น 2 (Complete)
 // ==========================================================
-router.post('/markDocumentComplete', authMiddleware, upload.single('file'), (req, res) => {
-  const { document_id } = req.body;
-  const filePath = req.file ? `/uploads/documents/${req.file.filename}` : null;
+router.post(
+  '/markDocumentComplete',
+  authMiddleware,
+  uploadSec.single('file'),
+  (req, res) => {
+    console.log('📥 File upload request received')
+    console.log('➡️ req.file:', req.file)
+    console.log('➡️ req.body:', req.body)
 
-  if (!document_id || !filePath)
-    return res.status(400).json({ error: 'Missing document_id or file' });
+    const { document_id } = req.body
+    const filePath = req.file ? `/uploads/uprequest/${req.file.filename}` : null
 
-  const sql = `
-    UPDATE document_tracking
-    SET status = 2, image_path = ?, finish_date = NOW()
-    WHERE document_id = ?
-  `;
+    if (!document_id || !filePath)
+      return res.status(400).json({ error: 'Missing document_id or file' })
 
-  db.query(sql, [filePath, document_id], (err, result) => {
-    if (err) {
-      console.error('❌ SQL error (markDocumentComplete):', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
+    const sql = `
+      UPDATE document_tracking
+      SET status = 2, image_complete = ?, finish_date = NOW()
+      WHERE document_id = ?
+    `
 
-    console.log(`✅ Document ${document_id} marked as Complete`);
-    res.json({ success: true, message: 'Document marked complete', filePath });
-  });
-});
+    db.query(sql, [filePath, document_id], (err, result) => {
+      if (err) {
+        console.error('❌ SQL error (markDocumentComplete):', err)
+        return res.status(500).json({ error: 'Database error' })
+      }
+
+      console.log(`✅ Document ${document_id} marked as Complete`)
+      res.json({ success: true, message: 'Document marked complete', filePath })
+    })
+  }
+)
 
 
 // ------------------------------------------ Get history Document -----------------------------------------

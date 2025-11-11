@@ -90,6 +90,8 @@ const login = async () => {
     const role = Number(decoded.role)
     localStorage.setItem('userRole', role)
     localStorage.setItem('userId', decoded.user_id)
+    localStorage.setItem('name', user.name)
+    localStorage.setItem('surname', user.surname)
     localStorage.setItem('email', decoded.email)
     // ✅ ถ้าเป็นเลขา (role 2) — ดึง category_id ของพี่คนนั้นจาก backend
 if (role === 2) {

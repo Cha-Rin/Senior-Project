@@ -250,7 +250,7 @@ router.get('/documents/:studentId', (req, res) => {
       d.status,
       d.student_note,
       d.finish_date,
-      d.image_path,                -- ✅ เพิ่มตรงนี้
+      d.image_path,
       f.comment AS feedback
     FROM document_tracking d
     LEFT JOIN categories c ON d.category_id = c.category_id
@@ -265,19 +265,28 @@ router.get('/documents/:studentId', (req, res) => {
       return res.status(500).json({ success: false, message: 'Database error' });
     }
 
-    // ✅ แปลง path ให้พร้อมใช้งาน (เพิ่ม /uploads ถ้าจำเป็น)
-    const formatted = results.map((row) => ({
-      ...row,
-      image_path: row.image_path
-        ? row.image_path.startsWith('/')
-          ?  `/${row.image_path}`
-          : `/uploads/documents/${row.image_path}`
-        : null,
-    }));
+    // ✅ ปรับ path ให้พร้อมใช้ (ไม่ซ้ำ และไม่ error)
+    const formatted = results.map((row) => {
+      let imagePath = row.image_path ? row.image_path.replace(/\\/g, '/') : null;
 
+      if (imagePath) {
+        // ถ้ามี uploads/documents อยู่แล้ว ก็ไม่ต้องเติมซ้ำ
+        if (!imagePath.startsWith('uploads/documents/')) {
+          imagePath = `uploads/documents/${imagePath}`;
+        }
+      }
+
+      return {
+        ...row,
+        image_path: imagePath,
+      };
+    });
+
+    // ✅ ส่งกลับครั้งเดียวเท่านั้น
     res.json(formatted);
   });
 });
+
 
 
 // ----------------------------------------- history document-----------------------------------------

@@ -379,13 +379,22 @@ const isImage = (path) => {
 }
 
 const getImageUrl = (path) => {
-  const baseURL = 'http://localhost:3000'; // ✅ backend port
-  if (!path) return `${baseURL}/uploads/documents/default.png`;
-  if (path.startsWith('http')) return path;
-  return path.startsWith('/uploads')
-    ? `${baseURL}${path}`
-    : `${baseURL}/uploads/documents/${path}`;
-};
+  if (!path) return null
+  const baseUrl = 'http://localhost:3000'
+
+  // ✅ แปลง backslash (\) → forward slash (/)
+  let cleanPath = path.replace(/\\/g, '/')
+
+  // ✅ ถ้ามี 'uploads/documents/uploads/documents/' ซ้ำ ให้เหลือแค่ครั้งเดียว
+  cleanPath = cleanPath.replace(/(uploads\/documents\/)+/, 'uploads/documents/')
+
+  // ✅ ถ้ามี '/' ซ้ำข้างหน้าก็ตัดออกแค่ครั้งเดียว
+  const fullUrl = `${baseUrl}/${cleanPath.replace(/^\/+/, '')}`
+
+  console.log('🖼️ Final image URL:', fullUrl)
+  return fullUrl
+}
+
 
 
 // ✅ ปิด modal

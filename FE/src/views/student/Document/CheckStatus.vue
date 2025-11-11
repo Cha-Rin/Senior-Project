@@ -15,8 +15,9 @@
               class="text-sm font-semibold"
               :class="{
                 'text-yellow-600': doc.status == 0,
-                'text-green-600': doc.status == 1,
-                'text-red-500': doc.status == 2
+                'text-blue-600': doc.status == 1,
+                'text-green-500': doc.status == 2,
+                'text-red-500': doc.status == 3
               }"
             >
               {{ mapStatus(doc.status) }}
@@ -191,11 +192,13 @@ function mapStatus(code) {
   const c = parseInt(code)
   switch (c) {
     case 0:
-      return 'รอดำเนินการ'
+      return 'Pending'
     case 1:
-      return 'อนุมัติ'
+      return 'In progress'
     case 2:
-      return 'ปฏิเสธ'
+      return 'Complete'
+    case 3:
+      return 'Reject'
     default:
       return 'ไม่ทราบสถานะ'
   }
@@ -206,15 +209,21 @@ function openImage(path) {
   if (!path) return
   const baseUrl = 'http://localhost:3000'
 
-  // ✅ แปลง backslash (\) เป็น forward slash (/) เพื่อป้องกัน path error
-  const cleanPath = path.replace(/\\/g, '/')
+  // ✅ แปลง backslash (\) → forward slash (/)
+  let cleanPath = path.replace(/\\/g, '/')
+
+  // ✅ ถ้ามี 'uploads/documents/uploads/documents/' ซ้ำ ให้เหลือแค่ครั้งเดียว
+  cleanPath = cleanPath.replace(/(uploads\/documents\/)+/, 'uploads/documents/')
 
   // ✅ ถ้ามี '/' ซ้ำข้างหน้าก็ตัดออกแค่ครั้งเดียว
   const fullUrl = `${baseUrl}/${cleanPath.replace(/^\/+/, '')}`
 
+  console.log('🖼️ Final image URL:', fullUrl) // <— ช่วยตรวจสอบได้
+
   selectedImage.value = fullUrl
   showImageModal.value = true
 }
+
 
 
 // ✅ ปิด popup

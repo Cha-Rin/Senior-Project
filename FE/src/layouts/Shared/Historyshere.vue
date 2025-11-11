@@ -114,6 +114,8 @@
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
+            <th v-if="props.type === 'document'"
+            class="px-6 py-4 text-center text-sm font-bold text-indigo-800">File</th>
             <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
           </tr>
         </thead>
@@ -126,6 +128,25 @@
             <td class="px-6 py-4 text-sm text-gray-700">{{ item.title }}</td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ item.full_name || '—' }}</td>
             <td class="px-6 py-4 text-sm text-gray-700">{{ item.student_note || '—' }}</td>
+            <td v-if="props.type === 'document'" class="px-6 py-4 text-center">
+        <template v-if="item.image_path">
+          <img
+            v-if="isImage(item.image_path)"
+            :src="getImageUrl(item.image_path)"
+            alt="Document"
+            class="h-16 w-16 rounded-lg object-cover border mx-auto shadow-sm hover:scale-105 transition-transform"
+          />
+          <a
+            v-else
+            :href="getImageUrl(item.image_path)"
+            target="_blank"
+            class="text-blue-600 underline"
+          >
+            View File
+          </a>
+        </template>
+        <span v-else class="text-gray-400 italic">No file</span>
+      </td>
             <td class="px-6 py-4 text-right">
               <span :class="getBadgeClass(item)" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium">
                 <span>{{ getBadgeIcon(item) }}</span>
@@ -376,6 +397,27 @@ const handleClickOutside = (e) => {
 }
 onMounted(() => document.addEventListener('click', handleClickOutside))
 onUnmounted(() => document.removeEventListener('click', handleClickOutside))
+const getImageUrl = (path) => {
+  if (!path) return null
+  const baseUrl = 'http://localhost:3000'
+
+  // ✅ แปลง backslash (\) → forward slash (/)
+  let cleanPath = path.replace(/\\/g, '/')
+
+  // ✅ ถ้ามี 'uploads/documents/uploads/documents/' ซ้ำ ให้เหลือแค่ครั้งเดียว
+  cleanPath = cleanPath.replace(/(uploads\/uprequest\/)+/, 'uploads/uprequest/')
+
+  // ✅ ถ้ามี '/' ซ้ำข้างหน้าก็ตัดออกแค่ครั้งเดียว
+  const fullUrl = `${baseUrl}/${cleanPath.replace(/^\/+/, '')}`
+
+  console.log('🖼️ Final image URL:', fullUrl)
+  return fullUrl
+}
+const isImage = (path) => {
+  if (!path) return false
+  return /\.(png|jpg|jpeg|gif|webp)$/i.test(path)
+}
+
 </script>
 
 <style scoped>
