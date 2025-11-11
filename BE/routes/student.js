@@ -1,6 +1,6 @@
 const express = require('express')
 const authMiddleware = require('../middleware/auth') ;
-const SECRET_KEY = 'mysecretkey'
+
 
 // ✅ 1. เพิ่ม 2 บรรทัดนี้
 const multer = require('multer')
@@ -578,38 +578,48 @@ router.post('/feedback/documents', authMiddleware, (req, res) => {
 
 // GET: ดึงเอกสารของ user สำหรับให้ feedback (เฉพาะที่อนุมัติและยังไม่มี feedback)
 // GET /student/documents/for-feedback
-router.get('/documents/for-feedback', authMiddleware, (req, res) => { 
-  const userId = req.user.id;
-  if (!userId) {
-    return res.status(400).json({ success: false, message: 'invalid_user_id' });
-  }
+router.get('/documents/for-feedback', authMiddleware, (req, res) => {
+    const userId = req.user.id || req.user.user_id;
 
-  const sql = `
-    SELECT 
-      d.document_id AS id, 
-      DATE(d.finish_date) AS date, 
-      COALESCE(c.type, 'Unknown') AS topic, 
-      d.student_note AS note,
-      CASE WHEN f.document_id IS NULL THEN 0 ELSE 1 END AS has_feedback  -- ✅ flag
-    FROM document_tracking d
-    LEFT JOIN categories c ON c.category_id = d.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id  -- ✅ ต้องมี join
-    WHERE d.user_id = ?
-      AND d.status = 2              -- ✅ 2 = อนุมัติแล้ว
-      AND f.document_id IS NULL     -- ✅ ยังไม่มี feedback
-    ORDER BY d.finish_date DESC
-  
-  `;
-
-  db.query(sql, [userId], (err, rows) => {
-    if (err) {
-      console.error('❌ fetch documents error:', err);
-      return res.status(500).json({ success: false, message: 'db_error' });
+    if (!userId) {
+      console.error('⚠️ Missing user ID in token');
+      return res.status(400).json({ success: false, message: 'invalid_user_id' });
     }
 
-    res.json({ success: true, items: rows });
+    // ✅ Query: ดึงเอกสารที่ complete แล้ว และยังไม่มี feedback
+    const sql = `
+      SELECT 
+        d.document_id AS id, 
+        DATE(d.finish_date) AS date, 
+        COALESCE(c.type, 'Unknown') AS topic, 
+        d.student_note AS note
+      FROM document_tracking d
+      LEFT JOIN categories c ON c.category_id = d.category_id
+      LEFT JOIN feedback_document_tracking f 
+        ON f.document_id = d.document_id
+      WHERE d.user_id = ?
+        AND d.status = 2          -- ✅ เฉพาะเอกสารที่ complete แล้ว
+        AND f.document_id IS NULL -- ✅ ยังไม่มี feedback
+      ORDER BY d.finish_date DESC
+    `;
+
+    db.query(sql, [userId], (err, rows) => {
+      if (err) {
+        console.error('❌ SQL error (for-feedback):', err);
+        return res.status(500).json({ success: false, message: 'Database error' });
+      }
+console.log("📊 Query Result (raw):");
+    console.table(rows);
+      // ✅ debug log
+      console.log(`📄 Found ${rows.length} document(s) pending feedback for user ${userId}`);
+
+      // ✅ ตอบกลับข้อมูลให้ frontend
+      res.json({
+        success: true,
+        items: rows || []
+      });
+    });
   });
-});
 
 // GET: ดึงเอกสารโดย id สำหรับให้ feedback
 router.get('/documents/:id/for-feedback', authMiddleware, (req, res) => {

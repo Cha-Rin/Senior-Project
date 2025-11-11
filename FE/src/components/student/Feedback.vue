@@ -135,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 // Props & Emit
 const props = defineProps({
@@ -150,7 +150,7 @@ const selectedAppointment = ref(null)
 const ratings = ref([null, null, null])
 const note = ref('')
 const showModal = ref(false)
-
+const localItems = ref([])
 // Questions & Options
 const questions = [
   'The service was fast, convenient, and accurate.',
@@ -167,13 +167,21 @@ const options = [
 
 // Computed
 const filteredTopics = computed(() => props.topics)
+watch(
+  () => props.items,
+  (newVal) => {
+    localItems.value = JSON.parse(JSON.stringify(newVal)) // clone
+  },
+  { immediate: true }
+)
+
 const filteredItems = computed(() =>
   props.items.filter(
     (item) =>
-      (selectedTopic.value === '' || item.topic === selectedTopic.value) &&
-      !item.completed
+      (selectedTopic.value === '' || item.topic === selectedTopic.value)
   )
 )
+
 const canSubmit = computed(() =>
   selectedAppointment.value && ratings.value.every((v) => v !== null)
 )
@@ -194,6 +202,9 @@ function select(qIndex, optionIndex) {
 }
 
 function submitFeedback() {
+  const target = localItems.value.find(i => i.id === selectedAppointment.value.id)
+if (target) target.completed = true
+
   if (!canSubmit.value) return
 
   const payload = {
@@ -211,6 +222,7 @@ function submitFeedback() {
 
   closeModal()
 }
+
 </script>
 
 <style scoped>

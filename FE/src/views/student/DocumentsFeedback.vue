@@ -48,21 +48,41 @@ onMounted(async () => {
 async function loadDocuments() {
   try {
     console.log("🔑 Fetching documents for feedback")
+
     const res = await fetch('/api/student/documents/for-feedback', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
-    const data = await res.json()
-    console.log("📥 Documents response:", data)
 
-    documents.value = Array.isArray(data?.items) ? data.items : []
+    const data = await res.json()
+    console.log("📥 Documents raw response:", JSON.stringify(data, null, 2))
+
+    // ✅ รองรับทั้งกรณีส่งเป็น array หรือ object { items: [...] }
+    const rawItems = Array.isArray(data) ? data : data.items
+    if (!rawItems) {
+      console.warn("⚠️ No documents found")
+      documents.value = []
+      return
+    }
+
+    // ✅ Map field ให้ตรงกับ Feedback.vue
+    documents.value = rawItems.map(d => ({
+      id: d.id || d.document_id,
+      topic: d.topic || d.doc_title || 'Unknown',
+      note: d.note || d.student_note || '',
+      date: d.date || d.finish_date || d.submit_date || '',
+      status: d.status ?? 2
+    }))
+
+    console.log("✅ Documents loaded:", documents.value)
   } catch (e) {
     console.error("❌ loadDocuments error:", e)
     documents.value = []
   }
 }
+
 
 // -------------------- Computed --------------------
 const filteredTopics = computed(() => topics.value)
