@@ -97,8 +97,8 @@ const login = async () => {
     const role = Number(decoded.role)
     localStorage.setItem('userRole', role)
     localStorage.setItem('userId', decoded.user_id)
-    // localStorage.setItem('name', user.name)
-    // localStorage.setItem('surname', user.surname)
+    localStorage.setItem('name', user.name)
+    localStorage.setItem('surname', user.surname)
     localStorage.setItem('email', decoded.email)
     localStorage.setItem('studentName', `${decoded.name} ${decoded.surname}`)
     // ✅ ถ้าเป็นเลขา (role 2) — ดึง category_id ของพี่คนนั้นจาก backend
