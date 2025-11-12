@@ -29,7 +29,7 @@
 
       <div class="text-black">
         <p>
-          Date: {{ item.date }}
+          Date: {{ item.date ? new Date(item.date).toLocaleDateString() : 'N/A' }}
           <span
             v-if="item.time && item.time !== 'N/A'"
             class="ml-2"

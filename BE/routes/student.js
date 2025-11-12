@@ -143,75 +143,75 @@ router.post('/appointments', (req, res) => {
 //-------------------------------------- Student Documents ----------------------------------------
 
 // -------------------------------------- Student Documents ----------------------------------------
-router.post(
-  '/documents',
-  authMiddleware,
-  upload.single('photo'), // ✅ ต้องตรงกับชื่อที่ frontend ส่งมา (TopicChoose.vue ใช้ 'photo')
-  (req, res) => {
-    console.log('📩 Hit /documents (with file upload)')
-    console.log('✅ Received body (text data):', req.body)
-    console.log('✅ Received file (image data):', req.file)
+// router.post(
+//   '/documents',
+//   authMiddleware,
+//   upload.single('photo'), // ✅ ต้องตรงกับชื่อที่ frontend ส่งมา (TopicChoose.vue ใช้ 'photo')
+//   (req, res) => {
+//     console.log('📩 Hit /documents (with file upload)')
+//     console.log('✅ Received body (text data):', req.body)
+//     console.log('✅ Received file (image data):', req.file)
 
-    const {
-      user_id,
-      category_id,
-      student_email,
-      submit_date,
-      finish_date,
-      student_note,
-      status,
-    } = req.body
+//     const {
+//       user_id,
+//       category_id,
+//       student_email,
+//       submit_date,
+//       finish_date,
+//       student_note,
+//       status,
+//     } = req.body
 
-    // ✅ ตรวจสอบค่าใน body
-    if (!user_id) {
-      return res.status(400).json({ error: 'user_id is required' })
-    }
-    if (!student_note) {
-      return res
-        .status(400)
-        .json({ error: 'student_note (sub_topic) is required' })
-    }
+//     // ✅ ตรวจสอบค่าใน body
+//     if (!user_id) {
+//       return res.status(400).json({ error: 'user_id is required' })
+//     }
+//     if (!student_note) {
+//       return res
+//         .status(400)
+//         .json({ error: 'student_note (sub_topic) is required' })
+//     }
 
-    // ✅ ตรวจสอบว่ามีไฟล์แนบมาหรือไม่
-    if (!req.file) {
-      return res.status(400).json({ error: 'photo (file) is required' })
-    }
+//     // ✅ ตรวจสอบว่ามีไฟล์แนบมาหรือไม่
+//     if (!req.file) {
+//       return res.status(400).json({ error: 'photo (file) is required' })
+//     }
 
-    // ✅ เก็บ path ของไฟล์ที่อัปโหลด
-    const imagePath = req.file.path
+//     // ✅ เก็บ path ของไฟล์ที่อัปโหลด
+//     const imagePath = req.file.path
 
-    // ✅ เพิ่มข้อมูลลงฐานข้อมูล
-    const sql = `
-      INSERT INTO document_tracking
-        (user_id, category_id, student_email, status, submit_date, finish_date, student_note, image_path)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `
-    const params = [
-      user_id,
-      category_id,
-      student_email,
-      status,
-      submit_date,
-      finish_date,
-      student_note,
-      imagePath,
-    ]
+//     // ✅ เพิ่มข้อมูลลงฐานข้อมูล
+//     const sql = `
+//       INSERT INTO document_tracking
+//         (user_id, category_id, student_email, status, submit_date, finish_date, student_note, image_path)
+//       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+//     `
+//     const params = [
+//       user_id,
+//       category_id,
+//       student_email,
+//       status,
+//       submit_date,
+//       finish_date,
+//       student_note,
+//       imagePath,
+//     ]
 
-    db.query(sql, params, (err, result) => {
-      if (err) {
-        console.error('❌ SQL Error:', err)
-        return res.status(500).json({ error: 'Database insert failed' })
-      }
+//     db.query(sql, params, (err, result) => {
+//       if (err) {
+//         console.error('❌ SQL Error:', err)
+//         return res.status(500).json({ error: 'Database insert failed' })
+//       }
 
-      console.log('✅ Document inserted, ID:', result.insertId)
-      res.json({
-        success: true,
-        message: 'Document created',
-        document_id: result.insertId,
-      })
-    })
-  }
-)
+//       console.log('✅ Document inserted, ID:', result.insertId)
+//       res.json({
+//         success: true,
+//         message: 'Document created',
+//         document_id: result.insertId,
+//       })
+//     })
+//   }
+// )
 
 // ===============================================================
 // 📘 GET /student/categories-with-staff
@@ -239,78 +239,54 @@ router.get('/categories-with-staff', (req, res) => {
 })
 
 //----------------------------------- chack status of documents ----------------------------------------
-router.get('/documents/:studentId', (req, res) => {
-  const studentId = req.params.studentId;
+// router.get('/documents/:studentId', (req, res) => {
+//   const studentId = req.params.studentId;
 
-  const sql = `
-    SELECT 
-      d.document_id, 
-      c.type AS doc_title,         
-      d.submit_date, 
-      d.status,
-      d.student_note,
-      d.finish_date,
-      d.image_path,
-      f.comment AS feedback
-    FROM document_tracking d
-    LEFT JOIN categories c ON d.category_id = c.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
-    WHERE d.user_id = ?
-    ORDER BY d.submit_date DESC
-  `;
+//   const sql = `
+//     SELECT 
+//       d.document_id, 
+//       c.type AS doc_title,         
+//       d.submit_date, 
+//       d.status,
+//       d.student_note,
+//       d.finish_date,
+//       d.image_path,
+//       f.comment AS feedback
+//     FROM document_tracking d
+//     LEFT JOIN categories c ON d.category_id = c.category_id
+//     LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+//     WHERE d.user_id = ?
+//     ORDER BY d.submit_date DESC
+//   `;
 
-  db.query(sql, [studentId], (err, results) => {
-    if (err) {
-      console.error('🔥 Database error:', err);
-      return res.status(500).json({ success: false, message: 'Database error' });
-    }
+//   db.query(sql, [studentId], (err, results) => {
+//     if (err) {
+//       console.error('🔥 Database error:', err);
+//       return res.status(500).json({ success: false, message: 'Database error' });
+//     }
 
-    // ✅ ปรับ path ให้พร้อมใช้ (ไม่ซ้ำ และไม่ error)
-    const formatted = results.map((row) => {
-      let imagePath = row.image_path ? row.image_path.replace(/\\/g, '/') : null;
+//     // ✅ ปรับ path ให้พร้อมใช้ (ไม่ซ้ำ และไม่ error)
+//     const formatted = results.map((row) => {
+//       let imagePath = row.image_path ? row.image_path.replace(/\\/g, '/') : null;
 
-      if (imagePath) {
-        // ถ้ามี uploads/documents อยู่แล้ว ก็ไม่ต้องเติมซ้ำ
-        if (!imagePath.startsWith('uploads/documents/')) {
-          imagePath = `uploads/documents/${imagePath}`;
-        }
-      }
+//       if (imagePath) {
+//         // ถ้ามี uploads/documents อยู่แล้ว ก็ไม่ต้องเติมซ้ำ
+//         if (!imagePath.startsWith('uploads/documents/')) {
+//           imagePath = `uploads/documents/${imagePath}`;
+//         }
+//       }
 
-      return {
-        ...row,
-        image_path: imagePath,
-      };
-    });
+//       return {
+//         ...row,
+//         image_path: imagePath,
+//       };
+//     });
 
-    // ✅ ส่งกลับครั้งเดียวเท่านั้น
-    res.json(formatted);
-  });
-});
+//     // ✅ ส่งกลับครั้งเดียวเท่านั้น
+//     res.json(formatted);
+//   });
+// });
 
-
-
-// ----------------------------------------- history document-----------------------------------------
-router.get('/document/history', authMiddleware, (req, res) => {
-  const studentId = req.user.user_id
-  console.log('📥 Student ID from token:', studentId)
-
-  const sql = `
-    SELECT d.*, c.type AS category_name
-    FROM document_tracking d
-    JOIN categories c ON d.category_id = c.category_id
-    WHERE d.user_id = ?
-    ORDER BY d.submit_date DESC
-  `;
-
-  db.query(sql, [studentId], (err, results) => {
-    if (err) {
-      console.error('❌ SQL Error:', err);
-      return res.status(500).json({ success: false, message: 'Query failed' });
-    }
-
-    res.json({ success: true, documents: results });
-  });
-});
 // -------------------------------------- Feedback Appointment -----------------------------------------
 // ไว้บนสุดของไฟล์ 
 // helper: สถานะที่ถือว่าอนุมัติ (เปลี่ยนได้ตามระบบคุณ)
@@ -517,196 +493,174 @@ router.get('/appointment-topics', authMiddleware, (req, res) => {
 
 
 // -----------------------------------Feedback Document -----------------------------------------
-// GET: ดึงเอกสารทั้งหมดที่ยังไม่มี feedback และอนุมัติแล้ว
-router.get('/documents_ALL', authMiddleware, (req, res) => {
-  const sql = `
-    SELECT 
-      d.document_id AS id,
-      DATE(d.finish_date) AS date,
-      d.student_note AS note,
-      c.type AS topic,
-      'Documents' AS category,
-      d.status
-    FROM document_tracking d
-    LEFT JOIN categories c ON c.category_id = d.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
-    WHERE f.document_id IS NULL
-      AND UPPER(TRIM(d.status)) IN ('APPROVE','APPROVED','อนุมัติ')
-    ORDER BY d.finish_date DESC
-  `;
-
-  db.query(sql, (err, results) => {
-    if (err) {
-      console.error('❌ Error fetching documents:', err)
-      return res.status(500).json({ error: 'Database error' })
-    }
-    res.json(results)
-  })
-})
-
-// POST: ส่ง feedback สำหรับเอกสาร
-router.post('/feedback/documents', authMiddleware, (req, res) => {
-  const userId = req.user.id;
-  if (!userId) return res.status(400).json({ success: false, message: 'invalid_user_id' });
-
-  const { document_id, ratings, comment } = req.body;
-  if (!document_id || !Array.isArray(ratings) || ratings.length < 3) {
-    return res.status(400).json({ success: false, message: 'Invalid payload' })
-  }
-
-  const sql = `
-    INSERT INTO feedback_document_tracking
-      (document_id, score_count1, score_count2, score_count3, comment, created_at)
-    VALUES (?, ?, ?, ?, ?, NOW())
-  `
-
-  const params = [document_id, ratings[0], ratings[1], ratings[2], comment || '']
-
-//   const updateSql = 'UPDATE documents SET feedback_status = 1 WHERE document_id = ?';
-// db.query(updateSql, [req.body.document_id]);
-  db.query(sql, params, (err, result) => {
-    if (err) {
-      if (err.code === 'ER_DUP_ENTRY') {
-        return res.status(409).json({ success: false, message: 'Feedback already exists' })
-      }
-      console.error('❌ Error inserting feedback:', err)
-      return res.status(500).json({ success: false, message: 'Database error' })
-    }
-    res.json({ success: true, id: result.insertId })
-  })
-})
-
 // GET: ดึงเอกสารของ user สำหรับให้ feedback (เฉพาะที่อนุมัติและยังไม่มี feedback)
 // GET /student/documents/for-feedback
-router.get('/documents/for-feedback', authMiddleware, (req, res) => {
-    const userId = req.user.id || req.user.user_id;
+// router.get('/documents/for-feedback', authMiddleware, (req, res) => {
+//    console.log('✨✨✨ VERSION: 2025-11-12-16:30 ✨✨✨')
+//     console.log('✨✨✨ ROUTE HIT: /documents/for-feedback');
+//     const userId = req.user.id || req.user.user_id;
 
-    if (!userId) {
-      console.error('⚠️ Missing user ID in token');
-      return res.status(400).json({ success: false, message: 'invalid_user_id' });
-    }
+//     if (!userId) {
+//       console.error('⚠️ Missing user ID in token');
+//       return res.status(400).json({ success: false, message: 'invalid_user_id' });
+//     }
 
-    // ✅ Query: ดึงเอกสารที่ complete แล้ว และยังไม่มี feedback
-    const sql = `
-      SELECT 
-        d.document_id AS id, 
-        DATE(d.finish_date) AS date, 
-        COALESCE(c.type, 'Unknown') AS topic, 
-        d.student_note AS note
-      FROM document_tracking d
-      LEFT JOIN categories c ON c.category_id = d.category_id
-      LEFT JOIN feedback_document_tracking f 
-        ON f.document_id = d.document_id
-      WHERE d.user_id = ?
-        AND d.status = 2          -- ✅ เฉพาะเอกสารที่ complete แล้ว
-        AND f.document_id IS NULL -- ✅ ยังไม่มี feedback
-      ORDER BY d.finish_date DESC
-    `;
+//     // ✅ Query: ดึงเอกสารที่ complete แล้ว และยังไม่มี feedback
+//     const sql = `
+//      SELECT 
+//       d.document_id AS id,
+//       d.doc_title,
+//       d.student_note,
+//       d.finish_date,
+//       d.status,
+//       'Documents' AS category
+//     FROM document_tracking d
+//     WHERE d.status = 2
+//       AND NOT EXISTS (
+//         SELECT 1 
+//         FROM feedback_document_tracking f
+//         WHERE f.document_id = d.document_id
+//       )
+//     ORDER BY d.submit_date DESC
+//     `;
 
-    db.query(sql, [userId], (err, rows) => {
-      if (err) {
-        console.error('❌ SQL error (for-feedback):', err);
-        return res.status(500).json({ success: false, message: 'Database error' });
-      }
-console.log("📊 Query Result (raw):");
-    console.table(rows);
-      // ✅ debug log
-      console.log(`📄 Found ${rows.length} document(s) pending feedback for user ${userId}`);
+//     db.query(sql, [userId], (err, rows) => {
+//       if (err) {
+//         console.error('❌ SQL error (for-feedback):', err);
+//         return res.status(500).json({ success: false, message: 'Database error' });
+//       }
+// console.log("📊 Query Result (raw):");
+//     console.table(rows);
+//       // ✅ debug log
+//       console.log(`📄 Found ${rows.length} document(s) pending feedback for user ${userId}`);
 
-      // ✅ ตอบกลับข้อมูลให้ frontend
-      res.json({
-        success: true,
-        items: rows || []
-      });
-    });
-  });
+//       // ✅ ตอบกลับข้อมูลให้ frontend
+//       res.json({
+//         success: true,
+//         items: rows || []
+//       });
+//     });
+//   });
+
+// POST: ส่ง feedback สำหรับเอกสาร
+// router.post('/feedback/documents', authMiddleware, (req, res) => {
+//   const userId = req.user.id;
+//   if (!userId) return res.status(400).json({ success: false, message: 'invalid_user_id' });
+
+//   const { document_id, ratings, comment } = req.body;
+//   if (!document_id || !Array.isArray(ratings) || ratings.length < 3) {
+//     return res.status(400).json({ success: false, message: 'Invalid payload' })
+//   }
+
+//   const sql = `
+//     INSERT INTO feedback_document_tracking
+//       (document_id, score_count1, score_count2, score_count3, comment, created_at)
+//     VALUES (?, ?, ?, ?, ?, NOW())
+//   `
+
+//   const params = [document_id, ratings[0], ratings[1], ratings[2], comment || '']
+
+// //   const updateSql = 'UPDATE documents SET feedback_status = 1 WHERE document_id = ?';
+// // db.query(updateSql, [req.body.document_id]);
+//   db.query(sql, params, (err, result) => {
+//     if (err) {
+//       if (err.code === 'ER_DUP_ENTRY') {
+//         return res.status(409).json({ success: false, message: 'Feedback already exists' })
+//       }
+//       console.error('❌ Error inserting feedback:', err)
+//       return res.status(500).json({ success: false, message: 'Database error' })
+//     }
+//     res.json({ success: true, id: result.insertId })
+//   })
+// })
+
 
 // GET: ดึงเอกสารโดย id สำหรับให้ feedback
-router.get('/documents/:id/for-feedback', authMiddleware, (req, res) => {
-  const id = Number(req.params.id);
-  if (!id) return res.status(400).json({ found: false, reason: 'invalid_id' });
+// router.get('/documents/:id/for-feedback', authMiddleware, (req, res) => {
+//   const id = Number(req.params.id);
+//   if (!id) return res.status(400).json({ found: false, reason: 'invalid_id' });
 
-  const sql = `
-    SELECT 
-      d.document_id AS id,
-      DATE(d.finish_date) AS date,
-      d.student_note AS note,
-      c.type AS topic,
-      'Documents' AS category,
-      d.status,
-      CASE WHEN f.document_id IS NULL THEN 0 ELSE 2 END AS has_feedback
-    FROM document_tracking d
-    LEFT JOIN categories c ON c.category_id = d.category_id
-    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
-    WHERE d.document_id = ?
-    LIMIT 1
-  `;
+//   const sql = `
+//     SELECT 
+//       d.document_id AS id,
+//       DATE(d.finish_date) AS date,
+//       d.student_note AS note,
+//       c.type AS topic,
+//       'Documents' AS category,
+//       d.status,
+//       CASE WHEN f.document_id IS NULL THEN 0 ELSE 2 END AS has_feedback
+//     FROM document_tracking d
+//     LEFT JOIN categories c ON c.category_id = d.category_id
+//     LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+//     WHERE d.document_id = ?
+//     LIMIT 1
+//   `;
 
-  db.query(sql, [id], (err, rows) => {
-    if (err) {
-      console.error('❌ Error fetching document by id:', err);
-      return res.status(500).json({ found: false, reason: 'db_error' });
-    }
-    if (!rows || rows.length === 0) return res.json({ found: false, reason: 'not_found' });
+//   db.query(sql, [id], (err, rows) => {
+//     if (err) {
+//       console.error('❌ Error fetching document by id:', err);
+//       return res.status(500).json({ found: false, reason: 'db_error' });
+//     }
+//     if (!rows || rows.length === 0) return res.json({ found: false, reason: 'not_found' });
 
-    const row = rows[0];
-    if (Number(row.has_feedback) === 1) return res.json({ found: false, reason: 'already_feedback' });
+//     const row = rows[0];
+//     if (Number(row.has_feedback) === 1) return res.json({ found: false, reason: 'already_feedback' });
 
-    const approvedSet = parseApprovedSet(req);
-    if (!approvedSet.includes(Number(row.status))) {
-      return res.json({ found: false, reason: 'not_approved', status: row.status, approved_set: approvedSet });
-    }
+//     const approvedSet = parseApprovedSet(req);
+//     if (!approvedSet.includes(Number(row.status))) {
+//       return res.json({ found: false, reason: 'not_approved', status: row.status, approved_set: approvedSet });
+//     }
 
-    return res.json({
-      found: true,
-      document: {
-        id: row.id,
-        date: row.date || null,
-        note: row.note || '',
-        topic: row.topic || 'Unknown',
-        category: 'Documents',
-        status: row.status
-      }
-    });
-  });
-});
+//     return res.json({
+//       found: true,
+//       document: {
+//         id: row.id,
+//         date: row.date || null,
+//         note: row.note || '',
+//         topic: row.topic || 'Unknown',
+//         category: 'Documents',
+//         status: row.status
+//       }
+//     });
+//   });
+// });
 
 // GET: ดึงหัวข้อของ user สำหรับเอกสาร
 // GET /student/document-topics
 //หัวข้อ drop-down ในหน้าทำแบบประเมิน แสดงเฉพาะหัวข้อที่ยังไม่ได้ทำ
-router.get('/document-topics', authMiddleware, (req, res) => {
-  const userId = req.user.id;
-  if (!userId) {
-    return res.status(400).json({ success: false, message: 'invalid_user_id' });
-  }
+// router.get('/document-topics', authMiddleware, (req, res) => {
+//   const userId = req.user.id;
+//   if (!userId) {
+//     return res.status(400).json({ success: false, message: 'invalid_user_id' });
+//   }
 
-  const sql = `
-  SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
-  FROM document_tracking d
-  LEFT JOIN categories c ON c.category_id = d.category_id
-  LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
-  WHERE d.user_id = ?
-    AND d.status = 2
-    AND f.document_id IS NULL  
-  ORDER BY topic;
-`;
+//   const sql = `
+//   SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
+//   FROM document_tracking d
+//   LEFT JOIN categories c ON c.category_id = d.category_id
+//   LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+//   WHERE d.user_id = ?
+//     AND d.status = 2
+//     AND f.document_id IS NULL  
+//   ORDER BY topic;
+// `;
 
-  db.query(sql, [userId], (err, rows) => {
-    if (err) {
-      console.error('❌ fetch document topics error:', err);
-      return res.status(500).json({ success: false, message: 'db_error' });
-    }
+//   db.query(sql, [userId], (err, rows) => {
+//     if (err) {
+//       console.error('❌ fetch document topics error:', err);
+//       return res.status(500).json({ success: false, message: 'db_error' });
+//     }
 
-    if (!rows.length) {
-      return res.json({ success: false, message: 'Not found' });
-    }
+//     if (!rows.length) {
+//       return res.json({ success: false, message: 'Not found' });
+//     }
 
-    res.json({
-      success: true,
-      topics: rows.map(r => r.topic).filter(Boolean),
-    });
-  });
-});
+//     res.json({
+//       success: true,
+//       topics: rows.map(r => r.topic).filter(Boolean),
+//     });
+//   });
+// });
 
 
 

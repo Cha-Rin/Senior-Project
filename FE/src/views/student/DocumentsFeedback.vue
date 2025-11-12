@@ -2,14 +2,28 @@
 import { ref, computed, onMounted } from 'vue'
 import Feedback from "@/components/student/Feedback.vue"
 import axios from 'axios'
+import jwt_decode from "jwt-decode"
 
-console.log('🧩 DocumentsFeedback component loaded')
 
 // -------------------- State --------------------
 const documents = ref([])
 const topics = ref([])
 const selectedTopic = ref('')
 const token = localStorage.getItem('authToken')
+let userId = localStorage.getItem('userId')
+if (token) {
+  try {
+    const decoded = jwt_decode(token)
+    if (decoded.userId) {
+      userId = decoded.userId
+      localStorage.setItem('userId', userId)
+    }
+  } catch (e) {
+    console.warn('Token decode failed:', e)
+  }
+}
+
+console.log('🔑 Effective userId:', userId)
 
 // -------------------- onMounted --------------------
 onMounted(async () => {
@@ -22,7 +36,7 @@ onMounted(async () => {
 
   try {
     console.log("🔑 Fetching approved topics")
-    const res = await fetch('/api/student/document-topics', {
+    const res = await fetch('/api/studentDoc/document-topics', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -48,8 +62,9 @@ onMounted(async () => {
 async function loadDocuments() {
   try {
     console.log("🔑 Fetching documents for feedback")
+console.log("🚀 Route /documents/for-feedback is running (status=2 filter)");
 
-    const res = await fetch('/api/student/documents/for-feedback', {
+    const res = await fetch(`/api/studentDoc/documents/for-feedback/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -58,23 +73,16 @@ async function loadDocuments() {
 
     const data = await res.json()
     console.log("📥 Documents raw response:", JSON.stringify(data, null, 2))
-
+    
     // ✅ รองรับทั้งกรณีส่งเป็น array หรือ object { items: [...] }
     const rawItems = Array.isArray(data) ? data : data.items
+    documents.value = rawItems || []
     if (!rawItems) {
       console.warn("⚠️ No documents found")
       documents.value = []
       return
     }
-
-    // ✅ Map field ให้ตรงกับ Feedback.vue
-    documents.value = rawItems.map(d => ({
-      id: d.id || d.document_id,
-      topic: d.topic || d.doc_title || 'Unknown',
-      note: d.note || d.student_note || '',
-      date: d.date || d.finish_date || d.submit_date || '',
-      status: d.status ?? 2
-    }))
+console.log("📥 Documents raw response:", data);
 
     console.log("✅ Documents loaded:", documents.value)
   } catch (e) {
@@ -96,7 +104,7 @@ async function handleSubmit(payload) {
   try {
     console.log("🧩 handleSubmit payload:", payload)
 
-    const res = await fetch('/api/student/feedback/documents', {
+    const res = await fetch('/api/studentDoc/feedback/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
