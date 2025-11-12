@@ -31,7 +31,7 @@
     <div class="flex items-center space-x-3">
       <!-- ชื่อผู้ใช้ -->
       <p class="text-sm font-semibold hidden sm:block">
-        👩‍🎓 {{ studentName || 'Guest' }}
+        👩‍🎓 {{ studentName }}
       </p>
 
       <!-- ปุ่มเปลี่ยนภาษา -->
@@ -90,11 +90,32 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import SidebarItem from './SidebarItemApp.vue'
-
+import jwt_decode from "jwt-decode"
 const router = useRouter()
 const menuOpen = ref(false)
 const currentLang = ref('th')
-const studentName = ref('')
+const studentName = ref('Guest')
+
+onMounted(async () => {
+  const token = localStorage.getItem('authToken')
+  if (!token) return
+
+  try {
+    const decoded = jwt_decode(token)
+    const userId = decoded.user_id
+
+    const res = await fetch(`/api/profile/${userId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    const data = await res.json()
+    if (data.name && data.surname) {
+  studentName.value = `${data.name} ${data.surname}`
+  localStorage.setItem('studentName', studentName.value)
+}
+  } catch (err) {
+    console.error('Failed to load user info:', err)
+  }
+})
 
 // 🔹 เปลี่ยนภาษา
 function toggleLang() {
