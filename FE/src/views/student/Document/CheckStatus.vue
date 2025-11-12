@@ -143,7 +143,7 @@ const selectedImage = ref(null)
 onMounted(async () => {
   const userId = localStorage.getItem('userId')
   try {
-    const res = await fetch(`/api/student/documents/${userId}`)
+    const res = await fetch(`/api/studentDoc/documents/${userId}`)
     const data = await res.json()
     if (Array.isArray(data)) {
       documents.value = sortByLatestDate(data)
