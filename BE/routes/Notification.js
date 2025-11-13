@@ -86,6 +86,7 @@ module.exports = (db) => {
       FROM document_tracking AS d
       JOIN user_category AS uc ON d.category_id = uc.category_id
       WHERE uc.user_id = ?
+      AND d.status = 1
     `
 
     db.query(sql, [secretaryId], (err, results) => {

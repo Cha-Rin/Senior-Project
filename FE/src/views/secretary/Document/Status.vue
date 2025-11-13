@@ -156,7 +156,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
-
+import jwt_decode from "jwt-decode"
 // ------------------------------------------
 // STATE
 // ------------------------------------------
@@ -165,7 +165,19 @@ const showCompleteModal = ref(false)
 const selectedFile = ref(null)
 const currentCompleteItem = ref(null)
 const fileInput = ref(null)
-
+const token = localStorage.getItem('authToken')
+let userId = localStorage.getItem('userId')
+if (token) {
+  try {
+    const decoded = jwt_decode(token)
+    if (decoded.userId) {
+      userId = decoded.userId
+      localStorage.setItem('userId', userId)
+    }
+  } catch (e) {
+    console.warn('Token decode failed:', e)
+  }
+}
 // ✅ Pagination
 const currentPage = ref(1)
 const itemsPerPage = 7
@@ -183,8 +195,11 @@ const loadDocuments = async () => {
   if (!token) return
 
   try {
-    const res = await fetch('http://localhost:3000/api/secretary/documentStatus', {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await fetch('/api/secretary/documentStatus', {
+     headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     })
     const data = await res.json()
 
@@ -230,7 +245,7 @@ const confirmComplete = async () => {
   formData.append('document_id', currentCompleteItem.value.no)
 
   try {
-    const res = await fetch('http://localhost:3000/api/secretary/markDocumentComplete', {
+    const res = await fetch('/api/secretary/markDocumentComplete', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`, // ✅ อย่าใส่ Content-Type เอง

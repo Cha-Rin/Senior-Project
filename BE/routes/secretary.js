@@ -320,7 +320,7 @@ router.get('/documentStatus', authMiddleware, (req, res) => {
       CONCAT(u.name, ' ', u.surname) AS full_name,
       d.submit_date,
       c.type AS topic,
-      d.status,
+      d.status
     FROM document_tracking d
     JOIN user_category uc ON d.category_id = uc.category_id
     JOIN categories c ON d.category_id = c.category_id
