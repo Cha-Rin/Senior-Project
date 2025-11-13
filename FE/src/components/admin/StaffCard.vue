@@ -35,6 +35,7 @@
 </template>
 
 <script setup>
+
 defineProps({
   id: [String, Number],
   name: String,
@@ -42,4 +43,5 @@ defineProps({
   rating: Number,
   category: String
 })
+
 </script>

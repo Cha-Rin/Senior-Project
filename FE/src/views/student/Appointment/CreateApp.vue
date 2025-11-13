@@ -243,4 +243,24 @@ onMounted(() => {
       staffIdToView.value = null
   }
 })
+router.get('/categories-with-staff', (req, res) => {
+  const sql = `
+    SELECT 
+      c.category_id,
+      c.type,
+      CONCAT(u.name, ' ', u.surname) AS staff_name
+    FROM categories c
+    LEFT JOIN user_category uc ON c.category_id = uc.category_id
+    LEFT JOIN user u ON uc.user_id = u.user_id AND u.role = 2
+    ORDER BY c.category_id;
+  `
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error('❌ Error fetching categories-with-staff:', err)
+      return res.status(500).json({ success: false, message: 'Database error' })
+    }
+    console.log('✅ categories-with-staff count:', rows.length)
+    res.json(rows)
+  })
+})
 </script>

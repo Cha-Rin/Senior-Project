@@ -166,7 +166,7 @@ const comments = ref([])
 
 const user = ref({ name: '', avatar: '' })
 
-// ⭐️ [แก้ไข] onMounted (เหมือน Appointment)
+
 onMounted(async () => {
   try {
     const token = localStorage.getItem('authToken');
