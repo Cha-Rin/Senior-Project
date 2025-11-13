@@ -1,8 +1,7 @@
 <template>
   <div class="p-8 space-y-6 max-w-md mx-auto bg-white min-h-screen">
     <h1 class="text-xl font-semibold text-center mt-8">Feedback</h1>
-
-    <!-- 🔽 Topic Dropdown -->
+    <!-- 📽 Topic Dropdown -->
     <div class="mb-4">
       <select v-model="selectedTopic" class="border rounded p-2 w-full">
         <option value="">-- เลือกหัวข้อ --</option>
@@ -25,6 +24,14 @@
     >
       <div class="flex justify-between items-center font-semibold text-black">
         <span>#{{ item.id }}</span>
+        <span 
+  class="text-xs px-2 py-1 rounded"
+  :class="item.category === 'Document' 
+    ? 'bg-yellow-100 text-yellow-800' 
+    : 'bg-blue-100 text-blue-800'"
+>
+  {{ item.category }}
+</span>
       </div>
 
       <div class="text-black">
@@ -135,7 +142,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 
 // Props & Emit
 const props = defineProps({
@@ -151,6 +158,7 @@ const ratings = ref([null, null, null])
 const note = ref('')
 const showModal = ref(false)
 const localItems = ref([])
+
 // Questions & Options
 const questions = [
   'The service was fast, convenient, and accurate.',
@@ -158,29 +166,44 @@ const questions = [
   'Service was completed within the scheduled timeframe.'
 ]
 const options = [
-  { emoji: '😠', label: 'Bad' },
+  { emoji: '😡', label: 'Bad' },
   { emoji: '🙁', label: 'Poor' },
   { emoji: '😐', label: 'Average' },
   { emoji: '🙂', label: 'Good' },
   { emoji: '😄', label: 'Excellent' }
 ]
 
+// ✅ Debug onMounted
+onMounted(() => {
+  console.log('🧩 Feedback.vue mounted')
+  console.log('📥 Props received:', {
+    items: props.items.length,
+    topics: props.topics.length
+  })
+  console.log('📋 Items detail:', props.items)
+  console.log('📋 Topics detail:', props.topics)
+})
+
 // Computed
 const filteredTopics = computed(() => props.topics)
+
 watch(
   () => props.items,
   (newVal) => {
+    console.log('🔄 Props items changed:', newVal.length)
     localItems.value = JSON.parse(JSON.stringify(newVal)) // clone
   },
   { immediate: true }
 )
 
-const filteredItems = computed(() =>
-  props.items.filter(
+const filteredItems = computed(() => {
+  const result = props.items.filter(
     (item) =>
       (selectedTopic.value === '' || item.topic === selectedTopic.value)
   )
-)
+  console.log('🔍 filteredItems:', result.length, 'items')
+  return result
+})
 
 const canSubmit = computed(() =>
   selectedAppointment.value && ratings.value.every((v) => v !== null)
@@ -203,7 +226,7 @@ function select(qIndex, optionIndex) {
 
 function submitFeedback() {
   const target = localItems.value.find(i => i.id === selectedAppointment.value.id)
-if (target) target.completed = true
+  if (target) target.completed = true
 
   if (!canSubmit.value) return
 
@@ -214,15 +237,11 @@ if (target) target.completed = true
     note: note.value
   }
 
+  console.log('📤 Submitting feedback:', payload)
   emit('submit', payload)
-
-  // ✅ ลบ item จาก list ทันที
-  const item = props.items.find((i) => i.id === selectedAppointment.value.id)
-  if (item) item.completed = true
 
   closeModal()
 }
-
 </script>
 
 <style scoped>

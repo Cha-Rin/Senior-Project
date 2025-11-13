@@ -31,28 +31,45 @@
       >
         กลับหน้าเลือกเส้นทาง
       </button>
+
+      <!-- ✅ เพิ่มปุ่ม Logout -->
+      <button
+        class="mt-4 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl w-full transition"
+        @click="handleLogout"
+      >
+        ออกจากระบบ
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { useRouter } from "vue-router";
+import { useFeedbackGuard } from "@/stores/useFeedbackGuard";
 
 const router = useRouter();
+const guard = useFeedbackGuard();
 
-// ⭐ ไปหน้า Feedback (ดีกว่าใช้ path ตรง ๆ)
+// ⭐ ไปหน้า Feedback
 const goFeedback = () => {
-  router.push({ name: "Feedback" });
+  router.push({ name: "Feedback" });  // ⬅️ ตรงนี้ต้อง redirect ไป StudentFeedbackPage
 };
 
-// ⭐ ปุ่มกลับ (กลับไปหน้า PathSelect)
+// ⭐ กลับหน้า PathSelect (ถูก redirect กลับมาอีกถ้ายังมี feedback ค้าง)
 const goBack = () => {
   router.push({ name: "PathSelect" });
+};
+
+// ✅ Logout
+const handleLogout = () => {
+  if (confirm('คุณต้องการออกจากระบบ?')) {
+    guard.logout();
+    router.push({ name: 'Login' });
+  }
 };
 </script>
 
 <style scoped>
-/* Animation loading page */
 @keyframes fade-in {
   from {
     opacity: 0;

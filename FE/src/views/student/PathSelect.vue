@@ -3,60 +3,56 @@
     <!-- Appointment Card -->
     <button
       class="w-64 h-28 bg-blue-900 text-white rounded-xl shadow-md text-lg font-semibold hover:bg-blue-800 transition"
-      @click="goToAppointment"
+      @click="enterAppointment"
     >
       Appointment
     </button>
 
-    <!-- Document Tracking Card -->
     <button
       class="w-64 h-28 bg-blue-900 text-white rounded-xl shadow-md text-lg font-semibold hover:bg-blue-800 transition"
-      @click="goToTracking"
+      @click="enterDocument"
     >
       Document Tracking
     </button>
-      
   </div>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
-
-function goToAppointment() {
-  router.push('/student/appointment/topic')
-}
-
-function goToTracking() {
-  router.push('/student/document/topictrack')
-}
-</script>
-
-<!-- <script setup>
-// import { useFeedbackGuard } from "@/stores/useFeedbackGuard";
+import { onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { useFeedbackGuard } from "@/stores/useFeedbackGuard";
 
 const router = useRouter();
 const guard = useFeedbackGuard();
 
+// ✅ โหลดใหม่ทุกครั้งที่เข้าหน้า PathSelect
+onMounted(async () => {
+  console.log('🔄 PathSelect mounted - reloading feedback...')
+  await guard.forceReload()
+  
+  // ✅ ถ้ามี feedback ค้าง redirect ทันที
+  if (guard.mustFeedback) {
+    router.push({ name: 'FeedbackRequired' })
+  }
+})
+
 const enterAppointment = async () => {
-  await guard.loadPending();   // โหลดข้อมูลค้างก่อน
+  await guard.forceReload() // โหลดใหม่อีกครั้งก่อนเข้า
 
   if (guard.mustFeedback) {
     router.push({ name: "FeedbackRequired" });
   } else {
-    router.push({ name: "ChooseTopic" });  // เส้นทางนัดหมายจริง
+    router.push({ name: "ChooseTopic" });
   }
 };
 
 const enterDocument = async () => {
-  await guard.loadPending();
+  await guard.forceReload() // โหลดใหม่อีกครั้งก่อนเข้า
 
   if (guard.mustFeedback) {
     router.push({ name: "FeedbackRequired" });
   } else {
-    router.push({ name: "TopicTrack" });  // เส้นทางเอกสารจริง
+    router.push({ name: "TopicTrack" });
   }
 };
-</script> -->
-
+</script>

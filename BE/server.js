@@ -48,8 +48,8 @@ app.use((err, req, res, next) => {
 const studentRouter = require('./routes/student')(db);
 app.use('/api/student', studentRouter);
 
-const studentDocRouter = require('./routes/studentDoc')(db);
-app.use('/api/studentDoc', studentDocRouter);
+// const studentDocRouter = require('./routes/studentDoc')(db);
+// app.use('/api/studentDoc', studentDocRouter);
 
 const secretaryRouter = require('./routes/secretary')(db);
 app.use('/api/secretary', secretaryRouter);

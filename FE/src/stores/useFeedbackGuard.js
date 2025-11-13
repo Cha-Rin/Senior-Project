@@ -1,52 +1,119 @@
-// ในไฟล์ useFeedbackGuard.js
+// stores/useFeedbackGuard.js
+import { defineStore } from 'pinia'
 
-import { defineStore } from "pinia";
-import axios from "axios";
+export const useFeedbackGuard = defineStore('feedbackGuard', {
+  state: () => ({
+    loaded: false,
+    loading: false,
+    pendingAppointments: [],
+    pendingDocuments: []
+  }),
 
-export const useFeedbackGuard = defineStore("feedbackGuard", {
-  state: () => ({
-    loaded: false,
-    // 🛑 แก้ไข State 
-    pendingApptCount: 0,
-    pendingDocCount: 0,
-  }),
+  getters: {
+    mustFeedback: (state) => {
+      return state.pendingAppointments.length > 0 || state.pendingDocuments.length > 0
+    },
+    totalPending: (state) => {
+      return state.pendingAppointments.length + state.pendingDocuments.length
+    }
+  },
 
-  getters: {
-    // Getter เดิม (เผื่อยังใช้ที่อื่น)
-    mustFeedback: (state) => (state.pendingApptCount + state.pendingDocCount) > 0,
+  actions: {
+    async loadPending(force = false) {
+      // ⭐ เพิ่ม parameter force เพื่อบังคับโหลดใหม่
+      if (this.loading) {
+        console.log('⏳ Already loading, skip...')
+        return
+      }
 
-    // ✅ Getter ใหม่ที่ฉลาดขึ้น
-    mustFeedbackAppt: (state) => state.pendingApptCount > 0,
-    mustFeedbackDoc: (state) => state.pendingDocCount > 0,
-  },
+      // ✅ ถ้าไม่ force และโหลดแล้ว → skip
+      if (this.loaded && !force) {
+        console.log('✅ Already loaded, skip...')
+        return
+      }
 
-  actions: {
-    async loadPending() {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem('authToken')
+      if (!token) {
+        console.warn('⚠️ No token found')
+        this.loaded = true
+        return
+      }
 
-      if (!token) {
-        this.pendingApptCount = 0; // 
-        this.pendingDocCount = 0;  // 
-        this.loaded = true;
-        return;
-      }
+      this.loading = true
 
-      try {
-        const res = await axios.get("/api/student/feedback/pending", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+      try {
+        console.log('🔄 Loading pending feedback...')
+        
+        const res = await fetch('/api/student/feedback/pending', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        })
 
-        // ✅ อ่านค่าจาก API ที่แก้ไขแล้ว
-        this.pendingApptCount = res?.data?.appointments ?? 0;
-        this.pendingDocCount = res?.data?.documents ?? 0;
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`)
+        }
 
-      } catch (err) {
-        console.error("❌ Error loading pending feedback:", err);
-        this.pendingApptCount = 0;
-        this.pendingDocCount = 0;
-      }
+        const data = await res.json()
+        console.log('📦 Pending feedback response:', data)
 
-      this.loaded = true;
-   }
-  },
-});
+        const appointments = Array.isArray(data.appointments) ? data.appointments : []
+        const documents = Array.isArray(data.documents) ? data.documents : []
+
+        console.log('🔍 Appointments sample:', appointments[0])
+        console.log('🔍 Documents sample:', documents[0])
+
+        this.pendingAppointments = appointments
+        this.pendingDocuments = documents
+        this.loaded = true
+
+        console.log('✅ Loaded:', {
+          appointments: this.pendingAppointments.length,
+          documents: this.pendingDocuments.length,
+          mustFeedback: this.mustFeedback
+        })
+
+      } catch (err) {
+        console.error('❌ loadPending error:', err)
+        this.loaded = true
+        this.pendingAppointments = []
+        this.pendingDocuments = []
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // ✅ เพิ่ม method สำหรับบังคับโหลดใหม่
+    async forceReload() {
+      console.log('🔄 Force reload pending feedback...')
+      this.loaded = false
+      await this.loadPending(true)
+    },
+
+    removeAppointment(id) {
+      this.pendingAppointments = this.pendingAppointments.filter(a => a.id !== id)
+      console.log('✅ Removed appointment:', id, '| Remaining:', this.pendingAppointments.length)
+    },
+
+    removeDocument(id) {
+      this.pendingDocuments = this.pendingDocuments.filter(d => d.id !== id)
+      console.log('✅ Removed document:', id, '| Remaining:', this.pendingDocuments.length)
+    },
+
+    reset() {
+      this.loaded = false
+      this.loading = false
+      this.pendingAppointments = []
+      this.pendingDocuments = []
+    },
+
+    logout() {
+      this.reset()
+      localStorage.removeItem('authToken')
+      localStorage.removeItem('userRole')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('student_id')
+    }
+  }
+})

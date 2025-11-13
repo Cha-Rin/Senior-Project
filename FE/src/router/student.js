@@ -23,7 +23,7 @@ import NewHistory from '../views/student/Document/NewHistory.vue'
 import FeedbackForm from '../components/student/Feedback.vue'
 import AppointmentsFeedback from '../views/student/AppointmentsFeedback.vue'
 import DocumentsFeedback from '../views/student/DocumentsFeedback.vue'
-
+import StudentFeedbackPage from '../views/student/StudentFeedbackPage.vue'
 import FeedbackRequired from '../views/student/FeedbackRequired.vue'
 
 
@@ -67,9 +67,21 @@ export default [
     path: '/student/feedback',
     component: FeedbackLayout,
     children: [
-      { path: '', name: 'Feedback', component: FeedbackForm },
-      { path: 'appointments', name: 'AppointmentsFeedback', component: AppointmentsFeedback },
-      { path: 'documents', name: 'DocumentsFeedback', component: DocumentsFeedback }
+      { 
+        path: '', 
+        name: 'Feedback', 
+        component: StudentFeedbackPage  // ⬅️ เปลี่ยนจาก FeedbackForm
+      },
+      { 
+        path: 'appointments', 
+        name: 'AppointmentsFeedback', 
+        component: AppointmentsFeedback 
+      },
+      { 
+        path: 'documents', 
+        name: 'DocumentsFeedback', 
+        component: DocumentsFeedback 
+      }
     ]
   }
 ]

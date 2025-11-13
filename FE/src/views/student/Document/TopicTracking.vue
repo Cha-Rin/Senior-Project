@@ -244,7 +244,7 @@ const submitDocument = async () => {
     formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
     formData.append('finish_date', '')
 
-    const res = await fetch('/api/studentDoc/documents', {
+    const res = await fetch('/api/student/documents', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

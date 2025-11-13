@@ -6,7 +6,7 @@ import Historyshere from '../layouts/Shared/Historyshere.vue'
 import studentRoutes from './student'
 import secretaryRoutes from './secretary'
 import adminRoutes from './admin'
-
+import { useFeedbackGuard } from "@/stores/useFeedbackGuard";
 const routes = [
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: Login },
@@ -21,43 +21,35 @@ const router = createRouter({
   routes
 })
 
-
 //-------------------------------- Navigation Guard เอาไว้ท้ายสุดของโค้ด --------------------------------
-router.beforeEach((to, from, next) => {
+// router/index.js
+
+router.beforeEach(async (to, from, next) => {
   const token = localStorage.getItem('authToken')
   const role = localStorage.getItem('userRole')
+  const guard = useFeedbackGuard()
 
-  // 🕒 ตรวจสอบว่า token หมดอายุหรือยัง
+  // 1️⃣ ตรวจ token หมดอายุ
   if (token) {
     try {
       const decoded = jwt_decode(token)
-      const now = Date.now() / 1000 // แปลงเป็นวินาที
-
+      const now = Date.now() / 1000
       if (decoded.exp && decoded.exp < now) {
-        // ❌ หมดอายุแล้ว
         localStorage.removeItem('authToken')
         localStorage.removeItem('userRole')
         return next({ name: 'Login' })
       }
     } catch (err) {
-      console.error('Token decode error:', err)
       localStorage.removeItem('authToken')
       localStorage.removeItem('userRole')
       return next({ name: 'Login' })
     }
   }
 
-  // 🧱 ถ้าไม่มี token และหน้า requireAuth → กลับไป login
-  if (!token && to.meta.requiresAuth) {
-    return next({ name: 'Login' })
-  }
-
-  // 🔒 ถ้ายังไม่ได้ login และจะเข้า page ที่ไม่ใช่ login
-  if (!role && to.name !== 'Login') {
-    return next({ name: 'Login' })
-  }
-
-  // 🚫 ถ้า login แล้ว แต่พยายามเข้า /login ซ้ำ
+  // 2️⃣ ตรวจ login / role
+  if (!token && to.meta.requiresAuth) return next({ name: 'Login' })
+  if (!role && to.name !== 'Login') return next({ name: 'Login' })
+  
   if (role && to.name === 'Login') {
     if (role == 3) return next({ name: 'PathSelect' })
     if (role == 2) return next({ name: 'Appointment' })
@@ -65,8 +57,26 @@ router.beforeEach((to, from, next) => {
     return next('/')
   }
 
+  // 3️⃣ ✅ โหลด pending feedback ใหม่ทุกครั้ง (สำหรับ student role 3)
+  if (token && role == 3) {
+    try {
+      // ⭐ เปลี่ยนจาก loadPending() เป็น forceReload() เพื่อโหลดใหม่ทุกครั้ง
+      console.log('🔄 Reloading feedback status...')
+      await guard.forceReload()
+    } catch (err) {
+      console.error('Failed to load feedback:', err)
+    }
+  }
+
+  // 4️⃣ Feedback Guard
+  const isFeedbackPage = to.path.startsWith('/student/feedback')
+  const isLoginPage = to.name === 'Login'
+  
+  if (guard.loaded && guard.mustFeedback && !isFeedbackPage && !isLoginPage && role == 3) {
+    console.log('⚠️ Redirect to FeedbackRequired page (pending:', guard.totalPending, ')')
+    return next({ name: 'FeedbackRequired' })
+  }
+
   next()
 })
-
-
 export default router

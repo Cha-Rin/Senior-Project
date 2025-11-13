@@ -36,7 +36,7 @@ onMounted(async () => {
 
   try {
     console.log("🔑 Fetching approved topics")
-    const res = await fetch('/api/studentDoc/document-topics', {
+    const res = await fetch('/api/student/document-topics', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -64,7 +64,7 @@ async function loadDocuments() {
     console.log("🔑 Fetching documents for feedback")
 console.log("🚀 Route /documents/for-feedback is running (status=2 filter)");
 
-    const res = await fetch(`/api/studentDoc/documents/for-feedback/${userId}`, {
+    const res = await fetch(`/api/student/documents/for-feedback/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
@@ -104,7 +104,7 @@ async function handleSubmit(payload) {
   try {
     console.log("🧩 handleSubmit payload:", payload)
 
-    const res = await fetch('/api/studentDoc/feedback/documents', {
+    const res = await fetch('/api/student/feedback/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
