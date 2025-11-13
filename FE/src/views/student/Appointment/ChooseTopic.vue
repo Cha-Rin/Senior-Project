@@ -44,7 +44,7 @@ const imageFile = ref(null)
 const loading = ref(false)
 const showDocId = ref(false)
 const createdDocId = ref('')
-
+const categoriesData = ref([])
 // ✅ user info
 const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
@@ -83,6 +83,7 @@ const goToStaffSchedule = (cat) => {
     name: 'CreateAppointment', // ต้องมี route นี้ใน router/index.js
     query: {
       category_id: cat.category_id,
+      staff_id: cat.staff_id,  
       staff_name: cat.staff_name,
       topic: cat.type,
     },

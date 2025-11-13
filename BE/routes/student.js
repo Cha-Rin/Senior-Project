@@ -42,16 +42,19 @@ module.exports = (db) => {
 
 // -------------------------------------Student Appointment ----------------------------------------
 router.post('/appointments', (req, res) => {
-  console.log('✅ Received body:', req.body)
+  console.log('✅ Received body:', req.body);
+
   const {
     user_id,
     category_id,
     student_email,
     appointment_date,
-    staff_offtime,
     student_note,
     status
   } = req.body;
+
+  // สำหรับนักเรียนที่ไม่ได้ส่ง staff_offtime
+  const staff_offtime = req.body.staff_offtime || 'N/A';
 
   if (!user_id) {
     return res.status(400).json({ error: 'user_id is required' });
@@ -59,18 +62,17 @@ router.post('/appointments', (req, res) => {
 
   const sql = `INSERT INTO appointment
     (user_id, category_id, student_email, status, appointment_date, staff_offtime, student_note)
-    VALUES (?, ?, ?, ?, ?, ?, ?)`
+    VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
   db.query(sql, [user_id, category_id, student_email, status, appointment_date, staff_offtime, student_note], (err, result) => {
     if (err) {
-      console.error('SQL Error:', err)
-      return res.status(500).json({ error: 'Database insert failed' })
+      console.error('SQL Error:', err);
+      return res.status(500).json({ error: 'Database insert failed' });
     }
 
-    res.json({ success: true, appointmentId: result.insertId })
+    res.json({ success: true, appointmentId: result.insertId });
   });
 });
-
 
 // check status
 // router.get('/appointments', (req, res) => {
@@ -222,7 +224,9 @@ router.get('/categories-with-staff', (req, res) => {
     SELECT 
       c.category_id,
       c.type,
-      CONCAT(u.name, ' ', u.surname) AS staff_name
+      u.user_id,
+      CONCAT(u.name, ' ', u.surname) AS staff_name,
+      u.profile_pic AS profile_image
     FROM categories c
     LEFT JOIN user_category uc ON c.category_id = uc.category_id
     LEFT JOIN user u ON uc.user_id = u.user_id AND u.role = 2
