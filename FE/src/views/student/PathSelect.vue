@@ -31,3 +31,32 @@ function goToTracking() {
   router.push('/student/document/topictrack')
 }
 </script>
+
+<!-- <script setup>
+// import { useFeedbackGuard } from "@/stores/useFeedbackGuard";
+import { useRouter } from "vue-router";
+
+const router = useRouter();
+const guard = useFeedbackGuard();
+
+const enterAppointment = async () => {
+  await guard.loadPending();   // โหลดข้อมูลค้างก่อน
+
+  if (guard.mustFeedback) {
+    router.push({ name: "FeedbackRequired" });
+  } else {
+    router.push({ name: "ChooseTopic" });  // เส้นทางนัดหมายจริง
+  }
+};
+
+const enterDocument = async () => {
+  await guard.loadPending();
+
+  if (guard.mustFeedback) {
+    router.push({ name: "FeedbackRequired" });
+  } else {
+    router.push({ name: "TopicTrack" });  // เส้นทางเอกสารจริง
+  }
+};
+</script> -->
+

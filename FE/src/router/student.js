@@ -24,6 +24,10 @@ import FeedbackForm from '../components/student/Feedback.vue'
 import AppointmentsFeedback from '../views/student/AppointmentsFeedback.vue'
 import DocumentsFeedback from '../views/student/DocumentsFeedback.vue'
 
+import FeedbackRequired from '../views/student/FeedbackRequired.vue'
+
+
+
 export default [
   { path: '/student/path', name: 'PathSelect', component: PathSelect },
 
@@ -39,6 +43,13 @@ export default [
       { path: 'historytest', name: 'Historytest', component: Historytest },
       { path: '/schedule/staff/:staffId', name: 'StudentScheduleView', component: StudentScheduleView }
     ]
+  },
+
+  //------------------ ⭐ Feedback Required (MOVE OUT) ------------------
+  {
+    path: '/student/feedback-required',
+    name: 'FeedbackRequired',
+    component: FeedbackRequired
   },
 
   {

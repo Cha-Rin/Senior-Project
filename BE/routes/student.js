@@ -496,6 +496,71 @@ router.get('/appointment-topics', authMiddleware, (req, res) => {
 });
 
 
+// ⭐ GET: จำนวน feedback ที่ยังไม่ได้ทำทั้งหมด
+// (ลบโค้ดเวอร์ชันเก่าที่ comment ไว้ออกไปได้เลย)
+
+// ⭐ GET: จำนวน feedback ที่ยังไม่ได้ทำทั้งหมด
+router.get('/feedback/pending', authMiddleware, (req, res) => {
+  const userId = req.user.user_id || req.user.id;
+
+  if (!userId) {
+    return res.json({ count: 0, appointments: 0, documents: 0 });
+  }
+
+  const sqlAppointments = `
+    SELECT COUNT(*) AS cnt
+    FROM appointment a
+    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
+    WHERE a.user_id = ?
+      AND a.status = 1
+      AND f.appointment_id IS NULL
+  `;
+
+  const sqlDocuments = `
+    SELECT COUNT(*) AS cnt
+    FROM document_tracking d
+    LEFT JOIN feedback_document_tracking f ON f.document_id = d.document_id
+    WHERE d.user_id = ?
+      AND d.status = 2
+      AND f.document_id IS NULL
+  `;
+
+  db.query(sqlAppointments, [userId], (err1, rows1) => {
+    // ‼️ 1. เพิ่มการดักจับ Error ที่ 1
+    if (err1) {
+      console.error('❌ SQL Error (Appointments):', err1);
+      return res.status(500).json({ success: false, message: 'Database error on appointments' });
+    }
+
+    // ✅ บรรทัดนี้ปลอดภัย ไม่ Crash (ใช้ optional chaining)
+    const pendingAppointments = rows1?.[0]?.cnt ?? 0;
+
+    db.query(sqlDocuments, [userId], (err2, rows2) => {
+        // ‼️ 2. เพิ่มการดักจับ Error ที่ 2
+      if (err2) {
+        console.error('❌ SQL Error (Documents):', err2);
+        return res.status(500).json({ success: false, message: 'Database error on documents' });
+      }
+
+      // ✅ บรรทัดนี้ปลอดภัย ไม่ Crash
+      const pendingDocuments = rows2?.[0]?.cnt ?? 0;
+
+      // ✅ 3. ส่งผลลัพธ์ที่ถูกต้อง
+      return res.json({
+        count: pendingAppointments + pendingDocuments,
+        appointments: pendingAppointments,
+        documents: pendingDocuments
+      });
+    });
+  });
+});
+
+
+
+
+
+
+
 // -----------------------------------Feedback Document -----------------------------------------
 // GET: ดึงเอกสารของ user สำหรับให้ feedback (เฉพาะที่อนุมัติและยังไม่มี feedback)
 // GET /student/documents/for-feedback
