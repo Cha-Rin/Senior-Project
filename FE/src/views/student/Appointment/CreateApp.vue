@@ -137,11 +137,33 @@ const availableTimeSlots = computed(() => {
   const dayIndex = getDayIndexFromDateString(selectedDate.value)
   if (dayIndex === -1) return []
 
+  const now = new Date()
+  const selected = new Date(`${selectedDate.value}T00:00:00`)
+  const isToday = selected.toDateString() === now.toDateString()
+
   return timeSlots.filter((slot, timeIndex) => {
+    // ❌ ห้ามเลือกช่วงพักกลางวัน
     if (timeIndex === LUNCH_ROW_INDEX) return false
+
+    // ❌ ห้ามเลือกช่องที่ไม่ว่างจากตารางของพี่เลขา
     const key = `${timeIndex},${dayIndex}`
     const isUnavailable = unavailableMasterSet.value.has(key)
-    return !isUnavailable
+    if (isUnavailable) return false
+
+    // ✅ ถ้าเป็นวันเดียวกับวันนี้ → ตรวจว่าเวลานั้นผ่านไปแล้วไหม
+    if (isToday) {
+      // แยกเวลาเริ่มต้นออกมา เช่น "08:00 - 09:00" → 8
+      const startHour = parseInt(slot.split(':')[0])
+      const startMinute = parseInt(slot.split(':')[1].split(' ')[0])
+      const slotTime = new Date(selected)
+      slotTime.setHours(startHour, startMinute, 0, 0)
+
+      if (slotTime <= now) {
+        return false // ❌ ผ่านเวลาแล้ว
+      }
+    }
+
+    return true // ✅ ใช้ได้
   })
 })
 
