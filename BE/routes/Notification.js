@@ -1,4 +1,3 @@
-// 📁 BE/routes/Notification.js
 const express = require('express')
 const authMiddleware = require('../middleware/auth')
 
@@ -18,7 +17,7 @@ module.exports = (db) => {
   })
 
   // ----------------------------------------------------------
-  // ✅ นัดหมายที่รออนุมัติ (Pending Appointment)
+  // 🟦 ระบบเดิม: Pending Appointment (ขึ้นตัวเลข Sidebar)
   // ----------------------------------------------------------
   router.get('/pending-now', (req, res) => {
     const secretaryId = req.query.user_id
@@ -30,7 +29,6 @@ module.exports = (db) => {
       SELECT COUNT(*) AS count
       FROM appointment AS a
       JOIN user_category AS uc ON a.category_id = uc.category_id
-      JOIN user AS u ON a.user_id = u.user_id
       WHERE a.status = 0
         AND uc.user_id = ?
     `
@@ -38,20 +36,54 @@ module.exports = (db) => {
     db.query(sql, [secretaryId], (err, results) => {
       if (err) {
         console.error('SQL Error (pending-now):', err)
-        return res.status(500).json({ success: false, message: 'Database query failed' })
+        return res.status(500).json({ success: false })
       }
-      const count = results[0]?.count || 0
-      res.json({ success: true, count })
+      res.json({ success: true, count: results[0]?.count || 0 })
     })
   })
 
   // ----------------------------------------------------------
-  // ✅ Request Document (เฉพาะของเลขาคนนั้น และ status = 0)
+  // 🟩 ระบบใหม่: กระดิ่ง — นัดที่ APPROVE แล้วและถึงเวลา (status = 1)
+  // ----------------------------------------------------------
+  router.get('/active-now', (req, res) => {
+    const secretaryId = req.query.user_id
+    if (!secretaryId) {
+      return res.status(400).json({ success: false, message: 'Missing user_id' })
+    }
+
+    const sql = `
+      SELECT 
+        a.appointment_id AS id,
+        CONCAT(u.name, ' ', u.surname) AS name,
+        c.type AS topic,
+        DATE_FORMAT(a.appointment_date, '%Y-%m-%d %H:%i') AS start_time,
+        DATE_FORMAT(a.staff_offtime, '%Y-%m-%d %H:%i') AS end_time
+      FROM appointment AS a
+      JOIN user_category AS uc ON a.category_id = uc.category_id
+      JOIN user AS u ON a.user_id = u.user_id
+      JOIN categories AS c ON a.category_id = c.category_id
+      WHERE uc.user_id = ?
+        AND a.status = 1
+        AND NOW() BETWEEN a.appointment_date AND a.staff_offtime
+      ORDER BY a.appointment_date ASC
+    `
+
+    db.query(sql, [secretaryId], (err, results) => {
+      if (err) {
+        console.error('SQL Error (active-now):', err)
+        return res.status(500).json({ success: false })
+      }
+      res.json(results)  // ← ส่ง array ให้ FE
+    })
+  })
+
+  // ----------------------------------------------------------
+  // 🟦 ระบบเดิม
   // ----------------------------------------------------------
   router.get('/request-documents', (req, res) => {
     const secretaryId = req.query.user_id
     if (!secretaryId) {
-      return res.status(400).json({ success: false, message: 'Missing user_id' })
+      return res.status(400).json({ success: false })
     }
 
     const sql = `
@@ -63,22 +95,18 @@ module.exports = (db) => {
     `
 
     db.query(sql, [secretaryId], (err, results) => {
-      if (err) {
-        console.error('SQL Error (request-documents):', err)
-        return res.status(500).json({ success: false, message: 'Database query failed' })
-      }
-      const count = results[0]?.count || 0
-      res.json({ success: true, count })
+      if (err) return res.status(500).json({ success: false })
+      res.json({ success: true, count: results[0]?.count || 0 })
     })
   })
 
   // ----------------------------------------------------------
-  // ✅ Document Status (เฉพาะของเลขาคนนั้น นับทุกสถานะ)
+  // 🟦 Document status (ระบบเดิม)
   // ----------------------------------------------------------
   router.get('/document-status', (req, res) => {
     const secretaryId = req.query.user_id
     if (!secretaryId) {
-      return res.status(400).json({ success: false, message: 'Missing user_id' })
+      return res.status(400).json({ success: false })
     }
 
     const sql = `
@@ -86,21 +114,16 @@ module.exports = (db) => {
       FROM document_tracking AS d
       JOIN user_category AS uc ON d.category_id = uc.category_id
       WHERE uc.user_id = ?
-      AND d.status = 1
     `
 
     db.query(sql, [secretaryId], (err, results) => {
-      if (err) {
-        console.error('SQL Error (document-status):', err)
-        return res.status(500).json({ success: false, message: 'Database query failed' })
-      }
-      const count = results[0]?.count || 0
-      res.json({ success: true, count })
+      if (err) return res.status(500).json({ success: false })
+      res.json({ success: true, count: results[0]?.count || 0 })
     })
   })
 
   // ----------------------------------------------------------
-  // ✅ อนุมัตินัดหมาย
+  // APPROVE นัดหมาย
   // ----------------------------------------------------------
   router.post('/:id/approve', (req, res) => {
     const idToApprove = req.params.id
@@ -110,19 +133,16 @@ module.exports = (db) => {
       WHERE appointment_id = ?
     `
     db.query(sql, [idToApprove], (err, result) => {
-      if (err) {
-        console.error('SQL Error (approve):', err)
-        return res.status(500).json({ success: false, message: 'Database update failed' })
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: 'Appointment not found' })
-      }
-      res.status(200).json({ success: true, message: 'Appointment approved successfully' })
+      if (err) return res.status(500).json({ success: false })
+      if (result.affectedRows === 0)
+        return res.status(404).json({ success: false })
+
+      res.json({ success: true, message: 'Appointment approved' })
     })
   })
 
   // ----------------------------------------------------------
-  // ✅ ปฏิเสธนัดหมาย
+  // REJECT นัดหมาย
   // ----------------------------------------------------------
   router.post('/:id/reject', (req, res) => {
     const idToReject = req.params.id
@@ -132,14 +152,11 @@ module.exports = (db) => {
       WHERE appointment_id = ?
     `
     db.query(sql, [idToReject], (err, result) => {
-      if (err) {
-        console.error('SQL Error (reject):', err)
-        return res.status(500).json({ success: false, message: 'Database update failed' })
-      }
-      if (result.affectedRows === 0) {
-        return res.status(404).json({ success: false, message: 'Appointment not found' })
-      }
-      res.status(200).json({ success: true, message: 'Appointment rejected successfully' })
+      if (err) return res.status(500).json({ success: false })
+      if (result.affectedRows === 0)
+        return res.status(404).json({ success: false })
+
+      res.json({ success: true, message: 'Appointment rejected' })
     })
   })
 

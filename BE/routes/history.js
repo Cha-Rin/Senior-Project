@@ -128,7 +128,8 @@ module.exports = (db) => {
           JOIN user_category uc ON a.category_id = uc.category_id
           JOIN user u ON a.user_id = u.user_id
           WHERE uc.user_id = ?
-            AND a.status IN (1, 2)
+  AND a.status IN (0, 1, 2, 3)
+
         `
         appointmentParams = [userId]
 

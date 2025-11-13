@@ -65,6 +65,9 @@ app.use('/api/academic', academicRoutes);
 
 const notiRoutes = require('./routes/Notification.js')(db);
 app.use('/api/noti', notiRoutes);
+const notiActiveRoutes = require('./routes/NotificationActive.js')(db);
+app.use('/api/noti', notiActiveRoutes);
+
 
 // ------------------------------------------ Static Files ------------------------------------
 // ✅ เสิร์ฟโฟลเดอร์ uploads (อยู่ใน BE/ เดียวกับ server.js)
