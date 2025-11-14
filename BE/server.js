@@ -1,4 +1,8 @@
 // ------------------------------------------ Imports -----------------------------------------
+require('dotenv').config();
+console.log('✅ Environment Check:');
+console.log('GOOGLE_CLIENT_ID:', process.env.GOOGLE_CLIENT_ID ? '✓ Set' : '✗ Missing');
+console.log('SECRET_KEY:', process.env.SECRET_KEY ? '✓ Set' : '✗ Missing');
 const express = require('express');
 const cors = require('cors');
 const jwt = require("jsonwebtoken");
@@ -8,7 +12,9 @@ const mysql = require('mysql2');
 const path = require('path'); // ✅ ต้องมี
 const router = express.Router();
 const app = express();
-
+const { OAuth2Client } = require('google-auth-library')
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const client = new OAuth2Client(GOOGLE_CLIENT_ID);
 // ------------------------------------------ Middleware --------------------------------------
 app.use(cors());
 app.use(express.json());
@@ -118,7 +124,94 @@ app.post('/api/login', (req, res) => {
     });
   });
 });
+// ------------------------------------------ login-------------------------------------------
+app.post('/api/auth/google', async (req, res) => {
+  // ✅ รับทั้ง token และ credential
+  const { token, credential } = req.body;
+  const idToken = token || credential;
+  
+  if (!idToken) {
+    return res.status(400).json({ success: false, message: 'No token provided' });
+  }
 
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,  // ✅ ใช้ตัวแปรที่รวมแล้ว
+      audience: process.env.GOOGLE_CLIENT_ID
+    });
+    
+    const payload = ticket.getPayload();
+    const email = payload.email.trim().toLowerCase();
+    const name = payload.name || email;
+
+    if (!email.endsWith('@lamduan.mfu.ac.th')) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'กรุณาใช้อีเมล @lamduan.mfu.ac.th เท่านั้น' 
+      });
+    }
+
+    const [rows] = await db.promise().query('SELECT * FROM user WHERE email = ?', [email]);
+
+    let user;
+    if (rows.length === 0) {
+      const [insert] = await db.promise().query(
+        'INSERT INTO user (email, name, role) VALUES (?, ?, ?)',
+        [email, name, 3]
+      );
+      user = { user_id: insert.insertId, email, name, role: 3 };
+    } else {
+      user = rows[0];
+    }
+
+    const jwtToken = jwt.sign(
+      { user_id: user.user_id, email: user.email, role: Number(user.role) },
+      process.env.SECRET_KEY,
+      { expiresIn: '2h' }
+    );
+
+    res.json({ success: true, token: jwtToken });
+  } catch (err) {
+    console.error('❌ Google Auth Error:', err);
+    res.status(500).json({ success: false, message: 'Login failed: ' + err.message });
+  }
+});
+// ------------------------------------------- demo -------------------------------------------
+// async function resetDemoAccounts() {
+//   try {
+//     const db = await mysql.createConnection({
+//       host: process.env.DB_HOST,
+//       user: process.env.DB_USER,
+//       password: process.env.DB_PASSWORD,
+//       database: process.env.DB_NAME,
+//     });
+
+//     // ✅ แทนที่ 'yourname' ด้วยชื่อจริงของคุณ
+//     const yourEmail = '6531501019@lamduan.mfu.ac.th';  // ← แก้ตรงนี้!
+//     const emailPattern = yourEmail.split('@')[0];    // เอาแค่ส่วนหน้า @
+
+//     console.log(`🗑️ Deleting all accounts containing "${emailPattern}"...`);
+    
+//     // ลบ accounts ทั้งหมดที่มี email pattern นี้
+//     const [result] = await db.query(
+//       `DELETE FROM user WHERE email LIKE ?`,
+//       [`%${emailPattern}%@lamduan.mfu.ac.th`]
+//     );
+
+//     console.log(`✅ Deleted ${result.affectedRows} demo accounts`);
+//     console.log('');
+//     console.log('📝 Ready for demo! You can now login with:');
+//     console.log(`   1. ${emailPattern}+student@lamduan.mfu.ac.th → Student (role 3)`);
+//     console.log(`   2. ${emailPattern}+staff@lamduan.mfu.ac.th → Staff (role 2)`);
+//     console.log(`   3. ${emailPattern}+admin@lamduan.mfu.ac.th → Admin (role 1)`);
+    
+//     await db.end();
+//   } catch (error) {
+//     console.error('❌ Error:', error.message);
+//   }
+// }
+
+// resetDemoAccounts();
 // ------------------------------------------ Upload Config -----------------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
