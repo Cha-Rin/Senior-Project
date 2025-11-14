@@ -126,7 +126,6 @@ app.post('/api/login', (req, res) => {
 });
 // ------------------------------------------ login-------------------------------------------
 app.post('/api/auth/google', async (req, res) => {
-  // ✅ รับทั้ง token และ credential
   const { token, credential } = req.body;
   const idToken = token || credential;
   
@@ -134,15 +133,23 @@ app.post('/api/auth/google', async (req, res) => {
     return res.status(400).json({ success: false, message: 'No token provided' });
   }
 
+  let connection;
   try {
+    // ✅ ใช้ connection แบบ manual เพื่อควบคุมได้ดีขึ้น
+    connection = await db.promise().getConnection();
+    
     const ticket = await client.verifyIdToken({
-      idToken: idToken,  // ✅ ใช้ตัวแปรที่รวมแล้ว
+      idToken: idToken,
       audience: process.env.GOOGLE_CLIENT_ID
     });
     
     const payload = ticket.getPayload();
-    const email = payload.email.trim().toLowerCase();
+    const email = payload.email?.trim().toLowerCase();
     const name = payload.name || email;
+
+    if (!email) {
+      throw new Error('Email not found in token');
+    }
 
     if (!email.endsWith('@lamduan.mfu.ac.th')) {
       return res.status(403).json({ 
@@ -151,18 +158,31 @@ app.post('/api/auth/google', async (req, res) => {
       });
     }
 
-    const [rows] = await db.promise().query('SELECT * FROM user WHERE email = ?', [email]);
+    // ✅ ใช้ transaction
+    await connection.beginTransaction();
+
+    const [rows] = await connection.query(
+      'SELECT * FROM user WHERE email = ?', 
+      [email]
+    );
 
     let user;
     if (rows.length === 0) {
-      const [insert] = await db.promise().query(
+      const [insert] = await connection.query(
         'INSERT INTO user (email, name, role) VALUES (?, ?, ?)',
         [email, name, 3]
       );
+      
+      if (!insert.insertId) {
+        throw new Error('Failed to insert user');
+      }
+      
       user = { user_id: insert.insertId, email, name, role: 3 };
     } else {
       user = rows[0];
     }
+
+    await connection.commit();
 
     const jwtToken = jwt.sign(
       { user_id: user.user_id, email: user.email, role: Number(user.role) },
@@ -171,9 +191,29 @@ app.post('/api/auth/google', async (req, res) => {
     );
 
     res.json({ success: true, token: jwtToken });
+    
   } catch (err) {
+    if (connection) await connection.rollback();
+    
     console.error('❌ Google Auth Error:', err);
-    res.status(500).json({ success: false, message: 'Login failed: ' + err.message });
+    
+    // ✅ แยก error message ตามประเภท
+    let errorMessage = 'Login failed';
+    if (err.code === 'ECONNREFUSED') {
+      errorMessage = 'Database connection refused';
+    } else if (err.code === 'ER_NO_SUCH_TABLE') {
+      errorMessage = 'User table not found';
+    } else if (err.code === 'ER_DUP_ENTRY') {
+      errorMessage = 'Email already exists';
+    }
+    
+    res.status(500).json({ 
+      success: false, 
+      message: errorMessage,
+      detail: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  } finally {
+    if (connection) connection.release();
   }
 });
 // ------------------------------------------- demo -------------------------------------------
