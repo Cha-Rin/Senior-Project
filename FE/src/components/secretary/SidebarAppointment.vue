@@ -2,71 +2,52 @@
 <template>
   <div class="flex flex-col min-h-screen w-64 bg-[#003366] text-white p-6 box-border">
     <!-- 🔹 Homepage -->
-    <router-link
-      to="/homepage"
-      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
-      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Homepage' }"
-    >
-      <span class="text-xl">🏠</span>
-      Homepage
+    <router-link to="/homepage" class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Homepage' }">
+      <component :is="iconMap.home" class="w-5 h-5" />
+      <span>Homepage</span>
     </router-link>
 
     <!-- 🔹 Appointment -->
-    <router-link
-      to="/appointment"
-      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
-      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Appointment' }"
-    >
-      <span class="text-xl">📅</span>
-      Appointment
+    <router-link to="/appointment" class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'Appointment' }">
+      <component :is="iconMap.appointment" class="icon" />
+      <span>Appointment</span>
     </router-link>
 
     <!-- 🔹 Request Appointment + badge -->
-    <router-link
-      to="/request-appointment"
+    <router-link to="/request-appointment"
       class="relative flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
-      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RequestAppointment' }"
-    >
-      <span class="text-xl">📝</span>
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RequestAppointment' }">
+      <component :is="iconMap.request" class="icon" />
       <span>Request Appointment</span>
 
       <!-- 🔴 Badge (แคป 99+) -->
-      <span
-        v-if="pendingCount > 0"
-        class="badge"
-        :title="`${pendingCount} pending`"
-      >
+      <span v-if="pendingCount > 0" class="badge" :title="`${pendingCount} pending`">
         {{ displayCount }}
       </span>
     </router-link>
 
     <!-- 🔹 History -->
-    <router-link
-      to="/history-appointment"
+    <router-link to="/history-appointment"
       class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
-      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'HistoryAppointment' }"
-    >
-      <span class="text-xl">🕒</span>
-      History
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'HistoryAppointment' }">
+      <component :is="iconMap.history" class="icon" />
+      <span>History</span>
     </router-link>
 
     <!-- 🔹 Feedback -->
-    <router-link
-      to="/feedback"
-      class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
-      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RatingAppointment' }"
-    >
-      <span class="text-xl">💬</span>
-      Feedback
+    <router-link to="/feedback" class="flex items-center gap-3 p-4 mb-2 rounded-lg hover:bg-[#004080] transition"
+      :class="{ 'border-b-4 border-blue-400 pb-3': $route.name === 'RatingAppointment' }">
+      <component :is="iconMap.feedback" class="icon" />
+      <span>Feedback</span>
     </router-link>
 
     <!-- 🔹 Logout -->
-    <div
-      class="flex items-center gap-3 p-4 mt-auto rounded-lg hover:bg-[#004080] cursor-pointer transition"
-      @click="logout"
-    >
-      <span class="text-xl">🚪</span>
-      Log out
+    <div class="flex items-center gap-3 p-4 mt-auto rounded-lg hover:bg-[#004080] cursor-pointer transition"
+      @click="logout">
+      <component :is="iconMap.logout" class="icon" />
+      <span>Log out</span>
     </div>
   </div>
 </template>
@@ -76,7 +57,26 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
 
+import {
+  Home,
+  Calendar,
+  FileText,
+  History,
+  MessageSquare,
+  LogOut
+} from "lucide-vue-next"
+
 const router = useRouter()
+
+const iconMap = {
+  home: Home,
+  appointment: Calendar,
+  request: FileText,
+  history: History,
+  feedback: MessageSquare,
+  logout: LogOut
+}
+
 const pendingCount = ref(0)
 let intervalId = null
 
@@ -160,19 +160,22 @@ onUnmounted(() => {
 <style scoped>
 .badge {
   position: absolute;
-  right: 1.25rem;   /* right-5 */
+  right: 1.25rem;
+  /* right-5 */
   top: 0.6rem;
   min-width: 1.5rem;
   height: 1.25rem;
   padding: 0 0.35rem;
   border-radius: 9999px;
-  background: #ef4444;   /* red-500 */
+  background: #ef4444;
+  /* red-500 */
   color: #fff;
   font-weight: 800;
-  font-size: 0.7rem;     /* text-xs */
+  font-size: 0.7rem;
+  /* text-xs */
   line-height: 1.25rem;
   text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .25);
   transform: translateY(-20%);
 }
 </style>
