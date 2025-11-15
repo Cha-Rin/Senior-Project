@@ -185,7 +185,7 @@ router.get('/appointments/for-feedback', authMiddleware, (req, res) => {
   LEFT JOIN categories c ON c.category_id = a.category_id
   LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id  -- ✅ ต้องมี
   WHERE a.user_id = ?
-    AND a.status = 1
+    AND a.status = 3
     AND f.appointment_id IS NULL
   ORDER BY a.appointment_date DESC
 `;
@@ -270,7 +270,7 @@ router.get('/appointment-topics', authMiddleware, (req, res) => {
     LEFT JOIN categories c ON c.category_id = a.category_id
     LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
     WHERE a.user_id = ?
-      AND a.status = 1
+      AND a.status = 3
       AND f.appointment_id IS NULL   -- ✅ ยังไม่มี feedback
     ORDER BY topic;
   `;
@@ -424,6 +424,42 @@ router.get('/feedback/pending', authMiddleware, (req, res) => {
       })
     }
   )
+
+  // ⭐ CREATE document (no image yet)
+router.post('/documents/create', authMiddleware, upload.none(), (req, res) => {
+  const { user_id, category_id, student_email, status, submit_date, student_note } = req.body;
+
+  const sql = `
+    INSERT INTO document_tracking
+      (user_id, category_id, student_email, status, submit_date, student_note)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+
+  db.query(sql,
+    [user_id, category_id, student_email, status, submit_date, student_note],
+    (err, result) => {
+      if (err) return res.status(500).json({ success: false });
+      res.json({ success: true, document_id: result.insertId });
+    }
+  );
+});
+
+
+
+// ⭐ UPLOAD photo to existing document
+router.post('/documents/upload', authMiddleware, upload.single('photo'), (req, res) => {
+  const { document_id } = req.body;
+  const imagePath = req.file.path;
+
+  const sql = `UPDATE document_tracking SET image_path = ? WHERE document_id = ?`;
+
+  db.query(sql, [imagePath, document_id], (err) => {
+    if (err) return res.status(500).json({ success: false });
+    res.json({ success: true });
+  });
+});
+
+
 
   //----------------------------------- Check status of documents ----------------------------------------
   router.get('/documents/:studentId', (req, res) => {

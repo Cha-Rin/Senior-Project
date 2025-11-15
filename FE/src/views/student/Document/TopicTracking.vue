@@ -62,15 +62,39 @@
         <h2 class="text-lg font-bold mb-4">📸 Take a Photo of Your Document</h2>
 
         <!-- ✅ แสดงกล้อง -->
-        <div v-if="!capturedImage" class="relative">
-          <video ref="videoRef" autoplay playsinline class="rounded-lg w-full h-64 object-cover"></video>
-          <button
-            @click="capturePhoto"
-            class="absolute bottom-2 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700"
-          >
-            📷 Capture
-          </button>
-        </div>
+       <!-- กล้อง + ตัวอย่าง -->
+<div v-if="!capturedImage" class="flex flex-col items-center">
+
+  <!-- วิดีโอ -->
+  <video
+    ref="videoRef"
+    autoplay
+    playsinline
+    class="rounded-lg w-full h-64 object-cover mb-3"
+  ></video>
+
+  <!-- ตัวอย่างภาพ -->
+  <div class="w-full mb-4">
+    <p class="text-sm font-semibold text-gray-600 mb-1 text-left">
+      📌 Example (ตัวอย่างภาพที่ถูกต้อง)
+    </p>
+    <img
+      src="/src/assets/image (1).png"
+      class="w-full h-40 object-contain rounded-lg border"
+      alt="Document Example"
+    />
+  </div>
+
+  <!-- ปุ่มถ่ายรูป (ย้ายออกมาแล้ว) -->
+  <button
+    @click="capturePhoto"
+    class="bg-blue-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-blue-700"
+  >
+    📷 Capture
+  </button>
+
+</div>
+
 
         <!-- ✅ แสดงภาพหลังถ่าย -->
         <div v-else class="flex flex-col items-center">
@@ -174,22 +198,109 @@ const selectCategory = (cat) => {
 }
 
 // 🔹 เปิดกล้อง
+// const openCameraPopup = async () => {
+//   if (!subTopic.value.trim()) {
+//     errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
+//     return
+//   }
+//   try {
+//     showCamera.value = true
+//     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+//     stream.value = s
+//     videoRef.value.srcObject = s
+//   } catch (err) {
+//     console.error('🚫 Cannot access camera:', err)
+//     alert('ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง')
+//     showCamera.value = false
+//   }
+// }
+
+
+
+
+
 const openCameraPopup = async () => {
   if (!subTopic.value.trim()) {
     errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
     return
   }
+
+  try {
+    const formData = new FormData()
+    formData.append('user_id', userId)
+    formData.append('category_id', selectedCategory.value.category_id)
+    formData.append('student_email', email)
+    formData.append('student_note', subTopic.value)
+    formData.append('status', 0)
+    formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
+
+    const res = await fetch('/api/student/documents/create', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    })
+
+    const data = await res.json()
+    if (!data.success) throw new Error('Create document failed')
+
+    createdDocId.value = data.document_id
+    showDocId.value = true
+
+  } catch (err) {
+    console.error(err)
+    alert('สร้างเอกสารไม่สำเร็จ')
+  }
+}
+
+
+const closeDocIdPopup = async () => {
+  showDocId.value = false
+
   try {
     showCamera.value = true
-    const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+    const s = await navigator.mediaDevices.getUserMedia({ video: true })
     stream.value = s
     videoRef.value.srcObject = s
   } catch (err) {
-    console.error('🚫 Cannot access camera:', err)
-    alert('ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง')
-    showCamera.value = false
+    alert('ไม่สามารถเปิดกล้องได้')
   }
 }
+
+
+
+const submitDocument = async () => {
+  if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
+  loading.value = true
+
+  try {
+    const blob = await (await fetch(capturedImage.value)).blob()
+    const file = new File([blob], 'document.jpg', { type: 'image/jpeg' })
+
+    const formData = new FormData()
+    formData.append('document_id', createdDocId.value)
+    formData.append('photo', file)
+
+    const res = await fetch('/api/student/documents/upload', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData
+    })
+
+    const data = await res.json()
+    if (!data.success) throw new Error('Upload failed')
+
+    alert('อัปโหลดสำเร็จ!')
+    router.push('/student/document/check')
+
+  } catch (err) {
+    console.error(err)
+    alert('อัปโหลดไม่สำเร็จ')
+  } finally {
+    loading.value = false
+  }
+}
+
+
 
 // 🔹 ถ่ายภาพ
 const capturePhoto = () => {
@@ -226,49 +337,49 @@ const closeCamera = () => {
 }
 
 // 🔹 ส่งเอกสาร
-const submitDocument = async () => {
-  if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
-  loading.value = true
-  try {
-    // แปลง base64 → file
-    const blob = await (await fetch(capturedImage.value)).blob()
-    const file = new File([blob], 'document.jpg', { type: 'image/jpeg' })
+// const submitDocument = async () => {
+//   if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
+//   loading.value = true
+//   try {
+//     // แปลง base64 → file
+//     const blob = await (await fetch(capturedImage.value)).blob()
+//     const file = new File([blob], 'document.jpg', { type: 'image/jpeg' })
 
-    const formData = new FormData()
-    formData.append('photo', file)
-    formData.append('user_id', userId)
-    formData.append('category_id', selectedCategory.value.category_id)
-    formData.append('student_email', email)
-    formData.append('student_note', subTopic.value)
-    formData.append('status', 0)
-    formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
-    formData.append('finish_date', '')
+//     const formData = new FormData()
+//     formData.append('photo', file)
+//     formData.append('user_id', userId)
+//     formData.append('category_id', selectedCategory.value.category_id)
+//     formData.append('student_email', email)
+//     formData.append('student_note', subTopic.value)
+//     formData.append('status', 0)
+//     formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
+//     formData.append('finish_date', '')
 
-    const res = await fetch('/api/student/documents', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    })
+//     const res = await fetch('/api/student/documents', {
+//       method: 'POST',
+//       headers: { Authorization: `Bearer ${token}` },
+//       body: formData,
+//     })
 
-    const data = await res.json()
-    if (!data.success) throw new Error('Create document failed')
+//     const data = await res.json()
+//     if (!data.success) throw new Error('Create document failed')
 
-    createdDocId.value = data.document_id
-    showCamera.value = false
-    showDocId.value = true
-  } catch (err) {
-    console.error('❌ Submit error:', err)
-    alert('อัปโหลดไม่สำเร็จ กรุณาลองใหม่')
-  } finally {
-    loading.value = false
-  }
-}
+//     createdDocId.value = data.document_id
+//     showCamera.value = false
+//     showDocId.value = true
+//   } catch (err) {
+//     console.error('❌ Submit error:', err)
+//     alert('อัปโหลดไม่สำเร็จ กรุณาลองใหม่')
+//   } finally {
+//     loading.value = false
+//   }
+// }
 
 // 🔹 ปิด popup Document ID
-const closeDocIdPopup = () => {
-  showDocId.value = false
-  router.push({ path: '/student/document/check' })
-}
+// const closeDocIdPopup = () => {
+//   showDocId.value = false
+//   router.push({ path: '/student/document/check' })
+// }
 
 onUnmounted(() => stopCamera())
 </script>
