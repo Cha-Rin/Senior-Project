@@ -44,6 +44,75 @@ module.exports = (db) => {
     next()
   })
 
+
+  // prefix สำหรับแต่ละ category_id
+const DOC_PREFIX = {
+  1: "A",  // กิจกรรมนักศึกษา
+  2: "C",  // สหกิจศึกษา
+  3: "P",  // ผ่อนผัน
+  4: "R",  // งานทะเบียน
+  5: "B"   // บัณฑิตศึกษา
+};
+
+// ฟังก์ชันสร้าง document_code
+function generateDocumentCode(db, category_id, callback) {
+  const prefix = DOC_PREFIX[category_id] || "X";
+
+  const sql = `
+    SELECT document_code 
+    FROM document_tracking
+    WHERE category_id = ?
+      AND document_code LIKE '${prefix}%'
+    ORDER BY document_id DESC
+    LIMIT 1
+  `;
+
+  db.query(sql, [category_id], (err, rows) => {
+    if (err) return callback(err);
+
+    let nextNumber = 1;
+
+    if (rows.length > 0 && rows[0].document_code) {
+      const lastCode = rows[0].document_code;   // เช่น R07
+      const lastNum = parseInt(lastCode.replace(prefix, ""), 10);
+      nextNumber = lastNum + 1;
+      if (nextNumber > 99) nextNumber = 1;      // RESET
+    }
+
+    const newCode = prefix + String(nextNumber).padStart(2, "0");
+    callback(null, newCode);
+  });
+}
+
+
+router.post('/documents/create', authMiddleware, upload.none(), (req, res) => {
+  const { user_id, category_id, student_email, status, submit_date, student_note } = req.body;
+
+  generateDocumentCode(db, category_id, (err, documentCode) => {
+    if (err) return res.status(500).json({ success: false, message: "Generate code failed" });
+
+    const sql = `
+      INSERT INTO document_tracking
+        (user_id, category_id, student_email, status, submit_date, student_note, document_code)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    db.query(sql,
+      [user_id, category_id, student_email, status, submit_date, student_note, documentCode],
+      (err, result) => {
+        if (err) return res.status(500).json({ success: false, message: "Database insert failed" });
+
+        res.json({
+          success: true,
+          document_id: result.insertId,
+          document_code: documentCode
+        });
+      }
+    );
+  });
+});
+
+
 // -------------------------------------Student Appointment ----------------------------------------
 router.post('/appointments', (req, res) => {
   console.log('✅ Received body:', req.body);
@@ -316,7 +385,7 @@ router.get('/feedback/pending', authMiddleware, (req, res) => {
     LEFT JOIN categories c ON c.category_id = a.category_id
     LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
     WHERE a.user_id = ?
-      AND a.status = 1
+      AND a.status = 3
       AND f.appointment_id IS NULL
     ORDER BY a.appointment_date DESC
   `;
@@ -426,23 +495,23 @@ router.get('/feedback/pending', authMiddleware, (req, res) => {
   )
 
   // ⭐ CREATE document (no image yet)
-router.post('/documents/create', authMiddleware, upload.none(), (req, res) => {
-  const { user_id, category_id, student_email, status, submit_date, student_note } = req.body;
+// router.post('/documents/create', authMiddleware, upload.none(), (req, res) => {
+//   const { user_id, category_id, student_email, status, submit_date, student_note } = req.body;
 
-  const sql = `
-    INSERT INTO document_tracking
-      (user_id, category_id, student_email, status, submit_date, student_note)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `;
+//   const sql = `
+//     INSERT INTO document_tracking
+//       (user_id, category_id, student_email, status, submit_date, student_note)
+//     VALUES (?, ?, ?, ?, ?, ?)
+//   `;
 
-  db.query(sql,
-    [user_id, category_id, student_email, status, submit_date, student_note],
-    (err, result) => {
-      if (err) return res.status(500).json({ success: false });
-      res.json({ success: true, document_id: result.insertId });
-    }
-  );
-});
+//   db.query(sql,
+//     [user_id, category_id, student_email, status, submit_date, student_note],
+//     (err, result) => {
+//       if (err) return res.status(500).json({ success: false });
+//       res.json({ success: true, document_id: result.insertId });
+//     }
+//   );
+// });
 
 
 

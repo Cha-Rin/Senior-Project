@@ -133,7 +133,7 @@
       <div class="bg-white p-6 rounded-xl shadow-lg text-center">
         <h2 class="text-xl font-bold text-green-700 mb-3">🎉 Document Created!</h2>
         <p class="text-lg">Your Document ID:</p>
-        <p class="text-3xl font-bold text-blue-600 my-3">#{{ createdDocId }}</p>
+        <p class="text-3xl font-bold text-blue-600 my-3">#{{ createdDocCode }}</p>
         <p class="text-sm text-gray-600 mb-4">Please write this ID on your document form.</p>
         <button
           @click="closeDocIdPopup"
@@ -168,6 +168,8 @@ const loading = ref(false)
 
 // Document result
 const showDocId = ref(false)
+const createdDocCode = ref("");
+
 const createdDocId = ref('')
 
 // User info
@@ -240,10 +242,12 @@ const openCameraPopup = async () => {
       body: formData
     })
 
+
     const data = await res.json()
     if (!data.success) throw new Error('Create document failed')
 
     createdDocId.value = data.document_id
+    createdDocCode.value = data.document_code;
     showDocId.value = true
 
   } catch (err) {

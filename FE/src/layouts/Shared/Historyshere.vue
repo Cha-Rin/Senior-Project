@@ -107,57 +107,149 @@
 
     <!-- ตาราง -->
     <div class="max-w-6xl mx-auto mb-6 overflow-hidden rounded-xl shadow-lg border border-gray-200">
+      <!-- ✅ เพิ่ม div นี้ -->
+  <div class="overflow-x-auto">
       <table class="w-full bg-white rounded-xl shadow-lg border border-gray-200">
-        <thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
+        <!-- <thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
           <tr>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
             <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
             <th v-if="props.type === 'document'"
-            class="px-6 py-4 text-center text-sm font-bold text-indigo-800">File</th>
+            class="px-6 py-4 text-center text-sm font-bold text-indigo-800">Image</th>
             <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
+            <th v-if="props.type === 'document'" class="px-6 py-4 text-right text-sm font-bold text-indigo-800">File</th>
+            <th v-if="props.type === 'document'" class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Reject Reason</th>
           </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          <tr v-for="item in paginatedItems" :key="item.id" class="hover:bg-gray-50">
-            <td class="px-6 py-4 text-sm text-gray-700">
-              {{ formatDateTime(item.event_date).date }}<br />
-              <span class="text-gray-500 text-xs">{{ formatDateTime(item.event_date).time }}</span>
-            </td>
-            <td class="px-6 py-4 text-sm text-gray-700">{{ item.title }}</td>
-            <td class="px-6 py-4 text-sm text-gray-700">{{ item.full_name || '—' }}</td>
-            <td class="px-6 py-4 text-sm text-gray-700">{{ item.student_note || '—' }}</td>
-            <td v-if="props.type === 'document'" class="px-6 py-4 text-center">
-        <template v-if="item.image_path">
-          <img
-            v-if="isImage(item.image_path)"
-            :src="getImageUrl(item.image_path)"
-            alt="Document"
-            class="h-16 w-16 rounded-lg object-cover border mx-auto shadow-sm hover:scale-105 transition-transform"
-          />
-          <a
-            v-else
-            :href="getImageUrl(item.image_path)"
-            target="_blank"
-            class="text-blue-600 underline"
-          >
-            View File
-          </a>
-        </template>
-        <span v-else class="text-gray-400 italic">No file</span>
-      </td>
-            <td class="px-6 py-4 text-right">
-              <span :class="getBadgeClass(item)" class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium">
-                <span>{{ getBadgeIcon(item) }}</span>
-                {{ getBadgeText(item) }}
-              </span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+        </thead> -->
 
-      <!-- ✅ Pagination -->
+<thead class="bg-gradient-to-r from-indigo-50 to-violet-50">
+  <tr>
+    <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Date</th>
+    <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Topic</th>
+    <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
+    <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
+
+    <!-- ⭐ เฉพาะ document เท่านั้น -->
+    <template v-if="props.type === 'document'">
+      <th class="px-6 py-4 text-center text-sm font-bold text-indigo-800">Image</th>
+      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">File</th>
+      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Reject Reason</th>
+    </template>
+
+    <!-- ⭐ status แสดงทั้ง 2 type -->
+    <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
+  </tr>
+</thead>
+
+
+        <tbody class="divide-y divide-gray-100">
+  <tr
+    v-for="item in paginatedItems"
+    :key="item.type + '-' + item.id"
+    class="hover:bg-gray-50"
+  >
+    <td class="px-6 py-4 text-sm text-gray-700">
+      {{ formatDateTime(item.event_date).date }}<br />
+      <span class="text-gray-500 text-xs">{{ formatDateTime(item.event_date).time }}</span>
+    </td>
+
+    <td class="px-6 py-4 text-sm text-gray-700">{{ item.title }}</td>
+    <td class="px-6 py-4 text-sm text-gray-700">{{ item.full_name || '—' }}</td>
+    <td class="px-6 py-4 text-sm text-gray-700">{{ item.student_note || '—' }}</td>
+
+    <!-- File (เฉพาะ document) -->
+     <td v-if="item.type === 'document'" class="px-6 py-4 text-center">
+  <template v-if="item.type === 'document' && item.image_path">
+    <img
+  v-if="isImage(item.image_path)"
+  :src="getImageUrl(item.image_path)"
+  class="h-16 w-16 rounded-lg object-cover border shadow-sm mx-auto cursor-pointer hover:opacity-80"
+  @click="openImagePreview(item.image_path)"
+/>
+    <a
+      v-else
+      :href="getImageUrl(item.image_path)"
+      target="_blank"
+      class="text-blue-600 underline"
+    >
+      View File
+    </a>
+  </template>
+  <span v-else class="text-gray-400 italic">—</span>
+</td>
+
+    <!-- <td class="px-6 py-4 text-center">
+      <template v-if="item.type === 'document' && item.image_path">
+        <img
+  v-if="isImage(getDocumentImage(item))"
+  :src="getImageUrl(getDocumentImage(item))"
+  class="h-16 w-16 rounded-lg object-cover border shadow-sm mx-auto"
+/>
+
+        <a
+          v-else
+          :href="getImageUrl(item.image_path)"
+          target="_blank"
+          class="text-blue-600 underline"
+        >
+          View File
+        </a>
+      </template>
+      <span v-else class="text-gray-400 italic">—</span>
+    </td> -->
+
+   
+
+    <!-- Status -->
+    <td class="px-6 py-4 text-right">
+      <span
+        :class="getBadgeClass(item)"
+        class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium"
+      >
+        <span>{{ getBadgeIcon(item) }}</span>
+        {{ getBadgeText(item) }}
+      </span>
+    </td>
+
+   <td v-if="item.type === 'document'" class="px-6 py-4 text-center">
+  <template v-if="item.image_complete">
+    <img
+      v-if="isImage(item.image_complete)"
+      :src="getImageUrl(item.image_complete)"
+      class="h-16 w-16 rounded-lg object-cover border shadow-sm mx-auto cursor-pointer hover:opacity-80"
+      @click="openImagePreview(item.image_complete)"
+    />
+    <a
+      v-else
+      :href="getImageUrl(item.image_complete)"
+      target="_blank"
+      class="text-blue-600 underline"
+    >
+      View File
+    </a>
+  </template>
+  <span v-else class="text-gray-400 italic">—</span>
+</td>
+
+
+
+
+     <!-- Reject Reason -->
+   <td v-if="item.type === 'document'" class="px-6 py-4 text-center text-sm text-gray-700">
+  {{ item.staff_note || '—' }}
+</td>
+
+  </tr>
+</tbody>
+
+      </table>
+  </div>
+
+     
+    </div>
+ <!-- ✅ Pagination -->
       <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-1">
         <button
           v-for="page in totalPages"
@@ -181,8 +273,23 @@
           หน้าถัดไป
         </button>
       </div>
-    </div>
+
+      <!-- 🔍 Image Preview Modal -->
+<div
+  v-if="showPreview"
+  class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+  @click="showPreview = false"
+>
+  <img
+    :src="previewImage"
+    class="max-h-[90vh] max-w-[90vw] rounded-lg shadow-lg"
+    @click.stop
+  />
+</div>
+
   </div>
+
+  
 </template>
 
 <script setup>
@@ -290,6 +397,19 @@ const filteredItemsByType = computed(() => {
     return dA >= 0 ? -1 : 1
   })
 })
+
+// const getDocumentImage = (item) => {
+//   return item.image_complete || item.image_path || null
+// }
+
+const showPreview = ref(false)
+const previewImage = ref(null)
+
+function openImagePreview(path) {
+  previewImage.value = getImageUrl(path)
+  showPreview.value = true
+}
+
 
 // 🔹 Pagination
 const currentPage = ref(1)

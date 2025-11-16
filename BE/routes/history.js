@@ -90,24 +90,29 @@ module.exports = (db) => {
         `
         appointmentParams = [userId]
 
-        documentSql = `
-          SELECT 
-            'document' AS type,
-            d.document_id AS id,
-            CONCAT(s.name, ' ', s.surname) AS full_name,
-            d.submit_date AS event_date,
-            c.type AS title,
-            d.status,
-            d.student_note AS student_note,
-           COALESCE(d.image_complete, d.image_path) AS image_path,
+    documentSql = `
+  SELECT 
+  'document' AS type,
+  d.document_id AS id,
+  CONCAT(s.name, ' ', s.surname) AS full_name,
+  d.submit_date AS event_date,
+  c.type AS title,
+  d.status,
+  d.student_note AS student_note,
+  d.staff_note AS staff_note,
+  d.document_code AS document_code,
+  d.image_path AS image_path,
+  d.image_complete AS image_complete,
+  d.user_id AS studentId
+FROM document_tracking AS d
+JOIN categories AS c ON d.category_id = c.category_id
+LEFT JOIN user_category uc ON d.category_id = uc.category_id
+LEFT JOIN user s ON uc.user_id = s.user_id
+WHERE d.user_id = ?
 
-            d.user_id AS studentId
-          FROM document_tracking AS d
-          JOIN categories AS c ON d.category_id = c.category_id
-          JOIN user_category uc ON d.category_id = uc.category_id
-          JOIN user s ON uc.user_id = s.user_id
-          WHERE d.user_id = ?
-        `
+`
+
+
         documentParams = [userId]
       }
 
@@ -142,7 +147,10 @@ module.exports = (db) => {
             c.type AS title,
             d.status,
             d.student_note AS student_note,
-            COALESCE(d.image_complete, d.image_path) AS image_path,
+            d.staff_note AS staff_note,
+            d.document_code AS document_code,
+            d.image_path AS image_path,
+            d.image_complete AS image_complete,
             d.user_id AS studentId
           FROM document_tracking AS d
           JOIN categories AS c ON d.category_id = c.category_id
