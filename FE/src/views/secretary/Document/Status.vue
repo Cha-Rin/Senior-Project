@@ -8,48 +8,71 @@
       </h1>
 
       <!-- ✅ Pop-up สำหรับอัปโหลดไฟล์ก่อน Mark Complete -->
-      <div
-        v-if="showCompleteModal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+      <!-- ✅ Pop-up สำหรับอัปโหลดไฟล์ก่อน Mark Complete -->
+<div
+  v-if="showCompleteModal"
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+>
+  <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative">
+
+    <!-- ปิด Modal -->
+    <button
+      @click="cancelComplete"
+      class="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+    >✖</button>
+
+    <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
+      อัปโหลดเอกสารยืนยัน
+    </h3>
+
+    <p class="text-sm text-gray-600 mb-4 text-center">
+      กรุณาเลือกไฟล์ภาพ / PDF หรือถ่ายภาพจากกล้อง
+    </p>
+
+    <!-- ⭐ ปุ่มเปิดกล้อง -->
+    <button
+      @click="openCamera"
+      class="w-full px-4 py-2 mb-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+    >
+      📸 ถ่ายภาพจากกล้อง
+    </button>
+
+    <!-- ⭐ เลือกไฟล์ -->
+    <input
+      type="file"
+      ref="fileInput"
+      @change="onFileChange"
+      accept=".jpg,.jpeg,.png,.pdf"
+      class="w-full px-4 py-2 border border-gray-300 rounded-lg cursor-pointer"
+    />
+
+    <!-- ⭐ Preview รูปที่ถ่าย หรือรูปที่เลือก -->
+    <div v-if="previewImage" class="mt-4">
+      <img :src="previewImage" class="w-full rounded-lg border" />
+    </div>
+
+    <!-- ปุ่มกด ยืนยัน / ยกเลิก -->
+    <div class="flex gap-3 mt-6">
+      <button
+        @click="confirmComplete"
+        :disabled="!selectedFile"
+        class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all"
+        :class="{ 'opacity-50 cursor-not-allowed': !selectedFile }"
       >
-        <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-          <h3 class="text-xl font-bold text-gray-800 mb-4">อัปโหลดเอกสารยืนยัน</h3>
-          <p class="text-sm text-gray-600 mb-4">
-            กรุณาอัปโหลดไฟล์ภาพหรือ PDF เพื่อยืนยันว่าเอกสารเสร็จสมบูรณ์
-          </p>
+        ✔ ยืนยัน
+      </button>
 
-          <!-- ช่องอัปโหลดไฟล์ -->
-          <div class="mb-4">
-            <input
-              type="file"
-              ref="fileInput"
-              @change="onFileChange"
-              accept=".jpg,.jpeg,.png,.pdf"
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg cursor-pointer"
-            />
-            <div v-if="selectedFile" class="mt-2 text-sm text-green-600">
-              ✅ ไฟล์ที่เลือก: {{ selectedFile.name }}
-            </div>
-          </div>
+      <button
+        @click="cancelComplete"
+        class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg transition-all"
+      >
+        ✖ ยกเลิก
+      </button>
+    </div>
 
-          <div class="flex gap-3">
-            <button
-              @click="confirmComplete"
-              :disabled="!selectedFile"
-              class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-              :class="{ 'opacity-50 cursor-not-allowed': !selectedFile }"
-            >
-              ยืนยัน
-            </button>
-            <button
-              @click="cancelComplete"
-              class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-            >
-              ยกเลิก
-            </button>
-          </div>
-        </div>
-      </div>
+  </div>
+</div>
+
 
       <!-- ตารางสถานะเอกสาร -->
       <div
@@ -149,6 +172,33 @@
           หน้าถัดไป
         </button>
       </div>
+
+<!-- Modal กล้อง -->
+<div
+  v-if="showCamera"
+  class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4"
+>
+  <div class="bg-white p-4 rounded-xl shadow-xl max-w-md w-full">
+    <video ref="video" autoplay playsinline class="w-full rounded-lg"></video>
+
+    <div class="flex gap-3 mt-4">
+      <button
+        @click="capturePhoto"
+        class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg"
+      >
+        📸 ถ่ายรูป
+      </button>
+
+      <button
+        @click="closeCamera"
+        class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg"
+      >
+        ❌ ปิดกล้อง
+      </button>
+    </div>
+  </div>
+</div>
+
     </div>
   </SecreLayout>
 </template>
@@ -222,6 +272,57 @@ const loadDocuments = async () => {
     console.error('❌ Fetch document status:', err)
   }
 }
+
+const showCamera = ref(false)
+const video = ref(null)
+const previewImage = ref(null)
+
+const openCamera = async () => {
+  showCamera.value = true
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true })
+    video.value.srcObject = stream
+  } catch (err) {
+    alert('ไม่สามารถเปิดกล้องได้')
+  }
+}
+
+const closeCamera = () => {
+  showCamera.value = false
+  const stream = video.value?.srcObject
+  if (stream) {
+    stream.getTracks().forEach((t) => t.stop())
+  }
+}
+
+const capturePhoto = () => {
+  const canvas = document.createElement('canvas')
+  canvas.width = video.value.videoWidth
+  canvas.height = video.value.videoHeight
+
+  const context = canvas.getContext('2d')
+  context.drawImage(video.value, 0, 0)
+
+  const dataUrl = canvas.toDataURL('image/jpeg') // base64 image
+
+  previewImage.value = dataUrl
+
+  // แปลงเป็นไฟล์
+  const byteString = atob(dataUrl.split(',')[1])
+  const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0]
+
+  const ab = new ArrayBuffer(byteString.length)
+  const ia = new Uint8Array(ab)
+  for (let i = 0; i < byteString.length; i++) {
+    ia[i] = byteString.charCodeAt(i)
+  }
+
+  selectedFile.value = new File([ab], 'camera_capture.jpg', { type: mimeString })
+
+  closeCamera()
+}
+
+
 
 // ✅ เปิด Modal อัปโหลด
 const openCompleteModal = (item) => {
