@@ -131,15 +131,17 @@
     <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
     <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
 
-    <!-- ⭐ เฉพาะ document เท่านั้น -->
     <template v-if="props.type === 'document'">
       <th class="px-6 py-4 text-center text-sm font-bold text-indigo-800">Image</th>
-      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">File</th>
-      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Reject Reason</th>
     </template>
 
     <!-- ⭐ status แสดงทั้ง 2 type -->
     <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
+    <!-- ⭐ เฉพาะ document เท่านั้น -->
+    <template v-if="props.type === 'document'">
+      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">File</th>
+      <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Reject Reason</th>
+    </template>
   </tr>
 </thead>
 
@@ -238,7 +240,7 @@
 
      <!-- Reject Reason -->
    <td v-if="item.type === 'document'" class="px-6 py-4 text-center text-sm text-gray-700">
-  {{ item.staff_note || '—' }}
+  {{ item.staff_note }}
 </td>
 
   </tr>
