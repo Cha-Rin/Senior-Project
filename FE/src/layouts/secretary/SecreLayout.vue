@@ -59,7 +59,7 @@ const isDocumentRoute = computed(() => {
 .main-content {
   display: flex;
   flex: 1;
-  margin-top: 60px; /* ความสูงของ navbar */
+  margin-top: 50px; /* ความสูงของ navbar */
 }
 
 .page-wrapper {
