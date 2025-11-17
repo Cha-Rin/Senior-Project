@@ -27,7 +27,7 @@ module.exports = (db) => {
 //       JOIN categories c ON a.category_id = c.category_id
 //       JOIN user_category uc ON a.category_id = uc.category_id
 //       WHERE 
-//         uc.user_id = ?
+//         uc.email = ?
 //         AND a.status = 1
 //         AND NOW() BETWEEN a.appointment_date AND a.staff_offtime
 //       ORDER BY a.appointment_date ASC
@@ -41,34 +41,76 @@ module.exports = (db) => {
 //       res.json(rows);
 //     });
 //   });
+// ==============================================================================
+// router.get("/active-now/:staffId", (req, res) => {
+//   const staffId = req.params.staffId;
+
+//   const sql = `
+//     SELECT 
+//       a.appointment_id AS id,
+//       CONCAT(u.name, ' ', u.surname) AS name,
+//       DATE_FORMAT(a.appointment_date, '%H:%i') AS time,
+//       c.type AS topic
+//     FROM appointment a
+//     JOIN user u ON a.user_id = u.user_id
+//     JOIN categories c ON a.category_id = c.category_id
+//     WHERE 
+//       a.category_id IN (
+//         SELECT category_id FROM user_category WHERE email = ?
+//       )
+//       AND NOW() >= a.appointment_date      -- ถึงเวลาแล้ว
+//       AND a.status = 1
+//     ORDER BY a.appointment_date ASC
+//   `;
+
+//   db.query(sql, [staffId], (err, rows) => {
+//     if (err) return res.status(500).json({error: "Database error"});
+//     res.json(rows);
+//   });
+// });
+
+
 router.get("/active-now/:staffId", (req, res) => {
-    const staffId = req.params.staffId;
+  const staffId = req.params.staffId;
+
   if (!staffId) {
     return res.status(400).json({ error: "Missing staffId" });
   }
-    const sql = `
-      SELECT 
-        a.appointment_id AS id,
-        CONCAT(u.name, ' ', u.surname) AS name,
-         DATE_FORMAT(a.appointment_date, '%H:%i') AS time,
-        c.type AS topic
-      FROM appointment a
-      JOIN user u ON a.user_id = u.user_id
-      JOIN categories c ON a.category_id = c.category_id
-      JOIN user_category uc ON a.category_id = uc.category_id
-      WHERE 
-        uc.user_id = ?
-        AND a.status = 1
-      ORDER BY a.appointment_date ASC
-    `;
 
-    db.query(sql, [staffId], (err, rows) => {
-      if (err) {
-        console.log("SQL active-now error:", err);
-        return res.status(500).json({ error: "Database error" });
-      }
-      res.json(rows);
-    });
+  const sql = `
+    SELECT 
+      a.appointment_id AS id,
+      CONCAT(u.name, ' ', u.surname) AS name,
+      DATE_FORMAT(a.appointment_date, '%H:%i') AS time,
+      c.type AS topic
+    FROM appointment a
+    JOIN user u ON a.user_id = u.user_id
+    JOIN categories c ON a.category_id = c.category_id
+    WHERE 
+      -- ⭐ 1) เฉพาะหมวดหมู่ของ staff
+      a.category_id IN (
+        SELECT category_id FROM user_category WHERE user_id = ?
+      )
+
+      -- ⭐ 2) เฉพาะวันนี้เท่านั้น
+      AND DATE(a.appointment_date) = CURDATE()
+
+      -- ⭐ 3) เวลาอยู่ในช่วงนัดหมาย
+      -- AND NOW() BETWEEN a.appointment_date AND a.staff_offtime
+
+      -- ⭐ 4) เฉพาะนัดที่อนุมัติแล้ว
+      AND a.status = 1
+
+    ORDER BY a.appointment_date ASC
+  `;
+
+  db.query(sql, [staffId], (err, rows) => {
+    if (err) {
+      console.error("SQL active-now error:", err);
+      return res.status(500).json({ error: "Database error" });
+    }
+    res.json(rows);
+  });
 });
 
  // ------------------------------------------

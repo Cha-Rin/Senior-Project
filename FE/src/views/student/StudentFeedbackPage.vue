@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen bg-gray-100 p-4">
+  <div class="min-h-screen  p-4">
     <!-- ✅ Header พร้อมปุ่ม Logout -->
-    <div class="max-w-md mx-auto mb-4 flex justify-between items-center">
+    <!-- <div class="max-w-md mx-auto mb-4 flex justify-between items-center">
       <h1 class="text-2xl font-bold">Feedback Required</h1>
       <button
         @click="handleLogout"
@@ -9,7 +9,8 @@
       >
         ออกจากระบบ
       </button>
-    </div>
+    </div> -->
+    
 
     <!-- ⏳ Loading State -->
     <div v-if="!guard.loaded || guard.loading" class="text-center py-8">

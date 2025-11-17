@@ -80,47 +80,53 @@ module.exports = (db) => {
   // ----------------------------------------------------------
   // 🟦 ระบบเดิม
   // ----------------------------------------------------------
-  router.get('/request-documents', (req, res) => {
-    const secretaryId = req.query.user_id
-    if (!secretaryId) {
-      return res.status(400).json({ success: false })
-    }
+router.get('/request-documents', (req, res) => {
+  const secretaryId = req.query.user_id
+  if (!secretaryId) {
+    return res.status(400).json({ success: false })
+  }
 
-    const sql = `
-      SELECT COUNT(DISTINCT d.document_id) AS count
-      FROM document_tracking AS d
-      JOIN user_category AS uc ON d.category_id = uc.category_id
-      WHERE uc.user_id = ?
-        AND d.status = 0
-    `
+  const sql = `
+    SELECT COUNT(DISTINCT d.document_id) AS count
+    FROM document_tracking d
+    JOIN user_category uc ON d.category_id = uc.category_id
+    WHERE uc.user_id = ?
+      AND d.status = 0
+  `;
 
-    db.query(sql, [secretaryId], (err, results) => {
-      if (err) return res.status(500).json({ success: false })
-      res.json({ success: true, count: results[0]?.count || 0 })
-    })
+  db.query(sql, [secretaryId], (err, results) => {
+    if (err) return res.status(500).json({ success: false })
+    res.json({ success: true, count: results[0]?.count || 0 })
   })
+})
+
 
   // ----------------------------------------------------------
   // 🟦 Document status (ระบบเดิม)
   // ----------------------------------------------------------
-  router.get('/document-status', (req, res) => {
-    const secretaryId = req.query.user_id
-    if (!secretaryId) {
-      return res.status(400).json({ success: false })
+ router.get('/document-status', (req, res) => {
+  const secretaryId = req.query.user_id;
+  if (!secretaryId) {
+    return res.status(400).json({ success: false });
+  }
+
+  const sql = `
+    SELECT COUNT(*) AS count
+    FROM document_tracking d
+    JOIN user_category uc ON d.category_id = uc.category_id
+    WHERE uc.user_id = ?
+      AND d.status = 1
+  `;
+
+  db.query(sql, [secretaryId], (err, results) => {
+    if (err) {
+      console.error("🔥 SQL Error:", err);
+      return res.status(500).json({ success: false });
     }
+    res.json({ success: true, count: results[0]?.count || 0 });
+  });
+});
 
-    const sql = `
-      SELECT COUNT(DISTINCT d.document_id) AS count
-      FROM document_tracking AS d
-      JOIN user_category AS uc ON d.category_id = uc.category_id
-      WHERE uc.user_id = ?
-    `
-
-    db.query(sql, [secretaryId], (err, results) => {
-      if (err) return res.status(500).json({ success: false })
-      res.json({ success: true, count: results[0]?.count || 0 })
-    })
-  })
 
   // ----------------------------------------------------------
   // APPROVE นัดหมาย

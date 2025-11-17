@@ -47,7 +47,7 @@ module.exports = (db) => {
     const userId = req.user.id || req.user.user_id
     const role = req.user.role
     const staffId = req.query.staffId
-
+    const userEmail = req.user.email
     console.log(`📥 User ${userId} with role ${role} requested history (combined)`)
 
     if (!userId || !role) {
@@ -71,50 +71,51 @@ module.exports = (db) => {
       let documentSql, documentParams
 
       // 🧑‍🎓 Student
-      if (role === 'student' || role === 3) {
-        appointmentSql = `
-          SELECT 
-            'appointment' AS type,
-            a.appointment_id AS id,
-            CONCAT(s.name, ' ', s.surname) AS full_name,
-            a.appointment_date AS event_date,
-            c.type AS title,
-            a.status,
-            a.student_note,
-            a.user_id AS studentId
-          FROM appointment AS a
-          JOIN categories AS c ON a.category_id = c.category_id
-          JOIN user_category uc ON a.category_id = uc.category_id
-          JOIN user s ON uc.user_id = s.user_id
-          WHERE a.user_id = ?
-        `
-        appointmentParams = [userId]
+if (role === 'student' || role === 3) {
 
-    documentSql = `
-  SELECT 
-  'document' AS type,
-  d.document_id AS id,
-  CONCAT(s.name, ' ', s.surname) AS full_name,
-  d.submit_date AS event_date,
-  c.type AS title,
-  d.status,
-  d.student_note AS student_note,
-  d.staff_note AS staff_note,
-  d.document_code AS document_code,
-  d.image_path AS image_path,
-  d.image_complete AS image_complete,
-  d.user_id AS studentId
-FROM document_tracking AS d
-JOIN categories AS c ON d.category_id = c.category_id
-LEFT JOIN user_category uc ON d.category_id = uc.category_id
-LEFT JOIN user s ON uc.user_id = s.user_id
-WHERE d.user_id = ?
+  appointmentSql = `
+    SELECT 
+      'appointment' AS type,
+      a.appointment_id AS id,
+      CONCAT(s.name, ' ', s.surname) AS full_name,
+      a.appointment_date AS event_date,
+      c.type AS title,
+      a.status,
+      a.student_note,
+      u.user_id AS studentId
+    FROM appointment AS a
+    JOIN user u ON a.user_id = u.user_id
+    JOIN categories AS c ON a.category_id = c.category_id
+    JOIN user_category uc ON a.category_id = uc.category_id
+    JOIN user s ON uc.user_id = s.user_id
+    WHERE u.email = ?
+  `
+  appointmentParams = [userEmail]
 
-`
+  documentSql = `
+    SELECT 
+      'document' AS type,
+      d.document_id AS id,
+      CONCAT(s.name, ' ', s.surname) AS full_name,
+      d.submit_date AS event_date,
+      c.type AS title,
+      d.status,
+      d.student_note AS student_note,
+      d.staff_note AS staff_note,
+      d.document_code AS document_code,
+      d.image_path AS image_path,
+      d.image_complete AS image_complete,
+      u.user_id AS studentId
+    FROM document_tracking AS d
+    JOIN user u ON d.user_id = u.user_id
+    JOIN categories AS c ON d.category_id = c.category_id
+    LEFT JOIN user_category uc ON d.category_id = uc.category_id
+    LEFT JOIN user s ON uc.user_id = s.user_id
+    WHERE u.email = ?
+  `
+  documentParams = [userEmail]
+}
 
-
-        documentParams = [userId]
-      }
 
       // 🧑‍💼 Secretary
       else if (role === 'secretary' || role === 2) {
@@ -182,7 +183,7 @@ WHERE d.user_id = ?
           JOIN user AS s ON uc.user_id = s.user_id
           JOIN user AS u ON a.user_id = u.user_id
           JOIN categories AS c ON a.category_id = c.category_id   
-          ${hasValidStaffId ? 'WHERE s.user_id = ?' : 'WHERE 1=0'}
+          ${hasValidStaffId ? 'WHERE s.email = ?' : 'WHERE 1=0'}
         `
         appointmentParams = hasValidStaffId ? [staffIdNum] : []
 
@@ -201,7 +202,7 @@ WHERE d.user_id = ?
           JOIN user_category uc ON d.category_id = uc.category_id
           JOIN user AS s ON uc.user_id = s.user_id
           JOIN user AS u ON d.user_id = u.user_id
-          ${hasValidStaffId ? 'WHERE s.user_id = ?' : 'WHERE 1=0'}
+          ${hasValidStaffId ? 'WHERE s.email = ?' : 'WHERE 1=0'}
         `
         documentParams = hasValidStaffId ? [staffIdNum] : []
       }

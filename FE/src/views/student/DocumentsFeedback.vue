@@ -64,7 +64,7 @@ async function loadDocuments() {
     console.log("🔑 Fetching documents for feedback")
 console.log("🚀 Route /documents/for-feedback is running (status=2 filter)");
 
-    const res = await fetch(`/api/student/documents/for-feedback/${userId}`, {
+    const res = await fetch(`/api/student/documents/for-feedback`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

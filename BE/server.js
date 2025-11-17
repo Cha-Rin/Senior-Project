@@ -128,7 +128,7 @@ app.post('/api/login', (req, res) => {
 app.post('/api/auth/google', async (req, res) => {
   const { token, credential } = req.body;
   const idToken = token || credential;
-  
+
   if (!idToken) {
     return res.status(400).json({ success: false, message: 'No token provided' });
   }
@@ -139,11 +139,11 @@ app.post('/api/auth/google', async (req, res) => {
       idToken: idToken,
       audience: process.env.GOOGLE_CLIENT_ID
     });
-    
+
     const payload = ticket.getPayload();
     const email = payload.email?.trim().toLowerCase();
     const name = payload.name || email;
-    const googleUserId = payload.sub; // Google's unique user ID
+    const googleUserId = payload.sub; 
 
     if (!email) {
       throw new Error('Email not found in token');
@@ -157,23 +157,60 @@ app.post('/api/auth/google', async (req, res) => {
       });
     }
 
-    // ✅ สร้าง JWT โดยใช้ข้อมูลจาก Google (ไม่ต้องใช้ database)
+    // ===============================
+    // ✅ 1) ดึง role จาก DATABASE
+    // ===============================
+    const [rows] = await db.promise().query(
+      `SELECT user_id, role 
+       FROM user 
+       WHERE email = ?`,
+      [email]
+    );
+
+    let role, userId;
+
+    if (rows.length > 0) {
+      // 🎉 พบ user ในระบบ
+      userId = rows[0].user_id;
+      role = rows[0].role;
+    } else {
+      // ❗ไม่พบ user — แล้วแต่ระบบว่าต้องการทำไง
+      // ตอนนี้จะ *ไม่ให้ล๊อกอิน* (ตามที่คุณต้องการ)
+      return res.status(403).json({
+        success: false,
+        message: 'ยังไม่มีบัญชีในระบบ กรุณาติดต่อเจ้าหน้าที่'
+      });
+
+      // หรือถ้าต้องการ auto-create user ให้ uncomment:
+      /*
+      const [result] = await db.promise().query(
+        `INSERT INTO user (email, name, role) VALUES (?, ?, 3)`,
+        [email, name, 3]
+      );
+      userId = result.insertId;
+      role = 3;
+      */
+    }
+
+    // ===============================
+    // ✅ 2) สร้าง JWT จาก role จริง
+    // ===============================
     const jwtToken = jwt.sign(
       { 
-        user_id: googleUserId,  // ใช้ Google's sub เป็น user_id
+        user_id: userId,
         email: email,
         name: name,
-        role: 3  // กำหนด role ตายตัว หรือจะดูจาก email pattern ก็ได้
+        role: role          // <-- ใช้ role จาก database
       },
       process.env.SECRET_KEY,
       { expiresIn: '2h' }
     );
 
-    res.json({ success: true, token: jwtToken });
-    
+    return res.json({ success: true, token: jwtToken });
+
   } catch (err) {
     console.error('❌ Google Auth Error:', err);
-    
+
     res.status(500).json({ 
       success: false, 
       message: 'Login failed',
@@ -181,6 +218,7 @@ app.post('/api/auth/google', async (req, res) => {
     });
   }
 });
+
 // ------------------------------------------- demo -------------------------------------------
 // async function resetDemoAccounts() {
 //   try {
@@ -259,7 +297,7 @@ router.post('/api/tracking/add', upload.single('file'), async (req, res) => {
 // ------------------------------------------ Profile -----------------------------------------
 app.get('/api/profile/:id', (req, res) => {
   const userId = Number(req.params.id);
-  const sql = 'SELECT name, surname FROM user WHERE user_id = ?';
+  const sql = 'SELECT name, surname FROM user WHERE email = ?';
   db.query(sql, [userId], (err, result) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     if (result.length === 0) return res.status(404).json({ error: 'User not found' });

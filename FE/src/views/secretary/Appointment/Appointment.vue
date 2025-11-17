@@ -86,22 +86,22 @@
                   Time
                 </th>
                 <th
-              v-for="(d, i) in days"
-              :key="d"
-              class="px-4 py-2 text-gray-700 border border-gray-300 capitalize font-semibold"
-              :class="[
-                i === 0 ? 'bg-[#FFF8D8]' : '',  // Mon - เหลืองอ่อน
-                i === 1 ? 'bg-[#FFE4E8]' : '',  // Tue - ชมพูอ่อน
-                i === 2 ? 'bg-[#E2F7E1]' : '',  // Wed - เขียวมิ้นต์
-                i === 3 ? 'bg-[#FFE8D8]' : '',  // Thu - ส้มพีช
-                i === 4 ? 'bg-[#D8EFFF]' : ''   // Fri - ฟ้าอ่อน
-              ]"
-            >
-              <div class="flex flex-col items-center">
-                <span class="text-gray-800 font-semibold">{{ d }}</span>
-                <span class="text-xs text-gray-600 font-normal">{{ weekDates[i] }}</span>
-              </div>
-            </th>
+                  v-for="(d, i) in days"
+                  :key="d"
+                  class="px-4 py-2 text-gray-700 border border-gray-300 capitalize font-semibold"
+                  :class="[
+                    i === 0 ? 'bg-[#FFF8D8]' : '',
+                    i === 1 ? 'bg-[#FFE4E8]' : '',
+                    i === 2 ? 'bg-[#E2F7E1]' : '',
+                    i === 3 ? 'bg-[#FFE8D8]' : '',
+                    i === 4 ? 'bg-[#D8EFFF]' : ''
+                  ]"
+                >
+                  <div class="flex flex-col items-center">
+                    <span class="text-gray-800 font-semibold">{{ d }}</span>
+                    <span class="text-xs text-gray-600 font-normal">{{ weekDates[i] }}</span>
+                  </div>
+                </th>
               </tr>
             </thead>
 
@@ -139,10 +139,13 @@ import axios from 'axios'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 /* 🧩 ตัวแปรหลัก */
+// ❗ email แทน userId
 const authToken = localStorage.getItem('authToken')
-const staffId = localStorage.getItem('userId')
-const categoryId = localStorage.getItem('categoryId') // ✅ แยกตารางตาม category_id
-console.log('🧩 Loaded staff:', staffId, '| category_id:', categoryId)
+const staffId = localStorage.getItem('email')    // ← เปลี่ยนแล้ว
+const categoryId = localStorage.getItem('categoryId')
+
+console.log('🧩 Loaded staff email:', staffId)
+console.log('🧩 category_id:', categoryId)
 
 /* ตารางเวลา + วัน */
 const timeSlots = [
@@ -159,33 +162,35 @@ const reserved = ref(new Set())
 const selectedToDelete = ref(new Set())
 const offItems = ref([])
 
-const key = (r, c) => `${r},${c}`
-const isSelectedToDelete = (r, c) => selectedToDelete.value.has(key(r, c))
+const key = (r,c) => `${r},${c}`
+const isSelectedToDelete = (r,c) => selectedToDelete.value.has(key(r,c))
 const setMode = (m) => (mode.value = m)
 
 /* Helper Functions */
 const getLocalDateString = (d) => {
   const year = d.getFullYear()
-  const month = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
+  const month = String(d.getMonth() + 1).padStart(2,'0')
+  const day = String(d.getDate()).padStart(2,'0')
   return `${year}-${month}-${day}`
 }
+
 const getMonday = (d) => {
   const date = new Date(d)
   const day = date.getDay()
   const diff = date.getDate() - day + (day === 0 ? -6 : 1)
   date.setDate(diff)
-  date.setHours(12, 0, 0, 0)
+  date.setHours(12,0,0,0)
   return date
 }
+
 const getDateFromDayIndex = (col) => {
-  const [y, m, d] = selectedWeek.value.start.split('-').map(Number)
-  const start = new Date(y, m - 1, d, 12, 0, 0)
-  start.setDate(start.getDate() + col)
+  const [y,m,d] = selectedWeek.value.start.split('-').map(Number)
+  const start = new Date(y,m-1,d,12,0,0)
+  start.setDate(start.getDate()+col)
   return getLocalDateString(start)
 }
+
 const getDayIndexFromDate = (dateStr) => {
-  if (!dateStr) return -1
   const itemDate = new Date(dateStr)
   const jsDayLocal = itemDate.getDay()
   if (jsDayLocal === 0 || jsDayLocal === 6) return -1
@@ -193,32 +198,40 @@ const getDayIndexFromDate = (dateStr) => {
 }
 
 /* 🟢 เพิ่มเวลาว่าง */
-const onCellClick = async (r, c) => {
+const onCellClick = async (r,c) => {
   if (r === LUNCH_ROW) return
-  const k = key(r, c)
+  const k = key(r,c)
 
   if (mode.value === 'add') {
     if (reserved.value.has(k)) return
 
     const date = getDateFromDayIndex(c)
-    const start_time = timeSlots[r].split(' - ')[0] + ':00'
-    const end_time = timeSlots[r].split(' - ')[1] + ':00'
+    const start_time = timeSlots[r].split(' - ')[0]+':00'
+    const end_time = timeSlots[r].split(' - ')[1]+':00'
 
     try {
       await axios.post(
         '/api/secretary/add',
-        { staff_id: staffId, category_id: categoryId, date, start_time, end_time },
-        { headers: { Authorization: `Bearer ${authToken}` } }
+        {
+          staff_id: staffId,   // ← email !!!
+          category_id: categoryId,
+          date,
+          start_time,
+          end_time
+        },
+        { headers: { Authorization:`Bearer ${authToken}` } }
       )
+
       reserved.value.add(k)
       loadOffTime()
     } catch (err) {
-      console.error('Error adding off-time:', err)
+      console.error('🔥 Error adding off-time:', err)
     }
   }
 
   if (mode.value === 'select') {
     if (!reserved.value.has(k)) return
+
     if (selectedToDelete.value.has(k))
       selectedToDelete.value.delete(k)
     else
@@ -226,91 +239,104 @@ const onCellClick = async (r, c) => {
   }
 }
 
-/* สี cell */
-const cellStyle = (r, c) => {
+/* สี Cell */
+const cellStyle = (r,c) => {
   if (r === LUNCH_ROW)
-    return { backgroundColor: '#6b7280', cursor: 'not-allowed' }
-  const k = key(r, c)
-  if (reserved.value.has(k)) {
+    return { backgroundColor:'#6b7280', cursor:'not-allowed' }
+
+  const k = key(r,c)
+
+  if (reserved.value.has(k))
     return {
       backgroundColor: selectedToDelete.value.has(k) ? '#fecaca' : '#ef4444',
-      color: '#fff'
+      color:'#fff'
     }
-  }
-  return { backgroundColor: '#fff' }
+
+  return { backgroundColor:'#fff' }
 }
 
-/* 🗓 Week / Month Picker */
+/* 🗓 Month / Week Picker */
 const today = new Date()
 const currentYear = today.getFullYear()
 const currentMonth = today.getMonth()
 
 const monthOptions = computed(() => {
   const opts = []
-  for (let i = -6; i <= 6; i++) {
+  for (let i=-6; i<=6; i++) {
     const date = new Date(currentYear, currentMonth + i, 1)
-    const label = date.toLocaleString('default', { month: 'long', year: 'numeric' })
-    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    const label = date.toLocaleString('default',{ month:'long', year:'numeric' })
+    const value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`
     opts.push({ label, value })
   }
   return opts
 })
 
-const selectedMonthYear = ref(`${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`)
+const selectedMonthYear = ref(
+  `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`
+)
 
 const weeksInMonth = computed(() => {
-  const [year, month] = selectedMonthYear.value.split('-').map(Number)
-  const first = new Date(year, month - 1, 1)
+  const [year,month] = selectedMonthYear.value.split('-').map(Number)
+  const first = new Date(year, month-1, 1)
   const last = new Date(year, month, 0)
   const result = []
   let cur = getMonday(first)
+
   while (cur <= last) {
     const mon = new Date(cur)
     const fri = new Date(mon)
-    fri.setDate(mon.getDate() + 4)
+    fri.setDate(mon.getDate()+4)
+
     if (fri >= first && mon <= last) {
       result.push({
-        start: getLocalDateString(mon),
-        end: getLocalDateString(fri)
+        start:getLocalDateString(mon),
+        end:getLocalDateString(fri)
       })
     }
-    cur.setDate(cur.getDate() + 7)
+
+    cur.setDate(cur.getDate()+7)
   }
+
   return result
 })
 
 const selectedWeek = ref(null)
-const selectWeek = (w) => (selectedWeek.value = w)
+const selectWeek = (w) => selectedWeek.value = w
+
 const formatDateShort = (iso) => {
-  const [y, m, d] = iso.split('-')
-  const date = new Date(y, m - 1, d)
-  return `${date.getDate()} ${date.toLocaleString('default', { month: 'short' })}`
+  const [y,m,d] = iso.split('-')
+  const date = new Date(y,m-1,d)
+  return `${date.getDate()} ${date.toLocaleString('default',{month:'short'})}`
 }
 
 /* วันที่ใต้หัวตาราง */
 const weekDates = computed(() => {
   if (!selectedWeek.value) return []
-  const [y, m, d] = selectedWeek.value.start.split('-').map(Number)
-  const base = new Date(y, m - 1, d)
+
+  const [y,m,d] = selectedWeek.value.start.split('-').map(Number)
+  const base = new Date(y,m-1,d)
   const dates = []
-  for (let i = 0; i < 5; i++) {
+
+  for (let i=0;i<5;i++) {
     const dt = new Date(base)
-    dt.setDate(base.getDate() + i)
-    dates.push(dt.toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }))
+    dt.setDate(base.getDate()+i)
+    dates.push(dt.toLocaleDateString('th-TH',{day:'2-digit',month:'short'}))
   }
+
   return dates
 })
 
-/* 🧩 โหลดข้อมูลเฉพาะของหมวดนั้น */
+/* โหลด Off-time */
 const loadOffTime = async () => {
   if (!selectedWeek.value) return
+
   try {
     const res = await axios.get('/api/secretary/list', {
-      headers: { Authorization: `Bearer ${authToken}` },
+      headers: { Authorization:`Bearer ${authToken}` },
       params: {
-        weekStart: selectedWeek.value.start,
-        weekEnd: selectedWeek.value.end,
-        categoryId: categoryId // ✅ แยกตารางตาม category
+        weekStart:selectedWeek.value.start,
+        weekEnd:selectedWeek.value.end,
+        categoryId:categoryId
       }
     })
 
@@ -320,47 +346,53 @@ const loadOffTime = async () => {
     offItems.value.forEach((item) => {
       const dayIndex = getDayIndexFromDate(item.date)
       if (dayIndex === -1) return
+
       const itemTime = new Date(`1970-01-01T${item.start_time}`)
       const itemHour = itemTime.getHours()
       const timeIndex = timeSlots.findIndex((slot) => {
-        const slotHour = parseInt(slot.slice(0, 2), 10)
-        return slotHour === itemHour
+        return parseInt(slot.slice(0,2)) === itemHour
       })
-      if (timeIndex !== -1) newSet.add(`${timeIndex},${dayIndex}`)
+
+      if (timeIndex !== -1)
+        newSet.add(`${timeIndex},${dayIndex}`)
     })
 
     reserved.value = newSet
-    console.log(`✅ Loaded ${newSet.size} items for category_id = ${categoryId}`)
   } catch (err) {
     console.error('🔥 Error loading off-time:', err)
   }
 }
 
-/* 🧹 ลบเวลา */
+/* ลบเวลาว่าง */
 const deleteSelected = async () => {
   const ids = []
+
   offItems.value.forEach((item) => {
     const dayIndex = getDayIndexFromDate(item.date)
     const itemTime = new Date(`1970-01-01T${item.start_time}`)
     const itemHour = itemTime.getHours()
+
     const timeIndex = timeSlots.findIndex((slot) => {
-      const slotHour = parseInt(slot.slice(0, 2), 10)
-      return slotHour === itemHour
+      return parseInt(slot.slice(0,2)) === itemHour
     })
+
     if (selectedToDelete.value.has(`${timeIndex},${dayIndex}`))
       ids.push(item.off_time_id)
   })
+
   if (ids.length === 0) return
+
   try {
     await axios.post(
       '/api/secretary/delete',
-      { ids, category_id: categoryId }, // ✅ ส่ง category_id ให้ backend ด้วย
-      { headers: { Authorization: `Bearer ${authToken}` } }
+      { ids, category_id:categoryId },
+      { headers: { Authorization:`Bearer ${authToken}` } }
     )
+
     selectedToDelete.value.clear()
     loadOffTime()
   } catch (err) {
-    console.error('Error deleting off-time:', err)
+    console.error('🔥 Error deleting off-time:', err)
   }
 }
 
@@ -369,11 +401,13 @@ onMounted(() => {
   const now = new Date()
   const start = getMonday(now)
   const startStr = getLocalDateString(start)
+
   selectedWeek.value =
-    weeksInMonth.value.find((w) => w.start === startStr) || weeksInMonth.value[0]
+    weeksInMonth.value.find((w) => w.start === startStr) ||
+    weeksInMonth.value[0]
 })
 
-watch(selectedWeek, () => loadOffTime(), { immediate: true })
+watch(selectedWeek, () => loadOffTime(), { immediate:true })
 watch(selectedMonthYear, () => {
   selectedWeek.value = weeksInMonth.value[0] || null
 })

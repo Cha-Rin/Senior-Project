@@ -244,17 +244,23 @@ module.exports = (db) => {
   // ============================================================
   // 🟢 6. เปลี่ยนสถานะ Staff
   // ============================================================
-  router.patch('/staffs/:id/status', (req, res) => {
-    const { id } = req.params
-    const { status } = req.body
-    db.query('UPDATE user SET status = ? WHERE user_id = ?', [status, id], (err) => {
-      if (err) {
-        console.error('❌ Error updating status:', err)
-        return res.status(500).json({ success: false, error: err.message })
-      }
-      res.json({ success: true })
-    })
+  // ============================================================
+// 🟢 แก้ไข: เปลี่ยนสถานะ Staff (Enable / Disable)
+// ============================================================
+router.patch('/staffs/:id/status', (req, res) => {
+  const { id } = req.params
+  const { status } = req.body
+
+  const sql = `UPDATE user SET status = ? WHERE user_id = ?`
+
+  db.query(sql, [status, id], (err) => {
+    if (err) {
+      console.error('❌ Error updating status:', err)
+      return res.status(500).json({ success: false, error: err.message })
+    }
+    res.json({ success: true })
   })
+})
 
   // ============================================================
   // 📊 7. Weekly Summary (Dashboard)

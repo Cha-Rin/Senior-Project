@@ -81,7 +81,14 @@ export default [
         path: 'documents', 
         name: 'DocumentsFeedback', 
         component: DocumentsFeedback 
+      },
+      {
+        path: 'history',
+        name: 'FeedbackHistory',
+        component: () => import('@/views/student/FeedbackHistory.vue'),
       }
+
+
     ]
   }
 ]

@@ -141,10 +141,17 @@ const selectedImage = ref(null)
 
 // ✅ โหลดข้อมูลจาก backend
 onMounted(async () => {
-  const userId = localStorage.getItem('userId')
+  const token = localStorage.getItem("authToken")
+
   try {
-    const res = await fetch(`/api/student/documents/${userId}`)
-    const data = await res.json()
+    const res = await fetch(`/api/student/documents`, {
+      headers: { 
+        "Authorization": `Bearer ${token}` 
+      }
+    });
+
+    const data = await res.json();
+
     if (Array.isArray(data)) {
       documents.value = sortByLatestDate(data)
     } else if (data.success && Array.isArray(data.documents)) {
@@ -156,6 +163,7 @@ onMounted(async () => {
     console.error('❌ Failed to load documents:', err)
   }
 })
+
 
 // ✅ เรียงวันที่ใหม่ → เก่าสุด
 function sortByLatestDate(arr) {

@@ -131,14 +131,17 @@
     <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Name</th>
     <th class="px-6 py-4 text-left text-sm font-bold text-indigo-800">Note</th>
 
+    <!-- ⭐ เฉพาะ document เท่านั้น -->
     <template v-if="props.type === 'document'">
       <th class="px-6 py-4 text-center text-sm font-bold text-indigo-800">Image</th>
+    
     </template>
 
     <!-- ⭐ status แสดงทั้ง 2 type -->
     <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Status</th>
-    <!-- ⭐ เฉพาะ document เท่านั้น -->
+
     <template v-if="props.type === 'document'">
+    
       <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">File</th>
       <th class="px-6 py-4 text-right text-sm font-bold text-indigo-800">Reject Reason</th>
     </template>
@@ -240,7 +243,7 @@
 
      <!-- Reject Reason -->
    <td v-if="item.type === 'document'" class="px-6 py-4 text-center text-sm text-gray-700">
-  {{ item.staff_note }}
+  {{ item.staff_note || '—' }}
 </td>
 
   </tr>
@@ -364,39 +367,26 @@ const statusOptions = computed(() => {
       ]
 })
 
-// 🔹 กรองตามประเภท + สถานะ + เรียงลำดับ
 const filteredItemsByType = computed(() => {
-  // ❗❗ ใช้ผลที่กรองตามช่วงวันที่เป็น “จุดเริ่มต้น”
   let items = filteredByDate.value
 
-  // กรองตาม type (จาก props)
+  // 🟣 กรองตาม type
   if (props.type === 'appointment') {
     items = items.filter(i => i.type === 'appointment')
   } else if (props.type === 'document') {
     items = items.filter(i => i.type === 'document')
   }
 
-  // กรองตามสถานะ
+  // 🟣 กรองตามสถานะ
   if (statusFilter.value !== 'all') {
     items = items.filter(i => String(i.status) === statusFilter.value)
   }
 
-  // เรียง: ใกล้วันนี้ที่สุดก่อน, Reject ไปท้าย
-  const now = Date.now()
+  // 🟣 เรียงวันที่ (ล่าสุดอยู่บนเสมอ)
   return items.slice().sort((a, b) => {
-    const isAReject = (a.type === 'document' && a.status === 3) || (a.type === 'appointment' && a.status === 2)
-    const isBReject = (b.type === 'document' && b.status === 3) || (b.type === 'appointment' && b.status === 2)
-    if (isAReject && !isBReject) return 1
-    if (!isAReject && isBReject) return -1
-
     const tA = new Date(a.event_date).getTime()
     const tB = new Date(b.event_date).getTime()
-    const dA = tA - now
-    const dB = tB - now
-
-    if (dA <= 0 && dB <= 0) return dB - dA   // ผ่านมาแล้ว: ใหม่กว่าอยู่บน
-    if (dA >= 0 && dB >= 0) return dA - dB   // ยังไม่ถึง: ใกล้กว่าก่อน
-    return dA >= 0 ? -1 : 1
+    return tB - tA   // → ใหม่กว่าอยู่บน
   })
 })
 
