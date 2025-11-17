@@ -10,6 +10,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, 'src') // กำหนดให้ @ = src/
     }
   },server: {historyApiFallback: true,
+    headers: {
+    "Cross-Origin-Opener-Policy": "unsafe-none",
+    "Cross-Origin-Embedder-Policy": "unsafe-none"
+  },
     proxy: {
       
       '/api': {

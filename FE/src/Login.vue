@@ -266,6 +266,22 @@ const handleGoogleCallback = async (response) => {
       return;
     }
 
+
+// ⭐️ ใส่จุดนี้
+if (data.message && data.message.includes('No permission')) {
+  errorMessage.value = 'This account has been disabled or has no permission.';
+  isLoading.value = false;
+  return;
+}
+
+if (!data.success || !data.token) {
+  errorMessage.value = 'Incorrect username or password.';
+  isLoading.value = false;
+  return;
+}
+
+
+
     // ✅ Save JWT
     localStorage.setItem("authToken", data.token);
 
