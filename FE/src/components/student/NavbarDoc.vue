@@ -5,7 +5,6 @@
   >
     <!-- 🔹 ซ้าย: Hamburger + โลโก้ -->
     <div class="flex items-center space-x-3">
-      <!-- Hamburger Icon -->
       <button @click="menuOpen = !menuOpen" class="text-white">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -15,26 +14,23 @@
           stroke="currentColor"
           stroke-width="2"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M4 6h16M4 12h16M4 18h16"
-          />
+          <path stroke-linecap="round" stroke-linejoin="round"
+            d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
 
-      <!-- Logo -->
       <img src="@/assets/logo.jpg" alt="logo" class="h-8" />
     </div>
 
-    <!-- 🔹 ขวา: ชื่อผู้ใช้ + เปลี่ยนภาษา + Logout -->
+    <!-- 🔹 ขวา: Email + ภาษา + Logout -->
     <div class="flex items-center space-x-3">
-      <!-- ชื่อผู้ใช้ -->
+      
+      <!-- 📧 อีเมลผู้ใช้ -->
       <p class="text-sm font-semibold hidden sm:block">
-        👩‍🎓 {{ studentName }}
+        {{ studentEmail }}
       </p>
 
-      <!-- ปุ่มเปลี่ยนภาษา -->
+      <!-- เปลี่ยนภาษา -->
       <button
         @click="toggleLang"
         class="text-xs font-bold border border-white px-2 py-1 rounded hover:bg-white hover:text-[#003366] transition"
@@ -42,7 +38,7 @@
         {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
       </button>
 
-      <!-- ปุ่ม Logout -->
+      <!-- Logout -->
       <button
         @click="logout"
         class="w-10 h-10 flex items-center justify-center rounded hover:bg-white hover:text-[#003366] transition"
@@ -57,14 +53,12 @@
           stroke-linejoin="round"
           class="w-6 h-6"
         >
-          <path
-            d="M13.5 7.5L10.5 10.75M13.5 7.5L10.5 4.5M13.5 7.5L4 7.5M8 13.5H1.5L1.5 1.5L8 1.5"
-          />
+          <path d="M13.5 7.5L10.5 10.75M13.5 7.5L10.5 4.5M13.5 7.5L4 7.5M8 13.5H1.5L1.5 1.5L8 1.5" />
         </svg>
       </button>
     </div>
 
-    <!-- 🔻 Sidebar Slide Menu -->
+    <!-- 🔻 Sidebar -->
     <transition name="slide">
       <div
         v-if="menuOpen"
@@ -87,81 +81,41 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import SidebarItem from './SidebarItemApp.vue'
+import { ref, onMounted } from "vue"
+import { useRouter } from "vue-router"
+import SidebarItem from "./SidebarItemApp.vue"
 import jwt_decode from "jwt-decode"
+
 const router = useRouter()
 const menuOpen = ref(false)
-const currentLang = ref('th')
-const studentName = ref('Guest')
+const currentLang = ref("th")
 
-onMounted(async () => {
-  const token = localStorage.getItem('authToken')
+// 📧 ตัวแปรใหม่: email ผู้ใช้
+const studentEmail = ref("Guest")
+
+// 🎯 ดึงอีเมลจาก Token
+onMounted(() => {
+  const token = localStorage.getItem("authToken")
   if (!token) return
 
   try {
     const decoded = jwt_decode(token)
-    const userId = decoded.user_id
-
-    const res = await fetch(`/api/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const data = await res.json()
-    if (data.name && data.surname) {
-  studentName.value = `${data.name} ${data.surname}`
-  localStorage.setItem('studentName', studentName.value)
-}
+    studentEmail.value = decoded.email || "Unknown"
   } catch (err) {
-    console.error('Failed to load user info:', err)
+    console.error("❌ Failed to decode token:", err)
   }
 })
 
-// 🔹 เปลี่ยนภาษา
+// เปลี่ยนภาษา
 function toggleLang() {
-  currentLang.value = currentLang.value === 'th' ? 'en' : 'th'
+  currentLang.value = currentLang.value === "th" ? "en" : "th"
 }
 
-// 🔹 Logout
+// Logout
 const logout = () => {
-  localStorage.removeItem('authToken')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('userRole')
-  router.push({ name: 'Login' })
+  localStorage.clear()
+  router.push({ name: "Login" })
 }
-
-// 🔹 โหลดชื่อผู้ใช้จาก backend
-onMounted(async () => {
-  const userId = localStorage.getItem('userId')
-  const token = localStorage.getItem('authToken')
-
-  if (!userId || !token) {
-    studentName.value = 'Guest'
-    return
-  }
-
-  try {
-    const res = await fetch(`/api/user/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    })
-    const data = await res.json()
-
-    if (data && data.name) {
-      // ✅ สมมุติ backend ส่ง { name: "ภาคภูมิ ล้ำประเสริฐ" }
-      studentName.value = data.name
-    } else if (data.first_name) {
-      // ✅ หรือกรณี backend ส่ง first_name, last_name แยกกัน
-      studentName.value = `${data.first_name} ${data.last_name || ''}`
-    } else {
-      studentName.value = 'Student'
-    }
-  } catch (err) {
-    console.error('❌ Failed to fetch user name:', err)
-    studentName.value = 'Student'
-  }
-})
 </script>
 
 <style scoped>
@@ -169,9 +123,7 @@ onMounted(async () => {
 .slide-leave-active {
   transition: all 0.3s ease;
 }
-.slide-enter-from {
-  transform: translateX(-100%);
-}
+.slide-enter-from,
 .slide-leave-to {
   transform: translateX(-100%);
 }

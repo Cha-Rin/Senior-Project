@@ -3,24 +3,26 @@
   <div
     class="fixed top-0 left-0 w-full z-50 bg-[#003366] text-white px-4 py-2 shadow-md flex items-center justify-between"
   >
-    <!-- 🔹 ซ้าย: โลโก้ -->
+    <!-- 🔹 Logo -->
     <div class="flex items-center space-x-3">
       <img src="@/assets/logo.jpg" alt="logo" class="h-8" />
     </div>
 
-    <!-- 🔹 ขวา: ชื่อผู้ใช้ + ปุ่มภาษา + Logout -->
-    <div class="flex items-center space-x-3">
-      <!-- ชื่อผู้ใช้ -->
-      <p class="text-sm font-semibold hidden sm:block">
-        👩‍💼 {{ studentName }}
-      </p>
+    <!-- 🔹 Right section -->
+    <div class="flex items-center space-x-4">
+      
+      <!-- 👤 ชื่อ + อีเมล -->
+      <div class="hidden sm:block text-right leading-tight">
+        <p class="text-sm font-semibold"> {{ fullName }}</p>
+        <p class="text-xs text-gray-300">{{ userEmail }}</p>
+      </div>
 
-      <!-- ปุ่มสลับภาษา -->
+      <!-- 🌐 Change Language -->
       <button @click="toggleLang" class="text-xs font-bold">
         {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
       </button>
 
-      <!-- ปุ่ม Logout -->
+      <!-- 🚪 Logout -->
       <button
         @click="logout"
         class="w-10 h-10 flex items-center justify-center rounded hover:bg-white hover:text-[#003366] transition"
@@ -36,9 +38,7 @@
           stroke-linejoin="round"
           class="w-6 h-6 block"
         >
-          <path
-            d="M10 17l5-5-5-5M3 12h12M21 19V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4"
-          />
+          <path d="M10 17l5-5-5-5M3 12h12M21 19V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4" />
         </svg>
       </button>
     </div>
@@ -46,69 +46,61 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watchEffect } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import jwt_decode from "jwt-decode"
+
 const router = useRouter()
 const currentLang = ref('th')
-const studentName = ref('Guest')
 
-onMounted(async () => {
-  const token = localStorage.getItem('authToken')
+// 🧑‍💼 User Data
+const userName = ref("Guest")
+const userSurname = ref("")
+const userEmail = ref("")
+
+// 🧠 computed ชื่อเต็ม
+const fullName = computed(() =>
+  `${userName.value} ${userSurname.value}`.trim() || "Guest"
+)
+
+onMounted(() => {
+  const token = localStorage.getItem("authToken")
   if (!token) return
 
   try {
     const decoded = jwt_decode(token)
-    const userId = decoded.user_id
 
-    const res = await fetch(`/api/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const data = await res.json()
-    if (data.name && data.surname) {
-  studentName.value = `${data.name} ${data.surname}`
-  localStorage.setItem('studentName', studentName.value)
-}
+    // 📌 ดึง name / surname / email จาก JWT
+    userName.value = decoded.name || ""
+    userSurname.value = decoded.surname || ""
+    userEmail.value = decoded.email || ""
+
+    // 📌 เก็บลง localStorage เผื่อหน้าอื่นต้องใช้
+    localStorage.setItem("name", userName.value)
+    localStorage.setItem("surname", userSurname.value)
+    localStorage.setItem("email", userEmail.value)
+
   } catch (err) {
-    console.error('Failed to load user info:', err)
-  }
-})
-// ✅ เก็บชื่อผู้ใช้
-const userName = ref('Guest')
-
-// โหลดชื่อผู้ใช้จาก localStorage
-onMounted(() => {
-  const name = localStorage.getItem('name') || ''
-  const surname = localStorage.getItem('surname') || ''
-  if (name || surname) {
-    userName.value = `${name} ${surname}`.trim()
+    console.error("❌ Failed to decode JWT:", err)
   }
 })
 
-// ✅ ตรวจอัปเดตชื่ออัตโนมัติเมื่อ localStorage เปลี่ยน
-watchEffect(() => {
-  const name = localStorage.getItem('name') || ''
-  const surname = localStorage.getItem('surname') || ''
-  userName.value = name || surname ? `${name} ${surname}`.trim() : 'Guest'
-})
-
-// ✅ ฟังก์ชันเปลี่ยนภาษา
+// 🌐 Language Toggle
 function toggleLang() {
-  currentLang.value = currentLang.value === 'th' ? 'en' : 'th'
+  currentLang.value = currentLang.value === "th" ? "en" : "th"
 }
 
-// ✅ ฟังก์ชัน Logout
+// 🚪 Logout
 const logout = () => {
-  localStorage.clear() // ล้าง token, role, name, etc.
-  router.push({ name: 'Login' })
+  localStorage.clear()
+  router.push({ name: "Login" })
 }
 </script>
 
 <style scoped>
-/* เพิ่ม spacing ให้สวยขึ้นในจอเล็ก */
 @media (max-width: 640px) {
   .text-sm {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 }
 </style>

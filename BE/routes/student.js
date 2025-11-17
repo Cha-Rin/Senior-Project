@@ -756,6 +756,64 @@ module.exports = (db) => {
       res.status(500).json({ success: false, message: 'db_error' })
     }
   })
+// ⭐ History: Appointment Feedback
+router.get('/feedback/history/appointments/:email', (req, res) => {
+  const email = req.params.email
+
+  const sql = `
+    SELECT 
+      f.feedback_id,
+      a.appointment_id,
+      a.appointment_date,
+      c.type AS topic,
+      f.score_count1,
+      f.score_count2,
+      f.score_count3,
+      f.comment
+    FROM feedback_appointment f
+    JOIN appointment a ON f.appointment_id = a.appointment_id
+    LEFT JOIN categories c ON a.category_id = c.category_id
+    WHERE a.student_email = ?
+    ORDER BY f.created_at DESC
+  `
+
+  db.query(sql, [email], (err, rows) => {
+    if (err) {
+      console.error("❌ Appointment history error:", err)
+      return res.status(500).json({ success: false })
+    }
+    res.json({ success: true, history: rows })
+  })
+})
+// ⭐ History: Document Feedback
+router.get('/feedback/history/documents/:email', (req, res) => {
+  const email = req.params.email
+
+  const sql = `
+    SELECT 
+      f.feedback_id,
+      d.document_id,
+      d.submit_date,
+      c.type AS topic,
+      f.score_count1,
+      f.score_count2,
+      f.score_count3,
+      f.comment
+    FROM feedback_document_tracking f
+    JOIN document_tracking d ON f.document_id = d.document_id
+    LEFT JOIN categories c ON d.category_id = c.category_id
+    WHERE d.student_email = ?
+    ORDER BY f.created_at DESC
+  `
+
+  db.query(sql, [email], (err, rows) => {
+    if (err) {
+      console.error("❌ Document history error:", err)
+      return res.status(500).json({ success: false })
+    }
+    res.json({ success: true, history: rows })
+  })
+})
 
   return router
 }
