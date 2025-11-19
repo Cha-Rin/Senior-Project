@@ -252,6 +252,8 @@ module.exports = (db) => {
     });
   });
 });
+
+
   // ==================================================
   // 📄 DOCUMENT (Secretary side)
   // ==================================================
@@ -269,7 +271,9 @@ module.exports = (db) => {
       const sql = `
         SELECT 
           d.document_id,
+          d.document_code, 
           d.user_id AS studentId,
+          u.email AS student_email,
           CONCAT(u.name, ' ', u.surname) AS full_name,
           d.submit_date,
           c.type AS topic,
@@ -342,7 +346,10 @@ module.exports = (db) => {
       const sql = `
         SELECT 
           d.document_id,
+           d.document_code,          -- ✅ เพิ่ม
+    u.email AS student_email, -- ✅ เพิ่ม
           d.user_id AS studentId,
+          u.email AS student_email, 
           CONCAT(u.name, ' ', u.surname) AS full_name,
           d.submit_date,
           c.type AS topic,
