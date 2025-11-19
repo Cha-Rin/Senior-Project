@@ -187,6 +187,20 @@ onMounted(async () => {
     }
 
     staffList.value = res.data.filter(
+  (c) => String(c.category_id) === String(categoryId.value)
+)
+
+if (staffList.value.length > 0) {
+  // เลือกพี่เลขาคนแรกเป็นค่าเริ่มต้น
+  staffIdToView.value = staffList.value[0].user_id
+  displayName.value = staffList.value[0].staff_name
+  imageSrc.value = staffList.value[0].profile_image
+    ? `/uploads/${staffList.value[0].profile_image}`
+    : '/uploads/default.png'
+  selectedTopic.value = staffList.value[0].type
+}
+
+    staffList.value = res.data.filter(
       (c) => String(c.category_id) === String(categoryId.value)
     )
 
