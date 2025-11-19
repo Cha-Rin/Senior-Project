@@ -196,7 +196,7 @@ const openCameraPopup = async () => {
 
   try {
     const form = new FormData()
-    form.append('user_id', userId)
+    form.append('user_id', selectedCategory.value.user_id) //form.append('user_id', userId)
     form.append('category_id', selectedCategory.value.category_id)
     form.append('student_email', email)
     form.append('student_note', subTopic.value)
