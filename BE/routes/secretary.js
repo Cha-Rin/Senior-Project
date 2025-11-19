@@ -424,96 +424,104 @@ module.exports = (db) => {
   // 📊 Rating – Document (per staff per term)
   // ==========================================
   router.get('/rating-Document', (req, res) => {
-    const { year, semester, staffId } = req.query
-    console.log('📊 Received rating request (Document):', { year, semester, staffId })
+  // ✅ ใช้ startDate, endDate, staffId แทน year/semester
+  const { startDate, endDate, staffId } = req.query;
+  console.log('📊 Received rating request (Document by date):', { startDate, endDate, staffId });
 
-    if (!year || !semester || !staffId) {
-      return res.status(400).json({ success: false, message: 'Missing year, semester, or staffId' })
+  if (!startDate || !endDate || !staffId) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Missing startDate, endDate, or staffId' 
+    });
+  }
+
+  // ✅ ตรวจสอบรูปแบบวันที่ (YYYY-MM-DD)
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Invalid date format. Use YYYY-MM-DD' 
+    });
+  }
+
+  // ✅ SQL ใหม่: ใช้ d.submit_date BETWEEN ? AND ?
+  const sql = `
+    SELECT 
+      fd.score_count1,
+      fd.score_count2,
+      fd.score_count3,
+      fd.comment       
+    FROM feedback_document_tracking fd
+    JOIN document_tracking d ON fd.document_id = d.document_id
+    JOIN user_category uc ON d.category_id = uc.category_id
+    JOIN user s ON uc.user_id = s.user_id 
+    WHERE 
+      DATE(d.submit_date) BETWEEN ? AND ? 
+      AND s.email = ?;
+  `;
+
+  db.query(sql, [startDate, endDate, staffId], (err, results) => {
+    if (err) {
+      console.error('❌ SQL Error (Document by date):', err);
+      return res.status(500).json({ success: false, error: err.message });
     }
 
-    const sql = `
-      SELECT 
-        fd.score_count1,
-        fd.score_count2,
-        fd.score_count3,
-        fd.comment       
-      FROM feedback_document_tracking fd
-      JOIN document_tracking d ON fd.document_id = d.document_id
-      JOIN academic_period ap ON DATE(d.submit_date) BETWEEN ap.start_date AND ap.end_date
-      JOIN user_category uc ON d.category_id = uc.category_id
-      JOIN user s ON uc.user_id = s.user_id 
-      WHERE 
-        ap.academic_year = ? AND 
-        ap.semester = ? AND
-        s.email = ?;
-    `
-
-    db.query(sql, [year, semester, staffId], (err, results) => {
-      if (err) {
-        console.error('❌ SQL Error (Document):', err)
-        return res.status(500).json({ success: false, error: err.message })
-      }
-
-      if (results.length === 0) {
-        const emptyData = {
+    if (results.length === 0) {
+      return res.json({
+        success: true,
+        data: {
           averages: {
             friendliness: '0.00',
             efficiency: '0.00',
-            communication: '0.00',
-            average: '0.0'
+            communication: '0.00'
+            // ❌ ไม่ส่ง average เพิ่ม — UI คำนวณเองจาก 3 ค่า
           },
           comments: []
         }
-        return res.json({ success: true, data: emptyData })
+      });
+    }
+
+    let totalFriendliness = 0;
+    let totalEfficiency = 0;
+    let totalCommunication = 0;
+    const commentsList = [];
+    const count = results.length;
+
+    results.forEach(row => {
+      const score1 = parseFloat(row.score_count1) || 0;
+      const score2 = parseFloat(row.score_count2) || 0;
+      const score3 = parseFloat(row.score_count3) || 0;
+
+      totalFriendliness += score1;
+      totalEfficiency += score2;
+      totalCommunication += score3;
+
+      if (row.comment && row.comment.trim()) {
+        const commentAvg = (score1 + score2 + score3) / 3;
+        const commentStars = Math.round(commentAvg);
+        commentsList.push({
+          text: row.comment.trim(),
+          stars: commentStars // ✅ UI แสดง ⭐ ถ้ามี
+        });
       }
+    });
 
-      let totalFriendliness = 0
-      let totalEfficiency = 0
-      let totalCommunication = 0
-      const commentsList = []
-      const count = results.length
+    const avgData = {
+      friendliness: (totalFriendliness / count).toFixed(2),
+      efficiency: (totalEfficiency / count).toFixed(2),
+      communication: (totalCommunication / count).toFixed(2)
+    };
 
-      results.forEach(row => {
-        const score1 = parseFloat(row.score_count1 || 0)
-        const score2 = parseFloat(row.score_count2 || 0)
-        const score3 = parseFloat(row.score_count3 || 0)
-
-        totalFriendliness += score1
-        totalEfficiency += score2
-        totalCommunication += score3
-
-        if (row.comment) {
-          const commentAvg = (score1 + score2 + score3) / 3
-          const commentStars = Math.round(commentAvg)
-          commentsList.push({
-            text: row.comment,
-            stars: commentStars
-          })
-        }
-      })
-
-      const avgData = {
-        friendliness: (totalFriendliness / count).toFixed(2),
-        efficiency: (totalEfficiency / count).toFixed(2),
-        communication: (totalCommunication / count).toFixed(2)
+    // ✅ ส่งเฉพาะ 3 ฟิลด์ — UI มี computed ratingsAverage อยู่แล้ว
+    res.json({
+      success: true,
+      data: {
+        averages: avgData, // { friendliness, efficiency, communication }
+        comments: commentsList
       }
-      const overallAvg = (
-        (Number(avgData.friendliness) +
-          Number(avgData.efficiency) +
-          Number(avgData.communication)) /
-        3
-      ).toFixed(1)
-
-      res.json({
-        success: true,
-        data: {
-          averages: { ...avgData, average: overallAvg },
-          comments: commentsList
-        }
-      })
-    })
-  })
-
+    });
+  });
+});
   // ==================================================
   // 🕒 Staff Off-time (Secretary self-manage)
   // ==================================================

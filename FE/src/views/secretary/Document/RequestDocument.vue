@@ -125,7 +125,9 @@
                 {{ item.no }}
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">
-                {{ item.studentId }}
+                {{ getStudentId(item.email) }}
+
+
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
@@ -245,6 +247,13 @@ const currentRejectItem = ref(null)
 const currentPage = ref(1)
 const itemsPerPage = 7
 
+
+const getStudentId = (email) => {
+  if (!email) return "-"
+  return email.split("@")[0]   // ตัดเอาเฉพาะก่อน @
+}
+
+
 // ------------------------------------------
 // 🔹 Pagination
 // ------------------------------------------
@@ -262,6 +271,10 @@ const goToPage = (page) => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 }
+
+
+
+
 
 // ------------------------------------------
 // 🔹 โหลดข้อมูลจาก backend
@@ -281,8 +294,10 @@ onMounted(async () => {
     })
     const data = await res.json()
     requests.value = (data.requests || []).map((item) => ({
-      no: item.document_id,
+      no: item.document_code,
+      documentId: item.document_id,  
       studentId: item.studentId,
+       email: item.student_email, 
       name: item.full_name,
       date: formatDate(item.submit_date),
       topic: item.topic,
@@ -311,7 +326,7 @@ const approve = async (item) => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ document_id: item.no, status: 1 }),
+      body: JSON.stringify({ document_id: item.documentId, status: 1 }),
     })
     const i = requests.value.findIndex((r) => r.no === item.no)
     if (i !== -1) requests.value.splice(i, 1, { ...item, status: 'Approved' })
@@ -345,11 +360,11 @@ const confirmReject = async () => {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({
-        document_id: currentRejectItem.value.no,
-        status: 3, // ❌ เปลี่ยนเป็น Reject (3)
-        reason: finalReason,
-      }),
+     body: JSON.stringify({
+  document_id: currentRejectItem.value.documentId,
+  status: 3,
+  reason: finalReason,
+}),
     })
 
     const idx = requests.value.findIndex(
