@@ -253,7 +253,7 @@ module.exports = (db) => {
   });
 });
 
-
+// --------------------------------------------------------------------------------------------------------
   // ==================================================
   // 📄 DOCUMENT (Secretary side)
   // ==================================================
@@ -431,7 +431,6 @@ module.exports = (db) => {
   // 📊 Rating – Document (per staff per term)
   // ==========================================
   router.get('/rating-Document', (req, res) => {
-  // ✅ ใช้ startDate, endDate, staffId แทน year/semester
   const { startDate, endDate, staffId } = req.query;
   console.log('📊 Received rating request (Document by date):', { startDate, endDate, staffId });
 
@@ -442,7 +441,7 @@ module.exports = (db) => {
     });
   }
 
-  // ✅ ตรวจสอบรูปแบบวันที่ (YYYY-MM-DD)
+  // ✅ ตรวจสอบรูปแบบวันที่ (ทางเลือก — ไม่จำเป็นถ้า Vue ส่งมาถูกต้อง)
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(startDate) || !dateRegex.test(endDate)) {
     return res.status(400).json({ 
@@ -451,7 +450,7 @@ module.exports = (db) => {
     });
   }
 
-  // ✅ SQL ใหม่: ใช้ d.submit_date BETWEEN ? AND ?
+  // ✅ แก้ไขจุดสำคัญ: เปลี่ยนจาก s.email → เป็น s.user_id
   const sql = `
     SELECT 
       fd.score_count1,
@@ -464,9 +463,10 @@ module.exports = (db) => {
     JOIN user s ON uc.user_id = s.user_id 
     WHERE 
       DATE(d.submit_date) BETWEEN ? AND ? 
-      AND s.email = ?;
+      AND s.user_id = ?;  -- ✅ เปลี่ยนตรงนี้: email → user_id
   `;
 
+  // ✅ ส่ง staffId โดยตรง (ไม่ต้อง map email)
   db.query(sql, [startDate, endDate, staffId], (err, results) => {
     if (err) {
       console.error('❌ SQL Error (Document by date):', err);
@@ -481,7 +481,6 @@ module.exports = (db) => {
             friendliness: '0.00',
             efficiency: '0.00',
             communication: '0.00'
-            // ❌ ไม่ส่ง average เพิ่ม — UI คำนวณเองจาก 3 ค่า
           },
           comments: []
         }
@@ -508,7 +507,7 @@ module.exports = (db) => {
         const commentStars = Math.round(commentAvg);
         commentsList.push({
           text: row.comment.trim(),
-          stars: commentStars // ✅ UI แสดง ⭐ ถ้ามี
+          stars: commentStars
         });
       }
     });
@@ -519,11 +518,10 @@ module.exports = (db) => {
       communication: (totalCommunication / count).toFixed(2)
     };
 
-    // ✅ ส่งเฉพาะ 3 ฟิลด์ — UI มี computed ratingsAverage อยู่แล้ว
     res.json({
       success: true,
       data: {
-        averages: avgData, // { friendliness, efficiency, communication }
+        averages: avgData,
         comments: commentsList
       }
     });
