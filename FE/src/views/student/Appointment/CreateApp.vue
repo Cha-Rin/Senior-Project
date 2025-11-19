@@ -25,7 +25,7 @@
         </div>
       </div>
 
-      <!-- 🔹 ตารางตารางเวลา -->
+      <!-- 🔹 ตารางเวลา -->
       <StudentScheduleView 
         v-if="staffIdToView"
         :staffId="staffIdToView"
@@ -33,8 +33,10 @@
         @update:weekRange="onWeekRangeUpdate"
       />
 
-      <!-- 🔹 ฟอร์มเลือกวันและเวลา -->
-      <div class="bg-blue-900 text-white w-full max-w-xs p-4 rounded-xl space-y-3 mb-10">
+      <!-- 🔹 ฟอร์มทั้งหมด -->
+      <div class="bg-blue-900 text-white w-full max-w-xs p-4 rounded-xl space-y-4 mb-10">
+
+        <!-- Date -->
         <label class="block text-left">
           <span class="text-sm font-medium">Date:</span>
           <input
@@ -46,15 +48,12 @@
           />
         </label>
 
+        <!-- Time -->
         <label class="block text-left">
           <span class="text-sm font-medium">Time:</span>
           <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
             <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
-            <option
-              v-for="slot in availableTimeSlots"
-              :key="slot"
-              :value="slot"
-            >
+            <option v-for="slot in availableTimeSlots" :key="slot" :value="slot">
               {{ slot }}
             </option>
             <option
@@ -65,12 +64,28 @@
             </option>
           </select>
         </label>
+
+        <!-- Comment -->
+        <label class="block text-left">
+          <span class="text-sm font-medium">Comment:</span>
+          <textarea
+            v-model="note"
+            rows="3"
+            class="border rounded p-1 w-full text-black resize-none"
+            placeholder="รายละเอียดเพิ่มเติม..."
+          ></textarea>
+        </label>
+
       </div>
 
-      <!-- ปุ่ม Next -->
-      <button @click="goToConfirm" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-        Next
+      <!-- ปุ่ม Submit -->
+      <button
+        @click="submitAppointment"
+        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+      >
+        Submit
       </button>
+
     </div>
   </div>
 </template>
@@ -86,7 +101,7 @@ const route = useRoute()
 const userId = localStorage.getItem('userId')
 
 // --------------------------------------------
-// 🔹 State
+// State
 // --------------------------------------------
 const staffList = ref([])
 const staffIdToView = ref(null)
@@ -99,11 +114,12 @@ const note = ref('')
 const categoryId = ref(null)
 
 // --------------------------------------------
-// 🔹 ตารางเวลา
+// ตารางเวลา
 // --------------------------------------------
 const unavailableMasterSet = ref(new Set())
 const weekStartDate = ref('')
 const weekEndDate = ref('')
+
 const timeSlots = [
   '08:00 - 09:00',
   '09:00 - 10:00',
@@ -114,18 +130,20 @@ const timeSlots = [
   '14:00 - 15:00',
   '15:00 - 16:00'
 ]
+
 const LUNCH_ROW_INDEX = 4
 
-const onUnavailableDataUpdate = (dataFromChild) => {
-  unavailableMasterSet.value = dataFromChild
+const onUnavailableDataUpdate = (data) => {
+  unavailableMasterSet.value = data
 }
+
 const onWeekRangeUpdate = (range) => {
   weekStartDate.value = range.start
   weekEndDate.value = range.end
 }
 
 // --------------------------------------------
-// 🔹 Filter เวลาที่ว่าง
+// Filter Available Time
 // --------------------------------------------
 const getDayIndexFromDateString = (dateStr) => {
   if (!dateStr) return -1
@@ -145,22 +163,27 @@ const availableTimeSlots = computed(() => {
 
   return timeSlots.filter((slot, timeIndex) => {
     if (timeIndex === LUNCH_ROW_INDEX) return false
+
     const key = `${timeIndex},${dayIndex}`
-    const isUnavailable = unavailableMasterSet.value.has(key)
-    if (isUnavailable) return false
+    const unavailable = unavailableMasterSet.value.has(key)
+    if (unavailable) return false
+
     if (isToday) {
       const startHour = parseInt(slot.split(':')[0])
       const startMinute = parseInt(slot.split(':')[1].split(' ')[0])
+
       const slotTime = new Date(selected)
       slotTime.setHours(startHour, startMinute, 0, 0)
+
       if (slotTime <= now) return false
     }
+
     return true
   })
 })
 
 // --------------------------------------------
-// 🔹 โหลด staff ของ category
+// โหลด staff ของ category
 // --------------------------------------------
 onMounted(async () => {
   try {
@@ -172,75 +195,61 @@ onMounted(async () => {
       return
     }
 
-    const selectedCategory = res.data.find(
-      (c) => String(c.user_id) === String(userId) && String(c.category_id) === String(categoryId.value)
-    )
-
-    if (selectedCategory) {
-      selectedTopic.value = selectedCategory.type
-      displayName.value = selectedCategory.staff_name
-      staffIdToView.value = selectedCategory.user_id
-
-      imageSrc.value = selectedCategory.profile_image
-        ? `/uploads/${selectedCategory.profile_image}`
-        : '/uploads/default.png'
-    }
-
-    staffList.value = res.data.filter(
-  (c) => String(c.category_id) === String(categoryId.value)
-)
-
-if (staffList.value.length > 0) {
-  // เลือกพี่เลขาคนแรกเป็นค่าเริ่มต้น
-  staffIdToView.value = staffList.value[0].user_id
-  displayName.value = staffList.value[0].staff_name
-  imageSrc.value = staffList.value[0].profile_image
-    ? `/uploads/${staffList.value[0].profile_image}`
-    : '/uploads/default.png'
-  selectedTopic.value = staffList.value[0].type
-}
-
     staffList.value = res.data.filter(
       (c) => String(c.category_id) === String(categoryId.value)
     )
 
     if (staffList.value.length === 0) {
       console.warn('ไม่พบ staff ใน category:', categoryId.value)
+      return
     }
+
+    // ตั้งค่า default staff
+    const defaultStaff = staffList.value[0]
+    staffIdToView.value = defaultStaff.user_id
+    displayName.value = defaultStaff.staff_name
+    selectedTopic.value = defaultStaff.type
+    imageSrc.value = defaultStaff.profile_image
+      ? `/uploads/${defaultStaff.profile_image}`
+      : '/uploads/default.png'
+
   } catch (err) {
-    console.error('❌ Error fetching categories-with-staff:', err)
+    console.error('❌ Error fetching staff:', err)
   }
 })
 
 // --------------------------------------------
-// 🔹 Next
+// 🚀 Submit Appointment (แทนหน้า Confirm)
 // --------------------------------------------
-function goToConfirm() {
+async function submitAppointment() {
   if (!selectedDate.value || !selectedSlot.value) {
     alert('กรุณาเลือกวันและช่วงเวลา')
     return
   }
 
-  // หา staff object ตาม staffIdToView
-  const staffObj = staffList.value.find(s => s.user_id === staffIdToView.value)
-  const nameToSend = staffObj?.staff_name || 'Default Name'
-  const topicToSend = staffObj?.type || 'N/A'
-  const avatarToSend = staffObj?.profile_image ? `/uploads/${staffObj.profile_image}` : '/uploads/default.png'
+  const userId = localStorage.getItem('userId')
+  const studentEmail = localStorage.getItem('email')
 
-  router.push({
-    name: 'ConfirmAppointment',
-    query: {
-      topic: topicToSend,
-      name: nameToSend,
-      avatar: avatarToSend,
-      staffId: staffIdToView.value,
-      category_id: categoryId.value,
-      date: selectedDate.value,
-      time: selectedSlot.value,
-      note: note.value
+  const payload = {
+    user_id: userId,
+    staff_id: staffIdToView.value,
+    category_id: categoryId.value,
+    student_email: studentEmail,
+    appointment_date: `${selectedDate.value} ${selectedSlot.value}`,
+    student_note: note.value || '',
+    status: '0' // pending
+  }
+
+  try {
+    const res = await axios.post('/api/student/appointments', payload)
+    if (res.data.success) {
+      router.push({ name: 'Historytest' })
+    } else {
+      alert('❌ Failed to save appointment')
     }
-  })
+  } catch (err) {
+    console.error('❌ Error saving appointment:', err)
+    alert('⚠️ Error saving appointment.')
+  }
 }
-
-
 </script>
