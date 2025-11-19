@@ -38,7 +38,7 @@ export default [
       { path: 'topic', name: 'ChooseTopic', component: ChooseTopic },
       { path: 'create', name: 'CreateAppointment', component: CreateAppointment },
       { path: 'confirm', name: 'ConfirmAppointment', component: ConfirmAppointment },
-      { path: 'check', name: 'CheckStatusApp', component: CheckStatus },
+      // { path: 'check', name: 'CheckStatusApp', component: CheckStatus },
       { path: 'history', name: 'HistoryApp', component: HistoryAppointment },
       { path: 'historytest', name: 'Historytest', component: Historytest },
       { path: '/schedule/staff/:staffId', name: 'StudentScheduleView', component: StudentScheduleView }
@@ -57,7 +57,7 @@ export default [
     component: DocumentLayout,
     children: [
       { path: 'topictrack', name: 'TopicTrack', component: TopicTracking },
-      { path: 'check', name: 'CheckStatusDoc', component: CheckStatusdoc },
+      // { path: 'check', name: 'CheckStatusDoc', component: CheckStatusdoc },
       { path: 'history', name: 'HistoryDoc', component: HistoryDocument },
       { path: 'Newhistory', name: 'Newhistory', component: NewHistory }
     ]
@@ -77,6 +77,7 @@ export default [
         name: 'AppointmentsFeedback', 
         component: AppointmentsFeedback 
       },
+      
       { 
         path: 'documents', 
         name: 'DocumentsFeedback', 
