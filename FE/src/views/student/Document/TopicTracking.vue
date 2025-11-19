@@ -6,10 +6,10 @@
     <!-- 🔹 โหลดข้อมูล -->
     <div v-if="loadingData" class="text-center text-gray-500">Loading topics...</div>
 
-    <!-- 🔹 แสดงหัวข้อหลัก -->
+    <!-- 🔹 แสดงหัวข้อหลักแบบ UNIQUE -->
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-8">
       <div
-        v-for="cat in categories"
+        v-for="cat in uniqueCategories"
         :key="cat.category_id"
         @click="selectCategory(cat)"
         :class="[ 
@@ -20,7 +20,6 @@
         ]"
       >
         <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
-        <p class="text-sm text-gray-500 mt-1">👩‍💼 {{ cat.staff_name || 'ยังไม่มีเจ้าหน้าที่' }}</p>
       </div>
     </div>
 
@@ -61,42 +60,35 @@
       <div class="bg-white p-6 rounded-xl shadow-lg w-[380px] text-center">
         <h2 class="text-lg font-bold mb-4">📸 Take a Photo of Your Document</h2>
 
-        <!-- ✅ แสดงกล้อง -->
-       <!-- กล้อง + ตัวอย่าง -->
-<div v-if="!capturedImage" class="flex flex-col items-center">
+        <!-- 🔹 แสดงกล้อง -->
+        <div v-if="!capturedImage" class="flex flex-col items-center">
+          <video
+            ref="videoRef"
+            autoplay
+            playsinline
+            class="rounded-lg w-full h-64 object-cover mb-3"
+          ></video>
 
-  <!-- วิดีโอ -->
-  <video
-    ref="videoRef"
-    autoplay
-    playsinline
-    class="rounded-lg w-full h-64 object-cover mb-3"
-  ></video>
+          <div class="w-full mb-4">
+            <p class="text-sm font-semibold text-gray-600 mb-1 text-left">
+              📌 Example (ตัวอย่างภาพที่ถูกต้อง)
+            </p>
+            <img
+              src="/src/assets/image (1).png"
+              class="w-full h-40 object-contain rounded-lg border"
+              alt="Document Example"
+            />
+          </div>
 
-  <!-- ตัวอย่างภาพ -->
-  <div class="w-full mb-4">
-    <p class="text-sm font-semibold text-gray-600 mb-1 text-left">
-      📌 Example (ตัวอย่างภาพที่ถูกต้อง)
-    </p>
-    <img
-      src="/src/assets/image (1).png"
-      class="w-full h-40 object-contain rounded-lg border"
-      alt="Document Example"
-    />
-  </div>
+          <button
+            @click="capturePhoto"
+            class="bg-blue-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-blue-700"
+          >
+            📷 Capture
+          </button>
+        </div>
 
-  <!-- ปุ่มถ่ายรูป (ย้ายออกมาแล้ว) -->
-  <button
-    @click="capturePhoto"
-    class="bg-blue-600 text-white px-5 py-2 rounded-full shadow-lg hover:bg-blue-700"
-  >
-    📷 Capture
-  </button>
-
-</div>
-
-
-        <!-- ✅ แสดงภาพหลังถ่าย -->
+        <!-- 🔹 แสดงหลังถ่าย -->
         <div v-else class="flex flex-col items-center">
           <img :src="capturedImage" class="w-full h-64 object-contain rounded-lg mb-3" />
           <div class="space-x-2">
@@ -125,7 +117,7 @@
       </div>
     </div>
 
-    <!-- 🔸 Popup: แสดง Document ID -->
+    <!-- 🔸 Popup Document ID -->
     <div
       v-if="showDocId"
       class="fixed inset-0 bg-black/70 flex items-center justify-center z-50"
@@ -147,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -168,8 +160,7 @@ const loading = ref(false)
 
 // Document result
 const showDocId = ref(false)
-const createdDocCode = ref("");
-
+const createdDocCode = ref("")
 const createdDocId = ref('')
 
 // User info
@@ -177,7 +168,20 @@ const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
 const token = localStorage.getItem('authToken')
 
-// ✅ โหลดหัวข้อและพี่เลขา
+// ------------------------------------------
+// 🔥 UNIQUE CATEGORY
+// ------------------------------------------
+const uniqueCategories = computed(() => {
+  const map = new Map()
+  categories.value.forEach(cat => {
+    if (!map.has(cat.category_id)) {
+      map.set(cat.category_id, cat)
+    }
+  })
+  return Array.from(map.values())
+})
+
+// โหลด categories
 onMounted(async () => {
   try {
     const res = await fetch('/api/student/categories-with-staff', {
@@ -192,35 +196,18 @@ onMounted(async () => {
   }
 })
 
-// 🔹 เลือกหัวข้อ
+// --------------------------------------------------------------
+// 🔥 เลือกหัวข้อ
+// --------------------------------------------------------------
 const selectCategory = (cat) => {
   selectedCategory.value = cat
   errorMessage.value = ''
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' })
 }
 
-// 🔹 เปิดกล้อง
-// const openCameraPopup = async () => {
-//   if (!subTopic.value.trim()) {
-//     errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
-//     return
-//   }
-//   try {
-//     showCamera.value = true
-//     const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-//     stream.value = s
-//     videoRef.value.srcObject = s
-//   } catch (err) {
-//     console.error('🚫 Cannot access camera:', err)
-//     alert('ไม่สามารถเปิดกล้องได้ กรุณาอนุญาตการเข้าถึงกล้อง')
-//     showCamera.value = false
-//   }
-// }
-
-
-
-
-
+// --------------------------------------------------------------
+// 🔥 เปิด popup Document ID ก่อนถ่ายรูป
+// --------------------------------------------------------------
 const openCameraPopup = async () => {
   if (!subTopic.value.trim()) {
     errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
@@ -242,12 +229,11 @@ const openCameraPopup = async () => {
       body: formData
     })
 
-
     const data = await res.json()
     if (!data.success) throw new Error('Create document failed')
 
     createdDocId.value = data.document_id
-    createdDocCode.value = data.document_code;
+    createdDocCode.value = data.document_code
     showDocId.value = true
 
   } catch (err) {
@@ -256,7 +242,9 @@ const openCameraPopup = async () => {
   }
 }
 
-
+// --------------------------------------------------------------
+// 🔥 ปิด popup เเละเปิดกล้อง
+// --------------------------------------------------------------
 const closeDocIdPopup = async () => {
   showDocId.value = false
 
@@ -270,8 +258,9 @@ const closeDocIdPopup = async () => {
   }
 }
 
-
-
+// --------------------------------------------------------------
+// 🔥 Submit (แก้ใหม่ → กลับไปหน้า Choose Topic)
+// --------------------------------------------------------------
 const submitDocument = async () => {
   if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
   loading.value = true
@@ -294,7 +283,9 @@ const submitDocument = async () => {
     if (!data.success) throw new Error('Upload failed')
 
     alert('อัปโหลดสำเร็จ!')
-    router.push('/student/document/check')
+
+    // 🔥 กลับไปหน้า Choose Topic (ไม่ไป History แล้ว)
+    router.push('/student/appointment/topic')
 
   } catch (err) {
     console.error(err)
@@ -304,9 +295,9 @@ const submitDocument = async () => {
   }
 }
 
-
-
-// 🔹 ถ่ายภาพ
+// --------------------------------------------------------------
+// กล้อง & ตัวช่วย
+// --------------------------------------------------------------
 const capturePhoto = () => {
   const video = videoRef.value
   if (!video) return
@@ -319,7 +310,6 @@ const capturePhoto = () => {
   stopCamera()
 }
 
-// 🔹 ปิดกล้อง
 const stopCamera = () => {
   if (stream.value) {
     stream.value.getTracks().forEach((track) => track.stop())
@@ -327,63 +317,16 @@ const stopCamera = () => {
   }
 }
 
-// 🔹 ถ่ายใหม่
 const retakePhoto = () => {
   capturedImage.value = null
   openCameraPopup()
 }
 
-// 🔹 ปิด popup
 const closeCamera = () => {
   stopCamera()
   showCamera.value = false
   capturedImage.value = null
 }
-
-// 🔹 ส่งเอกสาร
-// const submitDocument = async () => {
-//   if (!capturedImage.value) return alert('กรุณาถ่ายภาพก่อนส่ง')
-//   loading.value = true
-//   try {
-//     // แปลง base64 → file
-//     const blob = await (await fetch(capturedImage.value)).blob()
-//     const file = new File([blob], 'document.jpg', { type: 'image/jpeg' })
-
-//     const formData = new FormData()
-//     formData.append('photo', file)
-//     formData.append('user_id', userId)
-//     formData.append('category_id', selectedCategory.value.category_id)
-//     formData.append('student_email', email)
-//     formData.append('student_note', subTopic.value)
-//     formData.append('status', 0)
-//     formData.append('submit_date', new Date().toISOString().slice(0, 19).replace('T', ' '))
-//     formData.append('finish_date', '')
-
-//     const res = await fetch('/api/student/documents', {
-//       method: 'POST',
-//       headers: { Authorization: `Bearer ${token}` },
-//       body: formData,
-//     })
-
-//     const data = await res.json()
-//     if (!data.success) throw new Error('Create document failed')
-
-//     createdDocId.value = data.document_id
-//     showCamera.value = false
-//     showDocId.value = true
-//   } catch (err) {
-//     console.error('❌ Submit error:', err)
-//     alert('อัปโหลดไม่สำเร็จ กรุณาลองใหม่')
-//   } finally {
-//     loading.value = false
-//   }
-// }
-
-// 🔹 ปิด popup Document ID
-// const closeDocIdPopup = () => {
-//   showDocId.value = false
-//   router.push({ path: '/student/document/check' })
-// }
 
 onUnmounted(() => stopCamera())
 </script>

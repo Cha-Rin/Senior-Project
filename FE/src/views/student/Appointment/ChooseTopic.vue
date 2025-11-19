@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 pt-20 px-6">
-    <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">{{ t('choose_topic') }}</h1>
 
     <!-- 🔹 แสดงเฉพาะหัวข้อแบบไม่ซ้ำ -->
     <div
@@ -13,7 +13,8 @@
         class="p-5 rounded-xl border shadow-md bg-white cursor-pointer hover:shadow-lg hover:border-blue-500 transition-all"
       >
         <p class="text-lg font-semibold text-gray-800">
-          {{ cat.type }}
+          {{ getTopicName(cat.type) }}
+          <!-- {{ cat.type }} -->
         </p>
       </div>
     </div>
@@ -27,6 +28,32 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const categories = ref([])
 const token = localStorage.getItem('authToken')
+
+import { useI18n } from 'vue-i18n'
+
+const { t, locale } = useI18n()
+
+
+
+const topicMapping = {
+  'กิจกรรมนักศึกษา': 'Student Activities',
+  'งานทะเบียน': 'Registrar Office',
+  'สหกิจศึกษา': 'Cooperative Education',
+  'บัณฑิตศึกษา': 'Graduate Studies',
+  'ผ่อนผัน': 'Deferment'
+  // ใส่เพิ่มตามที่มีใน DB
+}
+
+// 3. ฟังก์ชันสำหรับเลือกภาษาที่จะแสดง
+const getTopicName = (text) => {
+  if (locale.value === 'en') {
+    // ถ้าเป็น EN ให้ไปหาคำแปลมาแสดง ถ้าหาไม่เจอให้ใช้คำเดิม
+    return topicMapping[text] || text
+  }
+  // ถ้าเป็น TH ก็ส่งค่าเดิมกลับไป
+  return text
+}
+
 
 // ------------------------------------------
 // 🔹 โหลดข้อมูลหัวข้อทั้งหมด + พี่เลขา (อาจมีหลายคน)
