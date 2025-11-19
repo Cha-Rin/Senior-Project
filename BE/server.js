@@ -223,42 +223,6 @@ app.post('/api/auth/google', async (req, res) => {
     });
   }
 });
-// ------------------------------------------- demo -------------------------------------------
-// async function resetDemoAccounts() {
-//   try {
-//     const db = await mysql.createConnection({
-//       host: process.env.DB_HOST,
-//       user: process.env.DB_USER,
-//       password: process.env.DB_PASSWORD,
-//       database: process.env.DB_NAME,
-//     });
-
-//     // ✅ แทนที่ 'yourname' ด้วยชื่อจริงของคุณ
-//     const yourEmail = '6531501019@lamduan.mfu.ac.th';  // ← แก้ตรงนี้!
-//     const emailPattern = yourEmail.split('@')[0];    // เอาแค่ส่วนหน้า @
-
-//     console.log(`🗑️ Deleting all accounts containing "${emailPattern}"...`);
-    
-//     // ลบ accounts ทั้งหมดที่มี email pattern นี้
-//     const [result] = await db.query(
-//       `DELETE FROM user WHERE email LIKE ?`,
-//       [`%${emailPattern}%@lamduan.mfu.ac.th`]
-//     );
-
-//     console.log(`✅ Deleted ${result.affectedRows} demo accounts`);
-//     console.log('');
-//     console.log('📝 Ready for demo! You can now login with:');
-//     console.log(`   1. ${emailPattern}+student@lamduan.mfu.ac.th → Student (role 3)`);
-//     console.log(`   2. ${emailPattern}+staff@lamduan.mfu.ac.th → Staff (role 2)`);
-//     console.log(`   3. ${emailPattern}+admin@lamduan.mfu.ac.th → Admin (role 1)`);
-    
-//     await db.end();
-//   } catch (error) {
-//     console.error('❌ Error:', error.message);
-//   }
-// }
-
-// resetDemoAccounts();
 // ------------------------------------------ Upload Config -----------------------------------
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
@@ -299,16 +263,16 @@ router.post('/api/tracking/add', upload.single('file'), async (req, res) => {
 });
 
 // ------------------------------------------ Profile -----------------------------------------
-app.get('/api/profile/:id', (req, res) => {
-  const userId = Number(req.params.id);
+app.get('/api/profile/:email', (req, res) => {
+  const email = req.params.email; // ✅ ใช้ email ตรงกับ :email
+  
   const sql = 'SELECT name, surname FROM user WHERE email = ?';
-  db.query(sql, [userId], (err, result) => {
+  db.query(sql, [email], (err, result) => {
     if (err) return res.status(500).json({ error: 'Database error' });
     if (result.length === 0) return res.status(404).json({ error: 'User not found' });
     res.json(result[0]);
   });
 });
-
 // ------------------------------------------ Logout ------------------------------------------
 app.post('/student/logout', (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });

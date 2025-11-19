@@ -159,96 +159,99 @@ module.exports = (db) => {
   // 💼 Secretary Rating (Appointment)
   // =====================================
   router.get('/rating-Appointment', (req, res) => {
-    const { year, semester, staffId } = req.query
-    console.log('📊 Received rating request:', { year, semester, staffId })
+  const { startDate, endDate, staffId } = req.query;
+  
+  // ✅ ตรวจสอบ parameters
+  if (!startDate || !endDate || !staffId) {
+    return res.status(400).json({ 
+      success: false, 
+      message: 'Missing startDate, endDate, or staffId' 
+    });
+  }
 
-    if (!year || !semester || !staffId) {
-      return res.status(400).json({ success: false, message: 'Missing year, semester, or staffId' })
+  // ✅ แก้ SQL ให้ใช้ date range แทน academic_year/semester
+  const sql = `
+    SELECT 
+      fa.score_count1,
+      fa.score_count2,
+      fa.score_count3,
+      fa.comment       
+    FROM feedback_appointment fa
+    JOIN appointment a ON fa.appointment_id = a.appointment_id
+    JOIN user_category uc ON a.category_id = uc.category_id
+    JOIN user s ON uc.user_id = s.user_id 
+    WHERE 
+      DATE(a.appointment_date) BETWEEN ? AND ? 
+      AND s.user_id = ?
+  `;
+
+  db.query(sql, [startDate, endDate, staffId], (err, results) => {
+    if (err) {
+      console.error('❌ SQL Error:', err);
+      return res.status(500).json({ success: false, error: err.message });
     }
 
-    const sql = `
-      SELECT 
-        fa.score_count1,
-        fa.score_count2,
-        fa.score_count3,
-        fa.comment       
-      FROM feedback_appointment fa
-      JOIN appointment a ON fa.appointment_id = a.appointment_id
-      JOIN academic_period ap ON DATE(a.appointment_date) BETWEEN ap.start_date AND ap.end_date
-      JOIN user_category uc ON a.category_id = uc.category_id
-      JOIN user s ON uc.user_id = s.user_id 
-      WHERE 
-        ap.academic_year = ? AND 
-        ap.semester = ? AND
-        s.email = ?;
-    `
+    // ✅ ถ้าไม่มีข้อมูล
+    if (results.length === 0) {
+      const emptyData = {
+        averages: {
+          friendliness: '0.00',
+          efficiency: '0.00',
+          communication: '0.00',
+          average: '0.0'
+        },
+        comments: []
+      };
+      return res.json({ success: true, data: emptyData });
+    }
 
-    db.query(sql, [year, semester, staffId], (err, results) => {
-      if (err) {
-        console.error('❌ SQL Error:', err)
-        return res.status(500).json({ success: false, error: err.message })
+    // ✅ คำนวณคะแนนเฉลี่ย
+    let totalFriendliness = 0;
+    let totalEfficiency = 0;
+    let totalCommunication = 0;
+    const commentsList = [];
+    const count = results.length;
+
+    results.forEach(row => {
+      const score1 = parseFloat(row.score_count1 || 0);
+      const score2 = parseFloat(row.score_count2 || 0);
+      const score3 = parseFloat(row.score_count3 || 0);
+
+      totalFriendliness += score1;
+      totalEfficiency += score2;
+      totalCommunication += score3;
+
+      if (row.comment) {
+        const commentAvg = (score1 + score2 + score3) / 3;
+        const commentStars = Math.round(commentAvg);
+        commentsList.push({
+          text: row.comment,
+          stars: commentStars
+        });
       }
+    });
 
-      if (results.length === 0) {
-        const emptyData = {
-          averages: {
-            friendliness: '0.00',
-            efficiency: '0.00',
-            communication: '0.00',
-            average: '0.0'
-          },
-          comments: []
-        }
-        return res.json({ success: true, data: emptyData })
+    const avgData = {
+      friendliness: (totalFriendliness / count).toFixed(2),
+      efficiency: (totalEfficiency / count).toFixed(2),
+      communication: (totalCommunication / count).toFixed(2)
+    };
+
+    const overallAvg = (
+      (Number(avgData.friendliness) +
+       Number(avgData.efficiency) +
+       Number(avgData.communication)) / 3
+    ).toFixed(1);
+
+    res.json({
+      success: true,
+      data: {
+        averages: { ...avgData, average: overallAvg },
+        comments: commentsList
       }
-
-      let totalFriendliness = 0
-      let totalEfficiency = 0
-      let totalCommunication = 0
-      const commentsList = []
-      const count = results.length
-
-      results.forEach(row => {
-        const score1 = parseFloat(row.score_count1 || 0)
-        const score2 = parseFloat(row.score_count2 || 0)
-        const score3 = parseFloat(row.score_count3 || 0)
-
-        totalFriendliness += score1
-        totalEfficiency += score2
-        totalCommunication += score3
-
-        if (row.comment) {
-          const commentAvg = (score1 + score2 + score3) / 3
-          const commentStars = Math.round(commentAvg)
-          commentsList.push({
-            text: row.comment,
-            stars: commentStars
-          })
-        }
-      })
-
-      const avgData = {
-        friendliness: (totalFriendliness / count).toFixed(2),
-        efficiency: (totalEfficiency / count).toFixed(2),
-        communication: (totalCommunication / count).toFixed(2)
-      }
-      const overallAvg = (
-        (Number(avgData.friendliness) +
-          Number(avgData.efficiency) +
-          Number(avgData.communication)) /
-        3
-      ).toFixed(1)
-
-      res.json({
-        success: true,
-        data: {
-          averages: { ...avgData, average: overallAvg },
-          comments: commentsList
-        }
-      })
-    })
-  })
-
+    });
+  });
+});
   // ==================================================
   // 📄 DOCUMENT (Secretary side)
   // ==================================================
