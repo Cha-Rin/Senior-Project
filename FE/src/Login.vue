@@ -258,29 +258,21 @@ const handleGoogleCallback = async (response) => {
     });
 
     const data = await res.json();
-    
+    console.log('📦 Backend response:', data);
 
+    // ✅ ตรวจสอบ response จาก backend
     if (!res.ok || !data.success) {
       errorMessage.value = data.message || "Login failed.";
       isLoading.value = false;
       return;
     }
 
-
-// ⭐️ ใส่จุดนี้
-if (data.message && data.message.includes('No permission')) {
-  errorMessage.value = 'This account has been disabled or has no permission.';
-  isLoading.value = false;
-  return;
-}
-
-if (!data.success || !data.token) {
-  errorMessage.value = 'Incorrect username or password.';
-  isLoading.value = false;
-  return;
-}
-
-
+    // ✅ ตรวจสอบว่ามี token หรือไม่
+    if (!data.token) {
+      errorMessage.value = "Login failed. Please try again.";
+      isLoading.value = false;
+      return;
+    }
 
     // ✅ Save JWT
     localStorage.setItem("authToken", data.token);
