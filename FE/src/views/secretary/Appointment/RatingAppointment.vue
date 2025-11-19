@@ -11,25 +11,86 @@
           </div>
         </div>
 
-        <div class="flex gap-4">
-  <select v-model="selectedSemester" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-    <option 
-      v-for="semester in semesterOptions" 
-      :key="semester.value" 
-      :value="semester.value">
-      {{ semester.text }}
-    </option>
-  </select>
-  
-  <select v-model="selectedYear" class="px-4 py-2 border rounded-lg text-sm bg-white cursor-pointer">
-    <option 
-      v-for="year in yearOptions" 
-      :key="year" 
-      :value="year">
-      {{ year }}
-    </option>
-  </select>
-</div>
+        <!-- ✅ Date Range Filter (แทน Semester/Year) -->
+        <div class="bg-violet-50 rounded-xl px-5 py-3 border border-violet-200 shadow-sm">
+          <div class="flex items-center gap-3">
+            <span class="text-violet-600 text-xl">📅</span>
+            <div class="relative" ref="calendarContainer">
+              <div
+                @click="toggleCalendar"
+                class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[260px]"
+              >
+                <span v-if="startDate && endDate">
+                  {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate) }}
+                </span>
+                <span v-else class="text-gray-500">Choose date range</span>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="h-4 w-4 text-gray-500 ml-auto"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </div>
+
+              <!-- ปฏิทิน -->
+              <div
+                v-if="showCalendar"
+                class="absolute top-full right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-10 p-4 w-80"
+              >
+                <div class="flex justify-between items-center mb-3">
+                  <button @click="changeMonth(-1)" class="p-1 hover:bg-gray-100 rounded text-lg">‹</button>
+                  <span class="font-medium">{{ currentMonthName }} {{ currentYear }}</span>
+                  <button @click="changeMonth(1)" class="p-1 hover:bg-gray-100 rounded text-lg">›</button>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1 text-center text-xs font-medium text-gray-600 mb-2">
+                  <div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+                </div>
+
+                <div class="grid grid-cols-7 gap-1">
+                  <div
+                    v-for="day in calendarDays"
+                    :key="day.date"
+                    :class="[
+                      'h-8 flex items-center justify-center rounded-md text-sm cursor-pointer',
+                      day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400',
+                      day.isSelected ? 'bg-indigo-600 text-white' : '',
+                      day.isInRange ? 'bg-indigo-100' : '',
+                      day.isToday ? 'border border-indigo-500' : ''
+                    ]"
+                    @click="selectDate(day.date)"
+                  >
+                    {{ day.day }}
+                  </div>
+                </div>
+
+                <div class="mt-3 flex justify-between">
+                  <button
+                    @click="selectTodayRange()"
+                    class="text-sm font-medium text-gray-600 hover:text-gray-800"
+                    title="เลือกเฉพาะวันนี้"
+                  >
+                    Today
+                  </button>
+                  <button
+                    @click="resetDate"
+                    class="text-sm font-medium text-violet-600 hover:text-violet-800 underline"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Main Card -->
@@ -39,9 +100,6 @@
           <span class="text-5xl font-bold">
             {{ ratingsEmpty ? '0.0' : ratingsAverage }}
           </span>
-          <!-- <div class="flex text-2xl">
-            <span v-for="i in 5" :key="i" :class="i <= 4 ? 'text-yellow-400' : 'text-gray-300'">★</span>
-          </div> -->
         </div>
 
         <!-- Content Row -->
@@ -53,7 +111,7 @@
             <!-- Empty state -->
             <template v-if="ratingsEmpty">
               <div class="text-center text-gray-500 py-16">
-                ยังไม่มี feedback สำหรับเทอมนี้ 😔
+                ยังไม่มี feedback สำหรับช่วงเวลานี้ 😔
               </div>
             </template>
 
@@ -83,32 +141,29 @@
             </div>
 
             <button 
-  @click="exportToExcel" 
-  class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
-  Export
-</button>
+              @click="exportToExcel" 
+              class="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+              Export
+            </button>
           </div>
 
           <!-- Comments Container -->
           <div class="flex-1 min-w-[300px] bg-gray-100 rounded-xl p-6 shadow flex flex-col text-black">
- <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
-            
- <div v-for="(comment, i) in comments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
- <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
- <div class="flex-1">
- <!-- <div class="flex text-sm mb-1">
- <span v-for="j in 5" :key="j" :class="j <= comment.stars ? 'text-yellow-400' : 'text-gray-300'">★</span>
- </div> -->
- <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
- </div>
- </div>
+            <div class="flex-1 overflow-y-auto pr-2 space-y-3 max-h-72">
+              
+              <div v-for="(comment, i) in comments" :key="i" class="flex gap-3 p-3 bg-white rounded-lg shadow">
+                <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
+                <div class="flex-1">
+                  <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
+                </div>
+              </div>
 
- <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
- ไม่มีคอมเมนต์ในเทอมนี้
- </div>
+              <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
+                ไม่มีคอมเมนต์ในช่วงเวลานี้
+              </div>
 
- </div>
- </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -117,7 +172,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue'
 import jwt_decode from 'jwt-decode'
 import axios from 'axios'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
@@ -129,11 +184,14 @@ import Lek from '@/assets/P_Lek.png'
 import Ang from '@/assets/P_Angoon.png'
 import userimg from '@/assets/user.png'
 
-const selectedSemester = ref(null) 
-const selectedYear = ref(null)
+// ✅ Calendar states
+const showCalendar = ref(false)
+const startDate = ref(null)
+const endDate = ref(null)
+const currentMonth = ref(new Date().getMonth())
+const currentYear = ref(new Date().getFullYear())
+const calendarContainer = ref(null)
 
-const semesterOptions = ref([])
-const yearOptions = ref([])
 function getUserAvatar(userId) {
   switch (userId) {
     case 2: return Aoi
@@ -144,7 +202,7 @@ function getUserAvatar(userId) {
   }
 }
 
-const user = ref({ name: '', avatar: '' })
+const user = ref({ name: '', surname: '', avatar: '' })
 const comments = ref([])
 
 // Ratings state
@@ -156,9 +214,9 @@ const ratings = ref({
 
 // Computed empty state
 const ratingsEmpty = computed(() =>
- (Number(ratings.value.friendliness) + 
-  Number(ratings.value.efficiency) + 
-  Number(ratings.value.communication)) === 0
+  (Number(ratings.value.friendliness) + 
+   Number(ratings.value.efficiency) + 
+   Number(ratings.value.communication)) === 0
 )
 
 // Computed average
@@ -171,142 +229,253 @@ const ratingsAverage = computed(() => {
   return ((f + e + c) / 3).toFixed(1)
 })
 
+// ✅ Calendar computed properties
+const currentMonthName = computed(() => {
+  const date = new Date(currentYear.value, currentMonth.value)
+  return date.toLocaleDateString('en-US', { month: 'long' })
+})
+
+const calendarDays = computed(() => {
+  const firstDay = new Date(currentYear.value, currentMonth.value, 1)
+  const lastDay = new Date(currentYear.value, currentMonth.value + 1, 0)
+  const prevLastDay = new Date(currentYear.value, currentMonth.value, 0)
+  
+  const days = []
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  // Previous month days
+  for (let i = firstDay.getDay() - 1; i >= 0; i--) {
+    const date = new Date(currentYear.value, currentMonth.value - 1, prevLastDay.getDate() - i)
+    days.push({
+      date: date,
+      day: date.getDate(),
+      isCurrentMonth: false,
+      isSelected: isDateSelected(date),
+      isInRange: isDateInRange(date),
+      isToday: date.getTime() === today.getTime()
+    })
+  }
+
+  // Current month days
+  for (let i = 1; i <= lastDay.getDate(); i++) {
+    const date = new Date(currentYear.value, currentMonth.value, i)
+    days.push({
+      date: date,
+      day: i,
+      isCurrentMonth: true,
+      isSelected: isDateSelected(date),
+      isInRange: isDateInRange(date),
+      isToday: date.getTime() === today.getTime()
+    })
+  }
+
+  // Next month days
+  const remainingDays = 42 - days.length
+  for (let i = 1; i <= remainingDays; i++) {
+    const date = new Date(currentYear.value, currentMonth.value + 1, i)
+    days.push({
+      date: date,
+      day: i,
+      isCurrentMonth: false,
+      isSelected: isDateSelected(date),
+      isInRange: isDateInRange(date),
+      isToday: date.getTime() === today.getTime()
+    })
+  }
+
+  return days
+})
+
+// ✅ Calendar functions
+const toggleCalendar = () => {
+  showCalendar.value = !showCalendar.value
+}
+
+const changeMonth = (delta) => {
+  currentMonth.value += delta
+  if (currentMonth.value > 11) {
+    currentMonth.value = 0
+    currentYear.value++
+  } else if (currentMonth.value < 0) {
+    currentMonth.value = 11
+    currentYear.value--
+  }
+}
+
+const selectDate = (date) => {
+  if (!startDate.value || (startDate.value && endDate.value)) {
+    startDate.value = date
+    endDate.value = null
+  } else {
+    if (date < startDate.value) {
+      endDate.value = startDate.value
+      startDate.value = date
+    } else {
+      endDate.value = date
+    }
+    showCalendar.value = false
+  }
+}
+
+const isDateSelected = (date) => {
+  if (!startDate.value) return false
+  const dateTime = date.getTime()
+  const startTime = startDate.value.getTime()
+  const endTime = endDate.value ? endDate.value.getTime() : startTime
+  return dateTime === startTime || dateTime === endTime
+}
+
+const isDateInRange = (date) => {
+  if (!startDate.value || !endDate.value) return false
+  const dateTime = date.getTime()
+  return dateTime > startDate.value.getTime() && dateTime < endDate.value.getTime()
+}
+
+const formatDateDisplay = (date) => {
+  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+}
+
+const selectTodayRange = () => {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  startDate.value = today
+  endDate.value = today
+  showCalendar.value = false
+}
+
+const resetDate = () => {
+  startDate.value = null
+  endDate.value = null
+  showCalendar.value = false
+}
+
+// ✅ Close calendar on outside click
+const handleClickOutside = (event) => {
+  if (calendarContainer.value && !calendarContainer.value.contains(event.target)) {
+    showCalendar.value = false
+  }
+}
+
 // Fetch user profile
 onMounted(async () => {
   try {
     const token = localStorage.getItem('authToken')
     if (!token) return
+    
     const decoded = jwt_decode(token)
-    const userId = Number(decoded.user_id)
-    const res = await axios.get(`/api/profile/${userId}`)
+    const email = decoded.email
+    
+    const res = await axios.get(`/api/profile/${email}`)
     user.value = res.data
-    user.value.avatar = getUserAvatar(userId)
-    await fetchDropdownOptions()
+    user.value.avatar = getUserAvatar(decoded.user_id)
+    
+    // ✅ Set default date range (current month)
+    const today = new Date()
+    startDate.value = new Date(today.getFullYear(), today.getMonth(), 1)
+    endDate.value = new Date(today.getFullYear(), today.getMonth() + 1, 0)
+    
     await fetchRatings()
+    
+    // ✅ Add event listener for outside click
+    document.addEventListener('click', handleClickOutside)
   } catch (err) {
     console.error('ไม่สามารถโหลดข้อมูลผู้ใช้:', err)
   }
 })
 
-// ⭐️ 4. เพิ่มฟังก์ชันสำหรับดึงข้อมูล Dropdown ⭐️
-const fetchDropdownOptions = async () => {
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+// ✅ Fetch ratings function
+const fetchRatings = async () => {
   try {
-    // 4.1 ดึง "รายการตัวเลือก"
-    const optionsRes = await axios.get('/api/academic/academic-options')
-    if (optionsRes.data.success) {
-      semesterOptions.value = optionsRes.data.data.semesters
-      yearOptions.value = optionsRes.data.data.years
+    const token = localStorage.getItem('authToken')
+    if (!token) return
+    
+    const decoded = jwt_decode(token)
+    const staffId = Number(decoded.user_id)
+
+    if (!staffId || !startDate.value || !endDate.value) {
+      console.warn('ข้อมูลไม่ครบ')
+      return
     }
 
-    // 4.2 ดึง "ค่าปัจจุบัน"
-    const currentRes = await axios.get('/api/academic/current')
-    if (currentRes.data.success) {
-      // 4.3 ตั้งค่า v-model (Default)
-      selectedSemester.value = currentRes.data.data.semester
-      selectedYear.value = currentRes.data.data.academic_year
+    // ✅ Format dates to YYYY-MM-DD
+    const formatDate = (date) => {
+      const d = new Date(date)
+      return d.toISOString().split('T')[0]
+    }
+
+    const res = await axios.get('/api/secretary/rating-Appointment', {
+      params: { 
+        startDate: formatDate(startDate.value),
+        endDate: formatDate(endDate.value),
+        staffId: staffId
+      }
+    })
+    
+    console.log('📊 Raw rating data from backend:', res.data.data)
+
+    if (res.data.success && res.data.data) {
+      ratings.value = res.data.data.averages
+      comments.value = res.data.data.comments
+    } else {
+      ratings.value = { friendliness: 0, efficiency: 0, communication: 0 }
+      comments.value = []
     }
   } catch (err) {
-    console.error('❌ ไม่สามารถโหลดข้อมูล Dropdown:', err)
-    // ถ้าพลาด, ก็ยังตั้งค่าสำรองไว้
-    selectedSemester.value = '1'
-    selectedYear.value = '2568' 
+    console.error('Failed to fetch ratings:', err)
+    ratings.value = { friendliness: 0, efficiency: 0, communication: 0 }
+    comments.value = []
   }
 }
 
-// Fetch ratings function
-const fetchRatings = async () => {
- try {
-    // ⭐️ เพิ่มการอ่าน user_id (staffId) จาก token ⭐️
-    const token = localStorage.getItem('authToken');
-    if (!token) return; // ถ้าไม่มี token ก็ไม่ต้องทำ
-    const decoded = jwt_decode(token);
-    const staffId = Number(decoded.user_id); // นี่คือ ID ของเลขาที่ login อยู่
-
-    if (!staffId) return; // กันพลาด
-    if (!selectedYear.value || !selectedSemester.value) {
-      console.warn('...รอข้อมูล Dropdown ก่อน...')
-      return; 
-    }
-
- const res = await axios.get('/api/secretary/rating-Appointment', {
- params: { 
- year: selectedYear.value, 
- semester: selectedSemester.value,
- staffId: staffId // ⭐️ ส่ง staffId ไปให้ Backend ⭐️
- }
-});
- console.log('📊 Raw rating data from backend:', res.data.data);
-
-if (res.data.success && res.data.data) {
-ratings.value = res.data.data.averages;
- comments.value = res.data.data.comments;
- } else {
-      // เผื่อกรณีข้อมูลไม่มา (เช่น ไม่มี feedback) ให้ clear ค่าเก่า
-      ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
-      comments.value = [];
-    }
- } catch (err) {
- console.error('Failed to fetch ratings:', err);
-    // ถ้า error ก็ clear ค่า
-    ratings.value = { friendliness: 0, efficiency: 0, communication: 0 };
-    comments.value = [];
- }
-};
-
-// Load ratings on mount and watch changes
-watch([selectedSemester, selectedYear], fetchRatings)
 const exportToExcel = () => {
-  console.log('Exporting to Excel...');
+  console.log('Exporting to Excel...')
 
-  // 1. ดึงข้อมูลปัจจุบัน
-  const year = selectedYear.value;
-  const sem = selectedSemester.value;
-  const r = ratings.value; // { friendliness: '4.50', ... }
-  const avg = ratingsAverage.value; // '4.2'
+  const start = formatDateDisplay(startDate.value)
+  const end = formatDateDisplay(endDate.value)
+  const r = ratings.value
+  const avg = ratingsAverage.value
 
-  // 2. สร้างเนื้อหาไฟล์ CSV (String)
-  
-  // \uFEFF คือ "BOM" - จำเป็นมากสำหรับ Excel 
-  // เพื่อให้เปิดไฟล์ .csv แล้วอ่านภาษาไทยไม่เพี้ยน
-  let csvContent = '\uFEFF'; 
+  let csvContent = '\uFEFF'
 
-  // -- ส่วนสรุป --
-  csvContent += 'สรุปผลการประเมิน\n'; // \n คือขึ้นบรรทัดใหม่
-  csvContent += `ปีการศึกษา,${year},เทอม,${sem}\n`;
-  csvContent += `คะแนนเฉลี่ยรวม,${avg}\n\n`;
+  csvContent += 'สรุปผลการประเมิน\n'
+  csvContent += `ช่วงเวลา,${start} - ${end}\n`
+  csvContent += `คะแนนเฉลี่ยรวม,${avg}\n\n`
 
-  // -- ส่วนข้อมูลกราฟ --
-  csvContent += 'ข้อมูลกราฟ (คะแนนเฉลี่ยรายข้อ)\n';
-  csvContent += 'หัวข้อ,คะแนน\n';
-  csvContent += `Staff Friendliness,${r.friendliness}\n`;
-  csvContent += `Service Efficiency,${r.efficiency}\n`;
-  csvContent += `Communication,${r.communication}\n\n`;
+  csvContent += 'ข้อมูลกราฟ (คะแนนเฉลี่ยรายข้อ)\n'
+  csvContent += 'หัวข้อ,คะแนน\n'
+  csvContent += `Staff Friendliness,${r.friendliness}\n`
+  csvContent += `Service Efficiency,${r.efficiency}\n`
+  csvContent += `Communication,${r.communication}\n\n`
 
-  // -- ส่วนความคิดเห็น --
-  csvContent += 'ความคิดเห็นทั้งหมด\n';
-  csvContent += 'ความคิดเห็น,คะแนน(ถ้ามี)\n';
+  csvContent += 'ความคิดเห็นทั้งหมด\n'
+  csvContent += 'ความคิดเห็น,คะแนน(ถ้ามี)\n'
   
   comments.value.forEach(comment => {
-    // จัดการ comment ที่อาจจะมีลูกน้ำ (,) ข้างใน
-    const text = `"${comment.text.replace(/"/g, '""')}"`; 
-    const stars = comment.stars || 'N/A'; // (จากโค้ด Appointment คุณมี .stars)
-    csvContent += `${text},${stars}\n`;
-  });
+    const text = `"${comment.text.replace(/"/g, '""')}"`
+    const stars = comment.stars || 'N/A'
+    csvContent += `${text},${stars}\n`
+  })
 
-  // 3. สร้าง "Blob" และจำลองการคลิกดาวน์โหลด
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  
-  // ตั้งชื่อไฟล์
-  link.download = `rating_export_${year}_${sem}.csv`; 
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `rating_export_${start.replace(/\s/g, '_')}_to_${end.replace(/\s/g, '_')}.csv`
 
-  document.body.appendChild(link); // (จำเป็นสำหรับ Firefox)
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(link.href);
-};
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  URL.revokeObjectURL(link.href)
+}
 
-// Load ratings on mount and watch changes
-watch([selectedSemester, selectedYear], fetchRatings)
-</script> 
+// ✅ Watch date changes
+watch([startDate, endDate], () => {
+  if (startDate.value && endDate.value) {
+    fetchRatings()
+  }
+})
+</script>
