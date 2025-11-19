@@ -692,7 +692,7 @@ module.exports = (db) => {
   // ------------------------------------------
   // 🌐 Public Off-time (สำหรับนักศึกษา)
   // ------------------------------------------
-  // staffId ที่รับมาที่นี่ = user.user_id (int)
+  // staffId ที่รับมาที่นี่ = user.user_id (int) /public/list
   router.get('/public/list', async (req, res) => {
     try {
       const { weekStart, weekEnd, staffId } = req.query

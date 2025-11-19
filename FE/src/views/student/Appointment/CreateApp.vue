@@ -17,12 +17,24 @@
           />
           <p class="text-lg font-medium">{{ staff.staff_name }}</p>
           <button
-            class="bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 mt-1"
-            @click="staffIdToView = staff.user_id"
+            :class="[
+              'px-3 py-1 rounded mt-1 transition-colors',
+              staffIdToView === staff.user_id
+                ? 'bg-green-600 text-white hover:bg-green-700'
+                : 'bg-blue-600 text-white hover:bg-blue-700'
+            ]"
+            @click="selectStaff(staff)"
           >
-            ดูตารางเวลา
+            {{ staffIdToView === staff.user_id ? '✓ เลือกแล้ว' : 'ดูตารางเวลา' }}
           </button>
         </div>
+      </div>
+
+      <!-- 🔹 แสดงข้อมูล Staff ที่เลือก -->
+      <div v-if="selectedStaffInfo" class="bg-blue-50 p-3 rounded-lg mb-4 max-w-md">
+        <p class="text-sm text-gray-600">กำลังดูตารางของ:</p>
+        <p class="text-lg font-semibold text-blue-700">{{ selectedStaffInfo.staff_name }}</p>
+        <p class="text-xs text-gray-500">หมวดหมู่: {{ selectedStaffInfo.type }}</p>
       </div>
 
       <!-- 🔹 ตารางเวลา -->
@@ -81,7 +93,13 @@
       <!-- ปุ่ม Submit -->
       <button
         @click="submitAppointment"
-        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        :disabled="!staffIdToView || !selectedDate || !selectedSlot"
+        :class="[
+          'px-4 py-2 rounded transition-colors',
+          !staffIdToView || !selectedDate || !selectedSlot
+            ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        ]"
       >
         Submit
       </button>
@@ -98,18 +116,15 @@ import axios from 'axios'
 
 const router = useRouter()
 const route = useRoute()
-const userId = localStorage.getItem('userId')
 
 // --------------------------------------------
 // State
 // --------------------------------------------
 const staffList = ref([])
 const staffIdToView = ref(null)
-const selectedTopic = ref('')
+const selectedStaffInfo = ref(null)
 const selectedDate = ref('')
 const selectedSlot = ref('')
-const displayName = ref('')
-const imageSrc = ref('')
 const note = ref('')
 const categoryId = ref(null)
 
@@ -140,6 +155,23 @@ const onUnavailableDataUpdate = (data) => {
 const onWeekRangeUpdate = (range) => {
   weekStartDate.value = range.start
   weekEndDate.value = range.end
+}
+
+// --------------------------------------------
+// 🎯 เลือก Staff
+// --------------------------------------------
+function selectStaff(staff) {
+  staffIdToView.value = staff.user_id
+  selectedStaffInfo.value = {
+    staff_name: staff.staff_name,
+    type: staff.type,
+    profile_image: staff.profile_image
+  }
+  
+  // รีเซ็ตการเลือกวันและเวลาเมื่อเปลี่ยน staff
+  selectedDate.value = ''
+  selectedSlot.value = ''
+  unavailableMasterSet.value = new Set()
 }
 
 // --------------------------------------------
@@ -204,14 +236,8 @@ onMounted(async () => {
       return
     }
 
-    // ตั้งค่า default staff
-    const defaultStaff = staffList.value[0]
-    staffIdToView.value = defaultStaff.user_id
-    displayName.value = defaultStaff.staff_name
-    selectedTopic.value = defaultStaff.type
-    imageSrc.value = defaultStaff.profile_image
-      ? `/uploads/${defaultStaff.profile_image}`
-      : '/uploads/default.png'
+    // ตั้งค่า default staff คนแรก
+    selectStaff(staffList.value[0])
 
   } catch (err) {
     console.error('❌ Error fetching staff:', err)
@@ -219,22 +245,26 @@ onMounted(async () => {
 })
 
 // --------------------------------------------
-// 🚀 Submit Appointment (แทนหน้า Confirm)
+// 🚀 Submit Appointment (ส่งไปหา staff_id ที่เลือก)
 // --------------------------------------------
 async function submitAppointment() {
+  if (!staffIdToView.value) {
+    alert('กรุณาเลือก Staff')
+    return
+  }
+
   if (!selectedDate.value || !selectedSlot.value) {
     alert('กรุณาเลือกวันและช่วงเวลา')
     return
   }
 
-  const userId = localStorage.getItem('userId')
   const studentEmail = localStorage.getItem('email')
 
+  // ✅ ส่ง user_id = staff_id (เพราะนักศึกษาไม่มี user_id)
   const payload = {
-    user_id: userId,
-    staff_id: staffIdToView.value,
+    user_id: staffIdToView.value, // ✅ user_id = staff_id ของ staff ที่เลือก
     category_id: categoryId.value,
-    student_email: studentEmail,
+    student_email: studentEmail, // ✅ ใช้ email ระบุนักศึกษา
     appointment_date: `${selectedDate.value} ${selectedSlot.value}`,
     student_note: note.value || '',
     status: '0' // pending
@@ -243,6 +273,7 @@ async function submitAppointment() {
   try {
     const res = await axios.post('/api/student/appointments', payload)
     if (res.data.success) {
+      alert(`✅ นัดหมายกับ ${selectedStaffInfo.value.staff_name} สำเร็จ!`)
       router.push({ name: 'Historytest' })
     } else {
       alert('❌ Failed to save appointment')
