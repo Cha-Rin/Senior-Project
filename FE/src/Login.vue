@@ -258,7 +258,7 @@ const handleGoogleCallback = async (response) => {
     });
 
     const data = await res.json();
-    console.log('📥 Backend response:', data);
+    
 
     if (!res.ok || !data.success) {
       errorMessage.value = data.message || "Login failed.";
