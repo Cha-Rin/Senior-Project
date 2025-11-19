@@ -28,6 +28,7 @@ onMounted(async () => {
         'Content-Type': 'application/json'
       }
     })
+
     const data = await res.json()
     console.log('📥 Topics response:', data)
 
@@ -35,7 +36,7 @@ onMounted(async () => {
       topics.value = Array.isArray(data.topics) ? data.topics : []
       console.log("✅ topics.value =", topics.value)
     } else {
-      console.warn("⚠️ API returned no success flag:", data)
+      console.warn("⚠️ API returned error or no success flag:", data)
     }
   } catch (err) {
     console.error('❌ Error fetching topics:', err)
@@ -48,16 +49,19 @@ onMounted(async () => {
 async function loadAppointments() {
   try {
     console.log("🔑 Fetching appointments (using token)")
+
     const res = await fetch('/api/student/appointments/for-feedback?approved_set=1', {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'
       }
     })
+
     const data = await res.json()
     console.log("📥 Appointments response:", data)
 
     appointments.value = Array.isArray(data?.items) ? data.items : []
+
   } catch (e) {
     console.error("❌ loadAppointments error:", e)
     appointments.value = []
@@ -66,15 +70,16 @@ async function loadAppointments() {
 
 // -------------------- Computed --------------------
 const filteredTopics = computed(() => topics.value)
+
 const filteredItems = computed(() => {
   if (!selectedTopic.value) return appointments.value
   return appointments.value.filter(a => a.topic === selectedTopic.value)
 })
 
-// -------------------- Submit Feedback --------------------
+// -------------------- Submit Feedback (COMMENT OPTIONAL) --------------------
 async function handleSubmit(payload) {
   try {
-    console.log("🧩 handleSubmit payload:", payload);
+    console.log("🧩 handleSubmit payload:", payload)
 
     const res = await fetch('/api/student/feedback/appointments', {
       method: 'POST',
@@ -83,26 +88,40 @@ async function handleSubmit(payload) {
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        appointment_id: payload.itemId,  // ✅ ต้องมี
-        ratings: payload.ratings,                 // ✅ ต้องเป็น array
-        comment: payload.note || ''            // ✅ optional
+        appointment_id: payload.itemId,   // Required
+        ratings: payload.ratings,         // Array
+        comment: payload.note || ''       // ⭐ COMMENT OPTIONAL
       })
-    });
+    })
 
-    const result = await res.json();
-    console.log("📥 Feedback submit response:", result);
+    const result = await res.json()
+    console.log("📥 Feedback submit response:", result)
 
     if (result.success) {
-      alert('ส่งความคิดเห็นเรียบร้อย ✅');
+      alert('ส่งความคิดเห็นเรียบร้อย ✅')
+
+      // 🔥 Remove completed appointment from list
+      appointments.value = appointments.value.filter(
+        a => a.appointment_id !== payload.itemId
+      )
+
+      // 🔥 Recalculate topics
+      const remainingTopics = [...new Set(appointments.value.map(a => a.topic))]
+      topics.value = topics.value.filter(t => remainingTopics.includes(t))
+
+      if (!remainingTopics.includes(selectedTopic.value)) {
+        selectedTopic.value = ''
+      }
+
     } else {
-      alert(result.message || 'เกิดข้อผิดพลาด');
+      alert(result.message || 'เกิดข้อผิดพลาด')
     }
+
   } catch (e) {
-    console.error('❌ handleSubmit error:', e);
-    alert('เกิดข้อผิดพลาดในการส่ง feedback');
+    console.error('❌ handleSubmit error:', e)
+    alert('เกิดข้อผิดพลาดในการส่ง feedback')
   }
 }
-
 </script>
 
 <template>

@@ -235,7 +235,8 @@ module.exports = (db) => {
       VALUES (?, ?, ?, ?, ?, NOW())
     `
 
-    const params = [appointment_id, ratings[0], ratings[1], ratings[2], comment || null]
+    const params = [appointment_id, ratings[0], ratings[1], ratings[2], comment || ""]
+
 
     db.query(sql, params, (err, result) => {
       if (err) {
