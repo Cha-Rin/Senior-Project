@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 pt-20 px-6">
-    <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">{{ $t('choose_topic') }}</h1>
 
     <!-- Loading -->
     <div v-if="loadingData" class="text-center text-gray-500">Loading topics...</div>
@@ -18,7 +18,7 @@
             : 'border-gray-200 bg-white hover:shadow-lg'
         ]"
       >
-        <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
+        <p class="text-lg font-semibold text-gray-800">{{ translateCategory(cat.type) }}</p>
       </div>
     </div>
 
@@ -30,16 +30,16 @@
       v-if="selectedCategory" 
       class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
-      <p class="text-sm font-semibold mb-2">
-        พิมพ์หัวข้อย่อยของคุณ
-        <span class="text-gray-400">(เช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
-      </p>
+     <p class="text-sm font-semibold mb-2">
+  {{ $t('sub_topic_title') }}
+  <span class="text-gray-400">({{ $t('sub_topic_example') }})</span>
+</p>
 
       <textarea
         v-model="subTopic"
         class="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none focus:ring-2 focus:ring-blue-400"
         rows="3"
-        placeholder="เช่น ลงทะเบียนเรียนเพิ่มเติม"
+        :placeholder="$t('sub_topic_example')"
       ></textarea>
 
       <div class="text-center mt-4">
@@ -47,7 +47,7 @@
           @click="openCameraPopup"
           class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-blue-700 transition"
         >
-          Send
+          {{ $t('send_btn') }}
         </button>
       </div>
     </div>
@@ -156,6 +156,24 @@ const createdDocId = ref("")
 const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
 const token = localStorage.getItem('authToken')
+
+// ⭐ ใช้ i18n
+import { useI18n } from "vue-i18n"
+const { locale } = useI18n()
+
+const categoryNameMap = {
+  "กิจกรรมนักศึกษา": { th: "กิจกรรมนักศึกษา", en: "Student Activities" },
+  "สหกิจศึกษา": { th: "สหกิจศึกษา", en: "Cooperative Education" },
+  "ผ่อนผัน": { th: "ผ่อนผัน", en: "Permission / Deferment" },
+  "งานทะเบียน": { th: "งานทะเบียน", en: "Registration Office" },
+  "บัณฑิตศึกษา": { th: "บัณฑิตศึกษา", en: "Graduate Studies" }
+}
+
+const translateCategory = (name) => {
+  if (!categoryNameMap[name]) return name
+  return categoryNameMap[name][locale.value] || name
+}
+
 
 // Unique Categories
 const uniqueCategories = computed(() => {

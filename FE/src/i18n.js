@@ -13,6 +13,12 @@ const messages = {
     required_feedback: 'รายการที่ต้องประเมิน',
     history: 'ประวัติการประเมิน',
     select_path: 'เลือกประเภทแบบประเมิน',
+    choose_topic: 'เลือกหัวข้อ',
+
+    sub_topic_title: "พิมพ์หัวข้อย่อยของคุณ",
+  sub_topic_example: "เช่น ลงทะเบียนเรียนเพิ่มเติม",
+  send_btn: "ส่ง",
+
   },
   en: {
     feedback: 'Feedback',
@@ -26,6 +32,11 @@ const messages = {
     required_feedback: 'Required Feedback',
     history: 'Feedback History',
     select_path: 'Select Feedback Type',
+    choose_topic: 'Choose Topic',
+
+    sub_topic_title: "Type your sub-topic",
+  sub_topic_example: "e.g., Additional enrollment request",
+  send_btn: "Send",
   },
 }
 
