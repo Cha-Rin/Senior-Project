@@ -271,16 +271,31 @@ async function submitAppointment() {
   }
 
   try {
-    const res = await axios.post('/api/student/appointments', payload)
-    if (res.data.success) {
-      alert(`✅ นัดหมายกับ ${selectedStaffInfo.value.staff_name} สำเร็จ!`)
-      router.push({ name: 'Historytest' })
-    } else {
-      alert('❌ Failed to save appointment')
+  const token = localStorage.getItem('authToken') // ✅ ดึง token
+  
+  const res = await axios.post('/api/student/appointments', payload, {
+    headers: {
+      'Authorization': `Bearer ${token}` // ✅ ส่ง token ไปด้วย
     }
-  } catch (err) {
-    console.error('❌ Error saving appointment:', err)
+  })
+  
+  if (res.data.success) {
+    alert(`✅ นัดหมายกับ ${selectedStaffInfo.value.staff_name} สำเร็จ!`)
+    router.push({ name: 'Historytest' })
+  } else {
+    alert('❌ Failed to save appointment')
+  }
+} catch (err) {
+  console.error('❌ Error saving appointment:', err)
+  
+  // ✅ เช็คว่าเป็น 401 (Unauthorized) หรือไม่
+  if (err.response?.status === 401) {
+    alert('⚠️ กรุณา Login ใหม่')
+    localStorage.removeItem('authToken')
+    router.push({ name: 'Login' })
+  } else {
     alert('⚠️ Error saving appointment.')
   }
+}
 }
 </script>

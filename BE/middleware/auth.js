@@ -18,6 +18,7 @@ function authMiddleware(req, res, next) {
     req.user = {
   id: decoded.user_id || decoded.id,
   email: decoded.email,
+  name: decoded.name,
   role: decoded.role
 }; // ✅ เก็บข้อมูล user จาก token
     next()

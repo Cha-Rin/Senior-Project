@@ -91,7 +91,7 @@ module.exports = (db) => {
   // =====================================================
   router.post('/documents/create', authMiddleware, upload.none(), (req, res) => {
     const { user_id, category_id, student_email, status, submit_date, student_note } = req.body
-
+    const student_name = req.user.name || 'ไม่ระบุชื่อ'
     generateDocumentCode(db, category_id, (err, documentCode) => {
       if (err) {
         console.error('❌ Generate code failed:', err)
@@ -100,13 +100,13 @@ module.exports = (db) => {
 
       const sql = `
         INSERT INTO document_tracking
-          (user_id, category_id, student_email, status, submit_date, student_note, document_code)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+          (user_id, student_name,category_id, student_email, status, submit_date, student_note, document_code)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
       `
 
       db.query(
         sql,
-        [user_id, category_id, student_email, status, submit_date, student_note, documentCode],
+        [user_id, student_name, category_id, student_email, status, submit_date, student_note, documentCode],
         (err, result) => {
           if (err) {
             console.error('❌ Database insert failed:', err)
@@ -124,11 +124,12 @@ module.exports = (db) => {
   })
 
   // ------------------------------------- Student Appointment ----------------------------------------
-  router.post('/appointments', (req, res) => {
+  router.post('/appointments', authMiddleware, (req, res) => {
     console.log('✅ Received body:', req.body)
 
     const {
       user_id,
+      
       category_id,
       student_email,
       appointment_date,
@@ -137,20 +138,20 @@ module.exports = (db) => {
     } = req.body
 
     const staff_offtime = req.body.staff_offtime || 'N/A'
-
+    const student_name = req.user.name || 'ไม่ระบุชื่อ'
     if (!user_id) {
       return res.status(400).json({ error: 'user_id is required' })
     }
 
     const sql = `
       INSERT INTO appointment
-        (user_id, category_id, student_email, status, appointment_date, staff_offtime, student_note)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (user_id, student_name, category_id, student_email, status, appointment_date, staff_offtime, student_note)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `
 
     db.query(
       sql,
-      [user_id, category_id, student_email, status, appointment_date, staff_offtime, student_note],
+      [user_id, student_name, category_id, student_email, status, appointment_date, staff_offtime, student_note],
       (err, result) => {
         if (err) {
           console.error('SQL Error:', err)

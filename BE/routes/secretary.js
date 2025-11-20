@@ -47,7 +47,7 @@ module.exports = (db) => {
         SELECT 
           a.appointment_id,
           a.user_id AS studentId,
-          CONCAT(u.name, ' ', u.surname) AS full_name,
+          a.student_name AS full_name,
           a.appointment_date,
           c.type AS topic,
           a.student_note,
