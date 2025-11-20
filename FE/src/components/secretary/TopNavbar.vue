@@ -36,7 +36,7 @@
           class="absolute right-0 mt-2 w-72 md:w-80 bg-white text-gray-800 rounded-lg shadow-xl overflow-hidden z-50"
         >
           <div class="py-2 px-4 border-b border-gray-200 font-bold">
-            รายการรอดำเนินการ ({{ activeStore.activeCount }})
+            Pending list ({{ activeStore.activeCount }})
           </div>
 
           <ul class="max-h-80 overflow-y-auto">
@@ -44,7 +44,7 @@
               v-if="activeStore.activeCount === 0"
               class="p-4 text-center text-gray-500"
             >
-              ไม่มีการแจ้งเตือน
+              No notifications
             </li>
 
             <li 
@@ -63,7 +63,7 @@
                 </div>
 
                 <div class="text-xs text-gray-500">
-                  <strong>เวลา:</strong> {{ app.time || '-' }}
+                  <strong>Time :</strong> {{ app.time || '-' }}
                 </div>
               </div>
 
@@ -72,14 +72,14 @@
                   @click="activeStore.markDone(app.id)"
                   class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition"
                 >
-                  สำเร็จการนัดหมาย
+                  Complete
                 </button>
 
                 <button
                   @click="activeStore.cancel(app.id)"
                   class="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
                 >
-                  ปฏิเสธ
+                  Cancal
                 </button>
               </div>
             </li>
@@ -92,10 +92,6 @@
          <strong>{{ userEmail }}</strong>
       </p>
 
-      <!-- ===================== 🌐 LANGUAGE ===================== -->
-      <button @click="toggleLang" class="text-xs font-bold">
-        {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
-      </button>
 
       <!-- ===================== 🚪 LOGOUT ===================== -->
       <button

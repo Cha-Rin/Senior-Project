@@ -23,18 +23,18 @@
           </button>
 
           <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">
-            อัปโหลดเอกสารยืนยัน
+            Upload verification document
           </h3>
 
           <p class="text-sm text-gray-600 mb-4 text-center">
-            กรุณาเลือกไฟล์ภาพ หรือถ่ายภาพจากกล้อง
+            Please select an image file or take a photo with your camera.
           </p>
 
           <button
             @click="openCamera"
             class="w-full px-4 py-2 mb-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
-            📸 ถ่ายภาพจากกล้อง
+            📸 Capture a photo
           </button>
 
           <input
@@ -56,14 +56,14 @@
               class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg"
               :class="{ 'opacity-50 cursor-not-allowed': !selectedFile }"
             >
-              ✔ ยืนยัน
+              ✔ Complete
             </button>
 
             <button
               @click="cancelComplete"
               class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg"
             >
-              ✖ ยกเลิก
+              ✖ Cancel
             </button>
           </div>
         </div>
@@ -140,7 +140,7 @@
 
             <tr v-if="documents.length === 0">
               <td colspan="6" class="text-center py-10 text-gray-500">
-                ไม่มีข้อมูลสถานะเอกสาร
+                No document status available.
               </td>
             </tr>
           </tbody>
@@ -179,14 +179,14 @@
               @click="capturePhoto"
               class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg"
             >
-              📸 ถ่ายรูป
+              📸 Capture a photo
             </button>
 
             <button
               @click="closeCamera"
               class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg"
             >
-              ❌ ปิดกล้อง
+              ❌ Turn off the camera
             </button>
           </div>
         </div>
@@ -334,11 +334,11 @@ const confirmComplete = async () => {
   const result = await res.json()
 
   if (!result.success) {
-    alert("อัปโหลดไม่สำเร็จ")
+    alert("Upload failed")
     return
   }
 
-  alert("อัปโหลดสำเร็จและอัปเดตสถานะเป็น Complete แล้ว")
+  alert("Upload successful and the status has been updated to Complete.")
 
   showCompleteModal.value = false
   selectedFile.value = null

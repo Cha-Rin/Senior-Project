@@ -13,14 +13,9 @@
       
       <!-- 👤 ชื่อ + อีเมล -->
       <div class="hidden sm:block text-right leading-tight">
-        <p class="text-sm font-semibold"> {{ fullName }}</p>
         <p class="text-xs text-gray-300">{{ userEmail }}</p>
       </div>
 
-      <!-- 🌐 Change Language -->
-      <button @click="toggleLang" class="text-xs font-bold">
-        {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
-      </button>
 
       <!-- 🚪 Logout -->
       <button

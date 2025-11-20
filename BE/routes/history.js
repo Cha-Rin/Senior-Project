@@ -118,42 +118,48 @@ module.exports = (db) => {
     else if (role === 'secretary' || role === 2) {
       // ✅ Secretary ดูเฉพาะนัดหมายที่มา user_id = staff_id ของตัวเอง
       appointmentSql = `
-        SELECT 
-          'appointment' AS type,
-          a.appointment_id AS id,
-          a.student_email AS full_name,
-          a.appointment_date AS event_date,
-          c.type AS title,
-          a.status,
-          a.student_note,
-          a.user_id AS staffId
-        FROM appointment AS a
-        JOIN categories AS c ON a.category_id = c.category_id
-        WHERE a.user_id = ?
-          AND a.status IN (0, 1, 2, 3)
-      `
+  SELECT 
+    'appointment' AS type,
+    a.appointment_id AS id,
+    CONCAT(u.name, ' ', u.surname) AS full_name,   -- ⭐ แสดงชื่อนักศึกษา
+    a.appointment_date AS event_date,
+    c.type AS title,
+    a.status,
+    a.student_note,
+    a.user_id AS staffId
+  FROM appointment AS a
+  JOIN user u ON a.student_email = u.email         -- ⭐ JOIN หา user จาก email
+  JOIN categories AS c ON a.category_id = c.category_id
+  WHERE a.user_id = ?
+    AND a.status IN (0, 1, 2, 3)
+`
+
       appointmentParams = [userId]
 
       documentSql = `
-        SELECT 
-          'document' AS type,
-          d.document_id AS id,
-          d.student_email AS full_name,
-          d.submit_date AS event_date,
-          c.type AS title,
-          d.status,
-          d.student_note AS student_note,
-          d.staff_note AS staff_note,
-          d.document_code AS document_code,
-          d.image_path AS image_path,
-          d.image_complete AS image_complete,
-          d.user_id AS staffId
-        FROM document_tracking AS d
-        JOIN categories AS c ON d.category_id = c.category_id
-        WHERE d.user_id = ?
-          AND d.status IN (1, 2, 3)
-      `
-      documentParams = [userId]
+  SELECT 
+  'document' AS type,
+  d.document_id AS id,
+  CONCAT(u.name, ' ', u.surname) AS full_name,   -- ⭐ ชื่อ-นามสกุลจริง
+  d.submit_date AS event_date,
+  c.type AS title,
+  d.status,
+  d.student_note AS student_note,
+  d.staff_note AS staff_note,
+  d.document_code AS document_code,
+  d.image_path AS image_path,
+  d.image_complete AS image_complete,
+  d.user_id AS staffId
+FROM document_tracking AS d
+JOIN user u ON d.student_email = u.email
+JOIN categories AS c ON d.category_id = c.category_id
+JOIN user_category uc ON d.category_id = uc.category_id
+WHERE uc.user_id = ?
+  AND d.status IN (1, 2, 3)
+
+`
+documentParams = [userId]
+
     }
 
     // 🧑‍⚖️ Admin

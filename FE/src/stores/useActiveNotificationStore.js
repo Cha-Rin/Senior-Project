@@ -49,7 +49,7 @@ export const useActiveNotificationStore = defineStore("activeNotifications", {
 
     newItems.forEach((item) => {
       toast.info(
-        `⏰ ถึงเวลานัดหมายของ ${item.name} (${item.topic}) แล้ว!`,
+        `⏰ It's time for the appointment. ${item.name} (${item.topic}) แล้ว!`,
         { position: "bottom-right", autoClose: 5000 }
       );
     });
@@ -67,7 +67,7 @@ export const useActiveNotificationStore = defineStore("activeNotifications", {
       try {
         await fetch(`/api/noti/active/${id}/done`, { method: "POST" });
         this.activeList = this.activeList.filter((item) => item.id !== id);
-        toast.success("✅ ยืนยันสำเร็จแล้ว!");
+        toast.success("✅ Complete!");
       } catch (err) {
         console.error("Mark done failed:", err);
       }
@@ -77,7 +77,7 @@ export const useActiveNotificationStore = defineStore("activeNotifications", {
       try {
         await fetch(`/api/noti/active/${id}/cancel`, { method: "POST" });
         this.activeList = this.activeList.filter((item) => item.id !== id);
-        toast.error("❌ ยกเลิกนัดหมายแล้ว!");
+        toast.error("❌ Cancal!");
       } catch (err) {
         console.error("Cancel failed:", err);
       }

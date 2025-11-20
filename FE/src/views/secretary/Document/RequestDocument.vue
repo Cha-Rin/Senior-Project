@@ -15,7 +15,7 @@
       >
         <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
           <h3 class="text-xl font-bold text-gray-800 mb-4">
-            เลือกเหตุผลที่ปฏิเสธเอกสาร
+            Select the reason for rejecting the document.
           </h3>
 
           <!-- 🔹 รายการตัวเลือก -->
@@ -29,7 +29,7 @@
                 value="ข้อมูลในเอกสารผิด"
                 class="mr-3"
               />
-              ข้อมูลในเอกสารผิด
+              Document is wrong.
             </label>
 
             <label
@@ -41,7 +41,7 @@
                 value="ข้อมูลในเอกสารไม่ครบถ้วน"
                 class="mr-3"
               />
-              ข้อมูลในเอกสารไม่ครบถ้วน
+              Document is incomplete.
             </label>
 
             <!-- ✅ ตัวเลือก 'อื่นๆ' -->
@@ -54,7 +54,7 @@
                 value="อื่นๆ"
                 class="mr-3"
               />
-              อื่นๆ (โปรดระบุ)
+              Other (please specify)
             </label>
 
             <!-- ✅ กล่องข้อความ เมื่อเลือก 'อื่นๆ' -->
@@ -62,7 +62,7 @@
               v-if="selectedReason === 'อื่นๆ'"
               v-model="customReason"
               rows="3"
-              placeholder="กรุณาพิมพ์เหตุผลของคุณ..."
+              placeholder="Please enter your reason..."
               class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-indigo-400 mt-2"
             ></textarea>
           </div>
@@ -72,13 +72,13 @@
               @click="confirmReject"
               class="flex-1 px-4 py-2 bg-emerald-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
             >
-              ยืนยัน
+              Complete
             </button>
             <button
               @click="cancelReject"
               class="flex-1 px-4 py-2 bg-rose-500 text-white rounded-lg hover:shadow-lg transition-all transform hover:-translate-y-0.5"
             >
-              ยกเลิก
+            Cancel
             </button>
           </div>
         </div>
@@ -125,10 +125,7 @@
                 {{ item.no }}
               </td>
               <td class="px-6 py-4 text-sm text-gray-700">
-                {{ getStudentId(item.email) }}
-
-
-              </td>
+                {{ getStudentId(item.email) }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.name }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.date }}</td>
               <td class="px-6 py-4 text-sm text-gray-700">{{ item.topic }}</td>
@@ -194,7 +191,7 @@
                 colspan="7"
                 class="text-center py-10 text-gray-500 text-sm bg-gray-50"
               >
-                ไม่มีรายการคำขอเอกสาร
+                No document request 
               </td>
             </tr>
           </tbody>
@@ -224,7 +221,7 @@
           @click="goToPage(currentPage + 1)"
           class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
         >
-          หน้าถัดไป
+          Next
         </button>
       </div>
     </div>
@@ -342,15 +339,15 @@ const reject = (item) => {
 
 const confirmReject = async () => {
   if (!selectedReason.value)
-    return alert('กรุณาเลือกเหตุผลก่อนดำเนินการ')
+    return alert('Please select a reason before proceeding.')
 
   const finalReason =
-    selectedReason.value === 'อื่นๆ'
+    selectedReason.value === 'Other'
       ? customReason.value.trim()
       : selectedReason.value
 
-  if (selectedReason.value === 'อื่นๆ' && !finalReason)
-    return alert('กรุณาพิมพ์เหตุผลในช่องข้อความ')
+  if (selectedReason.value === 'Other' && !finalReason)
+    return alert('Please type your reason in the text box.')
 
   const token = localStorage.getItem('authToken')
   try {

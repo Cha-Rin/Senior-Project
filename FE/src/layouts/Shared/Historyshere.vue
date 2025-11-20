@@ -275,7 +275,7 @@
           @click="goToPage(currentPage + 1)"
           class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
         >
-          หน้าถัดไป
+          Next
         </button>
       </div>
 

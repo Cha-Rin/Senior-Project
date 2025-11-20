@@ -111,7 +111,7 @@
 
             <template v-if="ratingsEmpty">
               <div class="text-center text-gray-500 py-16">
-                ยังไม่มี feedback สำหรับช่วงเวลานี้ 😔
+                There is no feedback for this time period. 😔
               </div>
             </template>
 
@@ -161,7 +161,7 @@
               </div>
 
               <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
-                ไม่มีคอมเมนต์ในช่วงเวลานี้
+                There are no comments for this time period.
               </div>
             </div>
           </div>

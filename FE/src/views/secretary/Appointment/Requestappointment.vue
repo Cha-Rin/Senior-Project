@@ -102,9 +102,9 @@
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <p class="text-lg font-medium">ไม่มีการนัดหมาย</p>
+            <p class="text-lg font-medium">No appointments</p>
             <p class="text-sm text-gray-400 mt-1">
-              ยังไม่มีคำขอรอนัดหมายในขณะนี้
+              There are currently no pending appointment requests.
             </p>
           </div>
         </div>
@@ -135,7 +135,7 @@
             @click="goToPage(currentPage + 1)"
             class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700"
           >
-            หน้าถัดไป
+            Next
           </button>
         </div>
       </div>

@@ -111,7 +111,7 @@ const timeSlots = [
   '12:00 - 13:00',
   '13:00 - 14:00',
   '14:00 - 15:00',
-  '16:00 - 17:00'
+  '15:00 - 16:00'
 ]
 const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const LUNCH_ROW = 4

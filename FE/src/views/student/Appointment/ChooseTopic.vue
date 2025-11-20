@@ -13,8 +13,7 @@
         class="p-5 rounded-xl border shadow-md bg-white cursor-pointer hover:shadow-lg hover:border-blue-500 transition-all"
       >
         <p class="text-lg font-semibold text-gray-800">
-          {{ getTopicName(cat.type) }}
-          <!-- {{ cat.type }} -->
+          {{ cat.type }}
         </p>
       </div>
     </div>
@@ -35,24 +34,24 @@ const { t, locale } = useI18n()
 
 
 
-const topicMapping = {
-  'กิจกรรมนักศึกษา': 'Student Activities',
-  'งานทะเบียน': 'Registrar Office',
-  'สหกิจศึกษา': 'Cooperative Education',
-  'บัณฑิตศึกษา': 'Graduate Studies',
-  'ผ่อนผัน': 'Deferment'
-  // ใส่เพิ่มตามที่มีใน DB
-}
+// const topicMapping = {
+//   'กิจกรรมนักศึกษา': 'Student Activities',
+//   'งานทะเบียน': 'Registrar Office',
+//   'สหกิจศึกษา': 'Cooperative Education',
+//   'บัณฑิตศึกษา': 'Graduate Studies',
+//   'ผ่อนผัน': 'Deferment'
+//   // ใส่เพิ่มตามที่มีใน DB
+// }
 
-// 3. ฟังก์ชันสำหรับเลือกภาษาที่จะแสดง
-const getTopicName = (text) => {
-  if (locale.value === 'en') {
-    // ถ้าเป็น EN ให้ไปหาคำแปลมาแสดง ถ้าหาไม่เจอให้ใช้คำเดิม
-    return topicMapping[text] || text
-  }
-  // ถ้าเป็น TH ก็ส่งค่าเดิมกลับไป
-  return text
-}
+// // 3. ฟังก์ชันสำหรับเลือกภาษาที่จะแสดง
+// const getTopicName = (text) => {
+//   if (locale.value === 'en') {
+//     // ถ้าเป็น EN ให้ไปหาคำแปลมาแสดง ถ้าหาไม่เจอให้ใช้คำเดิม
+//     return topicMapping[text] || text
+//   }
+//   // ถ้าเป็น TH ก็ส่งค่าเดิมกลับไป
+//   return text
+// }
 
 
 // ------------------------------------------

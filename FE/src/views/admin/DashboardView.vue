@@ -12,12 +12,12 @@
 
       <WeeklyUsersChart
         :chartData="chartData1"
-        title="จำนวนผู้ใช้บริการในแต่ละวัน (สถานะเสร็จสิ้น)"
+        title="Number of service users per day (Completed status)"
       />
 
       <WeeklyUsersChart
         :chartData="chartData2"
-        title="คะแนนเฉลี่ยความพึงพอใจ (Service Provider / Process / Facilities)"
+        title="Average satisfaction score (Service Provider / Process / Facilities)"
       />
     </div>
 

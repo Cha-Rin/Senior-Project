@@ -100,6 +100,7 @@
           <span class="text-5xl font-bold">
             {{ ratingsEmpty ? '0.0' : ratingsAverage }}
           </span>
+          <span class="text-xl">⭐</span>
         </div>
 
         <!-- Content Row -->
@@ -111,7 +112,7 @@
             <!-- Empty state -->
             <template v-if="ratingsEmpty">
               <div class="text-center text-gray-500 py-16">
-                ยังไม่มี feedback สำหรับช่วงเวลานี้ 😔
+                There is no feedback for this time period. 😔
               </div>
             </template>
 
@@ -155,11 +156,14 @@
                 <div class="text-xl text-gray-400 flex items-center justify-center">👤</div>
                 <div class="flex-1">
                   <p class="text-sm text-gray-700 leading-relaxed">{{ comment.text }}</p>
+                  <div v-if="comment.stars" class="mt-1 flex items-center text-xs text-amber-600">
+                    <span>{{ comment.stars }} ⭐</span>
+                  </div>
                 </div>
               </div>
 
               <div v-if="comments.length === 0" class="text-center text-gray-400 pt-16">
-                ไม่มีคอมเมนต์ในช่วงเวลานี้
+                There are no comments for this time period.
               </div>
 
             </div>

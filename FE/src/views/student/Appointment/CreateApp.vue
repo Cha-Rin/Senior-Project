@@ -32,9 +32,9 @@
 
       <!-- 🔹 แสดงข้อมูล Staff ที่เลือก -->
       <div v-if="selectedStaffInfo" class="bg-blue-50 p-3 rounded-lg mb-4 max-w-md">
-        <p class="text-sm text-gray-600">กำลังดูตารางของ:</p>
+        <p class="text-sm text-gray-600">You are viewing the table of...:</p>
         <p class="text-lg font-semibold text-blue-700">{{ selectedStaffInfo.staff_name }}</p>
-        <p class="text-xs text-gray-500">หมวดหมู่: {{ selectedStaffInfo.type }}</p>
+        <p class="text-xs text-gray-500">Category: {{ selectedStaffInfo.type }}</p>
       </div>
 
       <!-- 🔹 ตารางเวลา -->
@@ -64,7 +64,7 @@
         <label class="block text-left">
           <span class="text-sm font-medium">Time:</span>
           <select v-model="selectedSlot" class="border rounded p-1 w-full text-black">
-            <option disabled value="">-- กรุณาเลือกช่วงเวลา --</option>
+            <option disabled value="">-- Please select a time period. --</option>
             <option v-for="slot in availableTimeSlots" :key="slot" :value="slot">
               {{ slot }}
             </option>
@@ -72,7 +72,7 @@
               v-if="selectedDate && availableTimeSlots.length === 0"
               disabled
             >
-              -- ไม่ว่าง/เป็นวันหยุด --
+              -- Unavailable / Holiday --
             </option>
           </select>
         </label>
@@ -84,7 +84,7 @@
             v-model="note"
             rows="3"
             class="border rounded p-1 w-full text-black resize-none"
-            placeholder="รายละเอียดเพิ่มเติม..."
+            placeholder="More information…"
           ></textarea>
         </label>
 
@@ -249,12 +249,12 @@ onMounted(async () => {
 // --------------------------------------------
 async function submitAppointment() {
   if (!staffIdToView.value) {
-    alert('กรุณาเลือก Staff')
+    alert('Please select a staff member.')
     return
   }
 
   if (!selectedDate.value || !selectedSlot.value) {
-    alert('กรุณาเลือกวันและช่วงเวลา')
+    alert('Please select a date and time range.')
     return
   }
 
@@ -280,7 +280,7 @@ async function submitAppointment() {
   })
   
   if (res.data.success) {
-    alert(`✅ นัดหมายกับ ${selectedStaffInfo.value.staff_name} สำเร็จ!`)
+    alert(`✅ Appointment with ${selectedStaffInfo.value.staff_name} Complete!`)
     router.push({ name: 'Historytest' })
   } else {
     alert('❌ Failed to save appointment')
@@ -290,7 +290,7 @@ async function submitAppointment() {
   
   // ✅ เช็คว่าเป็น 401 (Unauthorized) หรือไม่
   if (err.response?.status === 401) {
-    alert('⚠️ กรุณา Login ใหม่')
+    alert('⚠️ Please log in again.')
     localStorage.removeItem('authToken')
     router.push({ name: 'Login' })
   } else {

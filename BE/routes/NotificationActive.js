@@ -79,14 +79,21 @@ router.get("/active-now/:staffId", (req, res) => {
 
   const sql = `
     SELECT 
-      a.appointment_id AS id,
-      CONCAT(u.name, ' ', u.surname) AS name,
-      DATE_FORMAT(a.appointment_date, '%H:%i') AS time,
-      c.type AS topic
-    FROM appointment a
-    JOIN user u ON a.user_id = u.user_id
-    JOIN categories c ON a.category_id = c.category_id
-    WHERE 
+  a.appointment_id AS id,
+  CONCAT(stu.name, ' ', stu.surname) AS name,        -- ⭐ ชื่อนักศึกษา
+  DATE_FORMAT(a.appointment_date, '%H:%i') AS time,
+  c.type AS topic
+FROM appointment a
+
+-- ⭐ JOIN นักศึกษา (student_email → user.email)
+JOIN user stu 
+  ON a.student_email = stu.email
+
+-- ⭐ JOIN category เพื่อนำ type มาแสดง
+JOIN categories c 
+  ON a.category_id = c.category_id
+
+WHERE 
       -- ⭐ 1) เฉพาะหมวดหมู่ของ staff
       a.category_id IN (
         SELECT category_id FROM user_category WHERE user_id = ?

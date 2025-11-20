@@ -13,7 +13,7 @@
     <!-- เลือกหัวข้อ -->
     <div class="mb-4">
       <select v-model="selectedTopic" class="border rounded p-2 w-full">
-        <option value="">-- เลือกหัวข้อ --</option>
+        <option value="">-- Choose Topic --</option>
         <option
           v-for="(topic, index) in topics"
           :key="index"
@@ -53,7 +53,7 @@
 
     <!-- ถ้าไม่มี -->
     <p v-if="filteredItems.length === 0" class="text-center text-gray-500 italic mt-8">
-      ไม่มีรายการที่ต้องทำแบบประเมิน 🎉
+      You have no feedback tasks to complete.🎉
     </p>
 
     <!-- Popup Modal -->
@@ -70,10 +70,10 @@
         </button>
 
         <h2 class="text-lg font-semibold mb-2 text-center">
-          แบบประเมินความพึงพอใจ
+          Feedback
         </h2>
         <p class="text-sm text-gray-600 mb-4 text-center">
-          หัวข้อ: {{ selectedAppointment?.topic }}
+          Topic : {{ selectedAppointment?.topic }}
         </p>
 
         <!-- Rating -->
@@ -104,12 +104,12 @@
 
         <!-- Comment -->
         <div class="mt-4">
-          <label class="block text-sm font-semibold mb-1">ความคิดเห็นเพิ่มเติม:</label>
+          <label class="block text-sm font-semibold mb-1">Opinion :</label>
           <textarea
             v-model="note"
             rows="3"
             class="border rounded w-full p-2 text-sm"
-            placeholder="พิมพ์ความคิดเห็นของคุณ..."
+            placeholder="Type your comment..."
           ></textarea>
         </div>
 
@@ -119,14 +119,14 @@
             class="px-4 py-2 rounded bg-gray-300 hover:bg-gray-400 mr-2"
             @click="closeModal"
           >
-            ยกเลิก
+            Cancle
           </button>
           <button
             class="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
             :disabled="!canSubmit"
             @click="submitFeedback"
           >
-            ส่งแบบประเมิน
+            Submit
           </button>
         </div>
       </div>
@@ -267,15 +267,15 @@ async function submitFeedback() {
 
     const data = await res.json()
     if (data.success) {
-      alert("ขอบคุณสำหรับการทำแบบประเมิน!")
+      alert("Thank you for feedback!")
       items.value = items.value.filter(i => i.id !== selectedAppointment.value.id)
       closeModal()
     } else {
-      alert("เกิดข้อผิดพลาด: " + data.message)
+      alert("Error occurred: " + data.message)
     }
   } catch (err) {
     console.error("❌ submitFeedback error:", err)
-    alert("เกิดข้อผิดพลาดในการส่งแบบประเมิน")
+    alert("Failed to submit feedback.")
   }
 }
 </script>
