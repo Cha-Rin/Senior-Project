@@ -31,15 +31,15 @@
       class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
       <p class="text-sm font-semibold mb-2">
-        พิมพ์หัวข้อย่อยของคุณ
-        <span class="text-gray-400">(เช่น ลงทะเบียนเรียนเพิ่มเติม)</span>
+        Type your sub-topic
+        <!-- <span class="text-gray-400">(e.g., additional enrollment request)</span> -->
       </p>
 
       <textarea
         v-model="subTopic"
         class="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none focus:ring-2 focus:ring-blue-400"
         rows="3"
-        placeholder="เช่น ลงทะเบียนเรียนเพิ่มเติม"
+        placeholder="(e.g., additional enrollment request)"
       ></textarea>
 
       <div class="text-center mt-4">
@@ -157,6 +157,24 @@ const userId = localStorage.getItem('userId')
 const email = localStorage.getItem('email')
 const token = localStorage.getItem('authToken')
 
+// ⭐ ใช้ i18n
+import { useI18n } from "vue-i18n"
+const { locale } = useI18n()
+
+const categoryNameMap = {
+  "กิจกรรมนักศึกษา": { th: "กิจกรรมนักศึกษา", en: "Student Activities" },
+  "สหกิจศึกษา": { th: "สหกิจศึกษา", en: "Cooperative Education" },
+  "ผ่อนผัน": { th: "ผ่อนผัน", en: "Permission / Deferment" },
+  "งานทะเบียน": { th: "งานทะเบียน", en: "Registration Office" },
+  "บัณฑิตศึกษา": { th: "บัณฑิตศึกษา", en: "Graduate Studies" }
+}
+
+const translateCategory = (name) => {
+  if (!categoryNameMap[name]) return name
+  return categoryNameMap[name][locale.value] || name
+}
+
+
 // Unique Categories
 const uniqueCategories = computed(() => {
   const map = new Map()
@@ -190,7 +208,7 @@ const selectCategory = (cat) => {
 // Create Document (before camera)
 const openCameraPopup = async () => {
   if (!subTopic.value.trim()) {
-    errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
+    errorMessage.value = 'Please type the subtopic before submitting.'
     return
   }
 
@@ -216,7 +234,7 @@ const openCameraPopup = async () => {
     createdDocCode.value = data.document_code
     showDocId.value = true
   } catch {
-    alert("สร้างเอกสารไม่สำเร็จ")
+    alert("Failed to create document")
   }
 }
 
@@ -228,7 +246,7 @@ const closeDocIdPopup = async () => {
     videoRef.value.srcObject = s
     stream.value = s
   } catch {
-    alert("ไม่สามารถเปิดกล้องได้")
+    alert("Unable to turn on camera")
   }
 }
 
@@ -244,7 +262,7 @@ const capturePhoto = () => {
 }
 
 const submitDocument = async () => {
-  if (!capturedImage.value) return alert("กรุณาถ่ายภาพก่อนส่ง")
+  if (!capturedImage.value) return alert("Please take pictures before sending.")
   loading.value = true
 
   try {
@@ -264,7 +282,7 @@ const submitDocument = async () => {
     const data = await res.json()
     if (!data.success) throw new Error()
 
-    alert("อัปโหลดสำเร็จ!")
+    alert("Successfully uploaded!")
 
         // ⭐⭐ RESET STATE เพื่อไม่ให้ค่าค้าง ⭐⭐
     selectedCategory.value = null
@@ -282,7 +300,7 @@ const submitDocument = async () => {
     router.push('/student/document/topictrack')
 
   } catch (err) {
-    alert("อัปโหลดไม่สำเร็จ")
+    alert("Upload failed")
   } finally {
     loading.value = false
   }

@@ -24,12 +24,12 @@
       </p>
 
       <!-- 🌐 ปุ่มเปลี่ยนภาษา -->
-      <button
+      <!-- <button
         @click="toggleLang"
         class="text-xs font-bold border border-white px-2 py-1 rounded hover:bg-white hover:text-[#003366] transition"
       >
         {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
-      </button>
+      </button> -->
 
       <!-- 🚪 Logout -->
       <button
@@ -92,9 +92,9 @@ onMounted(() => {
   }
 })
 
-function toggleLang() {
-  currentLang.value = currentLang.value === 'th' ? 'en' : 'th'
-}
+// function toggleLang() {
+//   currentLang.value = currentLang.value === 'th' ? 'en' : 'th'
+// }
 
 const logout = () => {
   localStorage.clear()

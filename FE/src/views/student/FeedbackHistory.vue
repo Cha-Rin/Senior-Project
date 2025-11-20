@@ -2,7 +2,7 @@
   <div class="p-4 pt-20 max-w-xl mx-auto">
 
     <h1 class="text-2xl font-bold text-indigo-700 mb-6 text-center">
-      ประวัติฟีดแบคของฉัน
+      History Feedback
     </h1>
 
     <!-- Tabs -->
@@ -30,13 +30,13 @@
 
     <!-- Loading -->
     <div v-if="loading" class="text-center text-gray-500 py-5">
-      กำลังโหลด...
+      Loading...
     </div>
 
     <!-- No data -->
     <div v-if="!loading && currentList.length === 0"
          class="text-center py-10 text-gray-500">
-      ยังไม่มีประวัติฟีดแบค
+      You have no feedback history yet.
     </div>
 
     <!-- History list -->
@@ -54,12 +54,12 @@
         </span>
       </div>
 
-      <p><strong>Date:</strong> {{ format(item.date) }}</p>
-      <p><strong>Topic:</strong> {{ item.topic }}</p>
-      <p><strong>Comment:</strong> {{ item.comment || '-' }}</p>
+      <p><strong>Date :</strong> {{ format(item.date) }}</p>
+      <p><strong>Topic :</strong> {{ item.topic }}</p>
+      <p><strong>Comment :</strong> {{ item.comment || '-' }}</p>
 
       <p class="text-xs text-gray-500 mt-2">
-        คะแนนเฉลี่ย: <strong>{{ item.avg }}</strong> / 5
+        Average : <strong>{{ item.avg }}</strong> / 5
       </p>
     </div>
 

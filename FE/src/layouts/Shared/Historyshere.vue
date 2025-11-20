@@ -528,6 +528,9 @@ const getImageUrl = (path) => {
 const isImage = (path) => {
   if (!path) return false
   return /\.(png|jpg|jpeg|gif|webp)$/i.test(path)
+
+
+  
 }
 
 </script>

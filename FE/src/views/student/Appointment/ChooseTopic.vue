@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 pt-20 px-6">
-    <h1 class="text-2xl font-bold text-center mb-6">{{ t('choose_topic') }}</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
 
     <!-- 🔹 แสดงเฉพาะหัวข้อแบบไม่ซ้ำ -->
     <div
