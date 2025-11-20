@@ -27,9 +27,9 @@
         👩‍🎓 {{ studentName }}
       </p>
 
-      <button @click="toggleLang" class="text-xs font-bold">
+      <!-- <button @click="toggleLang" class="text-xs font-bold">
         {{ currentLang === 'th' ? 'EN / TH' : 'TH / EN' }}
-      </button>
+      </button> -->
      <button
   @click="logout"
   class="w-10 h-10 flex items-center justify-center rounded hover:bg-white hover:text-[#003366] transition"

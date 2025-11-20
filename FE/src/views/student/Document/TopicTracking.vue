@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-gray-50 pt-20 px-6">
-    <h1 class="text-2xl font-bold text-center mb-6">{{ $t('choose_topic') }}</h1>
+    <h1 class="text-2xl font-bold text-center mb-6">Choose Topic</h1>
 
     <!-- Loading -->
     <div v-if="loadingData" class="text-center text-gray-500">Loading topics...</div>
@@ -18,7 +18,7 @@
             : 'border-gray-200 bg-white hover:shadow-lg'
         ]"
       >
-        <p class="text-lg font-semibold text-gray-800">{{ translateCategory(cat.type) }}</p>
+        <p class="text-lg font-semibold text-gray-800">{{ cat.type }}</p>
       </div>
     </div>
 
@@ -30,16 +30,16 @@
       v-if="selectedCategory" 
       class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
-     <p class="text-sm font-semibold mb-2">
-  {{ $t('sub_topic_title') }}
-  <span class="text-gray-400">({{ $t('sub_topic_example') }})</span>
-</p>
+      <p class="text-sm font-semibold mb-2">
+        Type your sub-topic
+        <!-- <span class="text-gray-400">(e.g., additional enrollment request)</span> -->
+      </p>
 
       <textarea
         v-model="subTopic"
         class="w-full border border-gray-300 rounded-lg p-2 text-sm resize-none focus:ring-2 focus:ring-blue-400"
         rows="3"
-        :placeholder="$t('sub_topic_example')"
+        placeholder="(e.g., additional enrollment request)"
       ></textarea>
 
       <div class="text-center mt-4">
@@ -47,7 +47,7 @@
           @click="openCameraPopup"
           class="bg-blue-600 text-white font-semibold px-6 py-2 rounded-full hover:bg-blue-700 transition"
         >
-          {{ $t('send_btn') }}
+          Send
         </button>
       </div>
     </div>
@@ -208,7 +208,7 @@ const selectCategory = (cat) => {
 // Create Document (before camera)
 const openCameraPopup = async () => {
   if (!subTopic.value.trim()) {
-    errorMessage.value = 'กรุณาพิมพ์หัวข้อย่อยก่อนส่ง'
+    errorMessage.value = 'Please type the subtopic before submitting.'
     return
   }
 
@@ -234,7 +234,7 @@ const openCameraPopup = async () => {
     createdDocCode.value = data.document_code
     showDocId.value = true
   } catch {
-    alert("สร้างเอกสารไม่สำเร็จ")
+    alert("Failed to create document")
   }
 }
 
@@ -246,7 +246,7 @@ const closeDocIdPopup = async () => {
     videoRef.value.srcObject = s
     stream.value = s
   } catch {
-    alert("ไม่สามารถเปิดกล้องได้")
+    alert("Unable to turn on camera")
   }
 }
 
@@ -262,7 +262,7 @@ const capturePhoto = () => {
 }
 
 const submitDocument = async () => {
-  if (!capturedImage.value) return alert("กรุณาถ่ายภาพก่อนส่ง")
+  if (!capturedImage.value) return alert("Please take pictures before sending.")
   loading.value = true
 
   try {
@@ -282,7 +282,7 @@ const submitDocument = async () => {
     const data = await res.json()
     if (!data.success) throw new Error()
 
-    alert("อัปโหลดสำเร็จ!")
+    alert("Successfully uploaded!")
 
         // ⭐⭐ RESET STATE เพื่อไม่ให้ค่าค้าง ⭐⭐
     selectedCategory.value = null
@@ -300,7 +300,7 @@ const submitDocument = async () => {
     router.push('/student/document/topictrack')
 
   } catch (err) {
-    alert("อัปโหลดไม่สำเร็จ")
+    alert("Upload failed")
   } finally {
     loading.value = false
   }

@@ -31,12 +31,12 @@
       </p>
 
       <!-- เปลี่ยนภาษา -->
-      <button
+      <!-- <button
         @click="toggleLang"
         class="text-xs font-bold border border-white px-2 py-1 rounded hover:bg-white hover:text-[#003366] transition"
       >
         {{ currentLang === 'th' ? 'TH / EN' : 'EN / TH' }}
-      </button>
+      </button> -->
 
       <!-- Logout -->
       <button
@@ -90,9 +90,6 @@ const router = useRouter()
 const menuOpen = ref(false)
 const currentLang = ref("th")
 
-// ⭐ ใช้ i18n
-import { useI18n } from "vue-i18n"
-const { locale } = useI18n()
 
 
 // 📧 ตัวแปรใหม่: email ผู้ใช้
@@ -112,11 +109,11 @@ onMounted(() => {
 })
 
 // ⭐ ปุ่มเปลี่ยนภาษา
-function toggleLang() {
-  currentLang.value = currentLang.value === "th" ? "en" : "th"
-  locale.value = currentLang.value
-  localStorage.setItem("lang", currentLang.value)
-}
+// function toggleLang() {
+//   currentLang.value = currentLang.value === "th" ? "en" : "th"
+//   locale.value = currentLang.value
+//   localStorage.setItem("lang", currentLang.value)
+// }
 
 // Logout
 const logout = () => {
