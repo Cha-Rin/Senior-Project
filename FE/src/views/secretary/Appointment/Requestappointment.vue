@@ -34,7 +34,7 @@
             </div>
 
             <!-- ID -->
-            <div class="text-gray-700 font-medium">{{ item.studentId }}</div>
+            <div class="text-gray-700 font-medium">{{ getStudentId(item.email) }}</div>
 
             <!-- NAME -->
             <div>{{ item.name }}</div>
@@ -148,7 +148,10 @@ import { ref, computed, onMounted } from 'vue'
 import SecreLayout from '@/layouts/secretary/SecreLayout.vue'
 
 const requests = ref([])
-
+const getStudentId = (email) => {
+  if (!email) return "-"
+  return email.split("@")[0]   // ตัดเอาเฉพาะก่อน @
+}
 // Pagination states
 const currentPage = ref(1)
 const itemsPerPage = 7
@@ -203,6 +206,7 @@ onMounted(async () => {
       name: item.full_name || '—',
       date: formatDateTime(item.appointment_date).date,
       time: formatDateTime(item.appointment_date).time,
+      email: item.student_email, 
       topic: item.topic,
       note: item.student_note || '',
       status:

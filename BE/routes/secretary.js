@@ -49,6 +49,7 @@ module.exports = (db) => {
           a.user_id AS studentId,
           a.student_name AS full_name,
           a.appointment_date,
+          a.student_email,
           c.type AS topic,
           a.student_note,
           a.status
