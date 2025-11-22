@@ -274,8 +274,8 @@ module.exports = (db) => {
           d.document_id,
           d.document_code, 
           d.user_id AS studentId,
-          u.email AS student_email,
-          CONCAT(u.name, ' ', u.surname) AS full_name,
+          d.student_email,
+          d.student_name AS full_name,
           d.submit_date,
           c.type AS topic,
           d.image_path,
@@ -283,7 +283,6 @@ module.exports = (db) => {
         FROM document_tracking d
         JOIN user_category uc ON d.category_id = uc.category_id
         JOIN categories c ON d.category_id = c.category_id
-        JOIN user u ON d.user_id = u.user_id
         WHERE uc.user_id = ? 
           AND d.status = 0
         ORDER BY d.submit_date DESC
@@ -347,18 +346,16 @@ module.exports = (db) => {
       const sql = `
         SELECT 
           d.document_id,
-           d.document_code,          -- ✅ เพิ่ม
-    u.email AS student_email, -- ✅ เพิ่ม
+          d.document_code,          
+          d.student_email, 
           d.user_id AS studentId,
-          u.email AS student_email, 
-          CONCAT(u.name, ' ', u.surname) AS full_name,
+          d.student_name,
           d.submit_date,
           c.type AS topic,
           d.status
         FROM document_tracking d
         JOIN user_category uc ON d.category_id = uc.category_id
         JOIN categories c ON d.category_id = c.category_id
-        JOIN user u ON d.user_id = u.user_id
         WHERE uc.user_id = ?
           AND d.status = 1
         ORDER BY d.submit_date DESC

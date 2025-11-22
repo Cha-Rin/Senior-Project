@@ -235,7 +235,7 @@ const loadDocuments = async () => {
     no: d.document_code,
     documentId: d.document_id,   // ✅ ใช้ document_id จริง
     email: d.student_email,
-    name: d.full_name,
+    name: d.student_name,
     date: formatDate(d.submit_date),
     topic: d.topic,
     status:
