@@ -54,10 +54,8 @@ module.exports = (db) => {
           a.student_note,
           a.status
         FROM appointment a
-        JOIN user_category uc ON a.category_id = uc.category_id
         JOIN categories c ON a.category_id = c.category_id
-        JOIN user u ON a.user_id = u.user_id
-        WHERE uc.user_id = ? AND a.status = 0
+        WHERE a.user_id = ? AND a.status = 0
         ORDER BY a.appointment_date ASC
       `
 

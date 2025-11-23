@@ -255,36 +255,37 @@ module.exports = (db) => {
   // 🔎 ดึงรายการเดียวเพื่อให้คะแนน (ต้อง Completed และยังไม่มี feedback)
   // FE: GET /student/appointments/for-feedback
   router.get('/appointments/for-feedback', authMiddleware, (req, res) => {
-    const userEmail = req.user.email
-    if (!userEmail) {
-      return res.status(400).json({ success: false, message: 'invalid_email' })
+  const userEmail = req.user.email
+  if (!userEmail) {
+    return res.status(400).json({ success: false, message: 'invalid_email' })
+  }
+
+  const sql = `
+    SELECT 
+      a.appointment_id AS id, 
+      a.appointment_date AS date, 
+      COALESCE(c.type, 'Unknown') AS topic, 
+      a.student_note AS note,
+      a.status
+    FROM appointment a
+    LEFT JOIN categories c ON c.category_id = a.category_id
+    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
+    WHERE a.student_email = ?
+      AND a.status = 3
+      AND f.appointment_id IS NULL
+    ORDER BY a.appointment_date DESC
+  `
+
+  db.query(sql, [userEmail], (err, rows) => {
+    if (err) {
+      console.error('❌ fetch appointments error:', err)
+      return res.status(500).json({ success: false, message: 'db_error' })
     }
-
-    const sql = `
-      SELECT 
-        a.appointment_id AS id, 
-        a.appointment_date AS date, 
-        COALESCE(c.type, 'Unknown') AS topic, 
-        a.student_note AS note
-      FROM appointment a
-      JOIN user u ON a.user_id = u.user_id
-      LEFT JOIN categories c ON c.category_id = a.category_id
-      LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
-      WHERE u.email = ?
-        AND a.status = 3
-        AND f.appointment_id IS NULL
-      ORDER BY a.appointment_date DESC
-    `
-
-    db.query(sql, [userEmail], (err, rows) => {
-      if (err) {
-        console.error('❌ fetch appointments error:', err)
-        return res.status(500).json({ success: false, message: 'db_error' })
-      }
-      res.json({ success: true, items: rows })
-    })
+    
+    console.log(`✅ Found ${rows.length} appointments for ${userEmail}`)
+    res.json({ success: true, items: rows })
   })
-
+})
   // GET /student/appointment/:id/for-feedback (ใช้ id อย่างเดียว ไม่ต้องใช้ email)
   router.get('/appointment/:id/for-feedback', (req, res) => {
     const id = Number(req.params.id)
@@ -347,39 +348,38 @@ module.exports = (db) => {
 
   // ✅ GET: ดึงหัวข้อของ user จาก appointment ที่ Completed และยังไม่มี feedback
   router.get('/appointment-topics', authMiddleware, (req, res) => {
-    const userEmail = req.user.email
-    if (!userEmail) {
-      return res.status(400).json({ success: false, message: 'invalid_email' })
+  const userEmail = req.user.email
+  if (!userEmail) {
+    return res.status(400).json({ success: false, message: 'invalid_email' })
+  }
+
+  const sql = `
+    SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
+    FROM appointment a
+    LEFT JOIN categories c ON c.category_id = a.category_id
+    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
+    WHERE a.student_email = ?
+      AND a.status = 3
+      AND f.appointment_id IS NULL
+    ORDER BY topic
+  `
+
+  db.query(sql, [userEmail], (err, rows) => {
+    if (err) {
+      console.error('❌ fetch appointment topics error:', err)
+      return res.status(500).json({ success: false, message: 'db_error' })
     }
 
-    const sql = `
-      SELECT DISTINCT COALESCE(c.type, 'Unknown') AS topic
-      FROM appointment a
-      JOIN user u ON a.user_id = u.user_id
-      LEFT JOIN categories c ON c.category_id = a.category_id
-      LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
-      WHERE u.email = ?
-        AND a.status = 3
-        AND f.appointment_id IS NULL
-      ORDER BY topic;
-    `
+    if (!rows.length) {
+      return res.json({ success: false, message: 'Not found' })
+    }
 
-    db.query(sql, [userEmail], (err, rows) => {
-      if (err) {
-        console.error('❌ fetch appointment topics error:', err)
-        return res.status(500).json({ success: false, message: 'db_error' })
-      }
-
-      if (!rows.length) {
-        return res.json({ success: false, message: 'Not found' })
-      }
-
-      res.json({
-        success: true,
-        topics: rows.map((r) => r.topic).filter(Boolean),
-      })
+    res.json({
+      success: true,
+      topics: rows.map((r) => r.topic).filter(Boolean),
     })
   })
+})
 
   // ⭐ GET: จำนวน feedback ที่ยังไม่ได้ทำทั้งหมด (appointments + documents)
   router.get('/feedback/pending', authMiddleware, (req, res) => {
@@ -391,19 +391,18 @@ module.exports = (db) => {
     // 🔹 appointments ที่ยังไม่มี feedback
     const sqlAppointments = `
       SELECT 
-        a.appointment_id AS id,
-        a.appointment_date AS date,
-        a.student_note AS note,
-        COALESCE(c.type, 'Appointment') AS topic,
-        a.status
-      FROM appointment a
-      JOIN user u ON a.user_id = u.user_id
-      LEFT JOIN categories c ON c.category_id = a.category_id
-      LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
-      WHERE u.email = ?
-        AND a.status = 3
-        AND f.appointment_id IS NULL
-      ORDER BY a.appointment_date DESC
+      a.appointment_id AS id,
+      a.appointment_date AS date,
+      a.student_note AS note,
+      COALESCE(c.type, 'Appointment') AS topic,
+      a.status
+    FROM appointment a
+    LEFT JOIN categories c ON c.category_id = a.category_id
+    LEFT JOIN feedback_appointment f ON f.appointment_id = a.appointment_id
+    WHERE a.student_email = ?
+      AND a.status = 3
+      AND f.appointment_id IS NULL
+    ORDER BY a.appointment_date DESC
     `
 
     // 🔹 documents ที่ยังไม่มี feedback

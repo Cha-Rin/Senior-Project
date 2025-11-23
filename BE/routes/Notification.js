@@ -20,27 +20,26 @@ module.exports = (db) => {
   // 🟦 ระบบเดิม: Pending Appointment (ขึ้นตัวเลข Sidebar)
   // ----------------------------------------------------------
   router.get('/pending-now', (req, res) => {
-    const secretaryId = req.query.user_id
-    if (!secretaryId) {
-      return res.status(400).json({ success: false, message: 'Missing user_id' })
+  const user_id = req.query.user_id
+  if (!user_id) {
+    return res.status(400).json({ success: false, message: 'Missing user_id' })
+  }
+
+  const sql = `
+    SELECT COUNT(*) AS count
+    FROM appointment
+    WHERE status = 0
+      AND user_id = ?
+  `
+
+  db.query(sql, [user_id], (err, results) => {
+    if (err) {
+      console.error('SQL Error (pending-now):', err)
+      return res.status(500).json({ success: false })
     }
-
-    const sql = `
-      SELECT COUNT(*) AS count
-      FROM appointment AS a
-      JOIN user_category AS uc ON a.category_id = uc.category_id
-      WHERE a.status = 0
-        AND uc.user_id = ?
-    `
-
-    db.query(sql, [secretaryId], (err, results) => {
-      if (err) {
-        console.error('SQL Error (pending-now):', err)
-        return res.status(500).json({ success: false })
-      }
-      res.json({ success: true, count: results[0]?.count || 0 })
-    })
+    res.json({ success: true, count: results[0]?.count || 0 })
   })
+})
 
   // ----------------------------------------------------------
   // 🟩 ระบบใหม่: กระดิ่ง — นัดที่ APPROVE แล้วและถึงเวลา (status = 1)

@@ -23,8 +23,8 @@
     <!-- 🔹 ขวา: Language Switch + Login Icon -->
     <div class="flex items-center space-x-3">
       <!-- ชื่อผู้ใช้ -->
-      <p class="text-sm font-semibold hidden sm:block">
-        👩‍🎓 {{ studentName }}
+       <p class="text-sm font-semibold hidden sm:block">
+        {{ studentEmail }}
       </p>
 
       <!-- <button @click="toggleLang" class="text-xs font-bold">
@@ -75,26 +75,16 @@ import jwt_decode from "jwt-decode"
 const router = useRouter()
 const menuOpen = ref(false)
 const currentLang = ref('th')
-const studentName = ref('Guest')
-
-onMounted(async () => {
-  const token = localStorage.getItem('authToken')
+const studentEmail = ref("Guest")
+onMounted(() => {
+  const token = localStorage.getItem("authToken")
   if (!token) return
 
   try {
     const decoded = jwt_decode(token)
-    const userId = decoded.user_id
-
-    const res = await fetch(`/api/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    const data = await res.json()
-    if (data.name && data.surname) {
-  studentName.value = `${data.name} ${data.surname}`
-  localStorage.setItem('studentName', studentName.value)
-}
+    studentEmail.value = decoded.email || "Unknown"
   } catch (err) {
-    console.error('Failed to load user info:', err)
+    console.error("❌ Failed to decode token:", err)
   }
 })
 
