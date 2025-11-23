@@ -1,7 +1,7 @@
 <!-- src/components/secretary/weekpicker.vue -->
 <template>
   <div class="ml-4 inline-flex gap-2">
-    <button
+    <!-- <button
       @click="selectWeek('prev')"
       class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-black"
     >
@@ -18,7 +18,7 @@
       class="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg text-black"
     >
       Next →
-    </button>
+    </button> -->
   </div>
 </template>
 
