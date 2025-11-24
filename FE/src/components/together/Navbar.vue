@@ -1,7 +1,7 @@
 <!-- 📁 src/components/secretary/TopNavbar.vue -->
 <template>
   <div
-    class="fixed top-0 left-0 w-full z-50 bg-[#003366] text-white px-4 py-2 shadow-md flex items-center justify-between"
+    class="fixed top-0 left-0 w-full h-16 z-50 bg-[#003366] text-white px-4 py-2 shadow-md flex items-center justify-between"
   >
     <!-- 🔹 Logo -->
     <div class="flex items-center space-x-3">

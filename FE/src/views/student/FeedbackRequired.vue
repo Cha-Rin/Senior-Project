@@ -7,13 +7,13 @@
     >
       <!-- Title -->
       <h1 class="text-2xl font-extrabold text-red-600 mb-4">
-        กรุณาทำฟีดแบ็คก่อน
+        Please provide feedback first.
       </h1>
 
       <!-- Description -->
       <p class="text-gray-700 text-base mb-6 leading-relaxed">
-        ระบบตรวจพบว่าคุณมีแบบประเมินที่ยังไม่ได้ทำ<br />
-        กรุณาทำให้เสร็จสิ้นก่อนเพื่อใช้งานฟีเจอร์อื่น ๆ
+        The system detected that you have uncompleted assessments.<br />
+        Please complete this first to use other features.
       </p>
 
       <!-- Button: ไปทำฟีดแบ็ค -->
@@ -21,7 +21,7 @@
         class="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded-xl w-full font-semibold transition"
         @click="goFeedback"
       >
-        ไปทำฟีดแบ็ค
+        Go do some feedback.
       </button>
 
       <!-- Optional: ปุ่มกลับหน้าเลือก path -->
@@ -29,7 +29,7 @@
         class="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-xl w-full transition"
         @click="goBack"
       >
-        กลับหน้าเลือกเส้นทาง
+        Return to the route selection page
       </button>
 
       <!-- ✅ เพิ่มปุ่ม Logout -->
@@ -37,7 +37,7 @@
         class="mt-4 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-xl w-full transition"
         @click="handleLogout"
       >
-        ออกจากระบบ
+        Log out
       </button>
     </div>
   </div>

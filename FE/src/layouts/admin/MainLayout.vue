@@ -13,7 +13,7 @@ const isLoginPage = route.name === 'Login';
     
     <div class="main-content">
       <Sidebar />
-      <div class="page-wrapper">
+      <div class="page-wrapper ml-64">
         <router-view />
       </div>
     </div>

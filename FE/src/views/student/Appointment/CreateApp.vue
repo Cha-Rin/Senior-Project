@@ -25,7 +25,7 @@
             ]"
             @click="selectStaff(staff)"
           >
-            {{ staffIdToView === staff.user_id ? '✓ เลือกแล้ว' : 'ดูตารางเวลา' }}
+            {{ staffIdToView === staff.user_id ? '✓ Selected' : 'See the schedule' }}
           </button>
         </div>
       </div>

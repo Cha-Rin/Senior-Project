@@ -50,7 +50,6 @@ module.exports = (db) => {
   const userEmail = req.user.email
   console.log("Decoded token:", req.user);
   console.log(`📥 User ${userId} with role ${role} requested history (combined)`)
-
   if (!role) {
     return res.status(400).json({ success: false, message: 'Role not found in token' })
   }
@@ -166,7 +165,16 @@ documentParams = [userId]
     else if (role === 'admin' || role === 1) {
       const staffIdNum = Number(staffId)
       const hasValidStaffId = Number.isInteger(staffIdNum) && staffIdNum > 0
+      let categoryIdNum = null
+  if (hasValidStaffId) {
+    const [staffInfo] = await runQuery(
+      "SELECT category_id FROM user_category WHERE user_id = ?",
+      [staffIdNum]
+    )
+    categoryIdNum = staffInfo?.category_id
+  }
 
+  const hasValidCategoryId = Number.isInteger(categoryIdNum) && categoryIdNum > 0
       appointmentSql = `
         SELECT 
           'appointment' AS type,
@@ -194,11 +202,11 @@ documentParams = [userId]
           d.image_complete,
           d.status,
           d.submit_date AS event_date,
-          d.user_id AS staffId
+          d.category_id
         FROM document_tracking AS d
-        ${hasValidStaffId ? 'WHERE d.user_id = ?' : 'WHERE 1=0'}
+        ${hasValidCategoryId ? 'WHERE d.category_id = ?' : 'WHERE 1=0'}
       `
-      documentParams = hasValidStaffId ? [staffIdNum] : []
+      documentParams = hasValidCategoryId ? [categoryIdNum] : []
     }
 
     else {

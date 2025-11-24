@@ -113,7 +113,8 @@
         No items found in selected date range.
       </div>
 
-      <div v-else v-for="item in filteredByTab" :key="item.type + '-' + item.id">
+      <!-- ✅ เปลี่ยนเป็น paginatedItems -->
+      <div v-else v-for="item in paginatedItems" :key="item.type + '-' + item.id">
 
         <div class="history-item flex items-center justify-between p-5 bg-white rounded-xl shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
           <div class="flex items-center gap-6">
@@ -151,18 +152,43 @@
             <span v-else-if="item.status === 3">✔️</span>
 
             {{ item.status === 1 ? 'Approve' : item.status === 2 ? 'Reject' : 'Pending' }}
+            
           </div>
 
         </div>
 
       </div>
-    </div>
+      <!-- ✅ Pagination -->
+      <div v-if="totalPages > 1" class="flex justify-center items-center mt-8 space-x-1">
+        <button
+          v-for="page in totalPages"
+          :key="page"
+          @click="goToPage(page)"
+          :class="[
+            'px-3 py-1 rounded text-sm',
+            page === currentPage
+              ? 'bg-indigo-600 text-white font-bold'
+              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'
+          ]"
+        >
+          {{ page }}
+        </button>
 
+        <button
+          v-if="currentPage < totalPages"
+          @click="goToPage(currentPage + 1)"
+          class="ml-2 px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700 text-sm"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+    
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useHistory } from '@/components/together/useHistory'
 import WeekPicker from '@/components/secretary/weekpicker.vue'
@@ -174,7 +200,7 @@ const calendarContainer = ref(null)
 const statusFilter = ref("all")
 const activeTab = ref('appointment')   // ✅ tab คุมประเภท
 
-// ✅ computed: แสดงตามแท็บ
+// ✅ computed: แสดงตามแท็บและสถานะ
 const filteredByTab = computed(() => {
   let items = history.value
 
@@ -192,7 +218,6 @@ const filteredByTab = computed(() => {
 
   return items
 })
-
 
 const { 
   history, 
@@ -221,7 +246,7 @@ onMounted(async () => {
   const token = localStorage.getItem("authToken");
   const role = localStorage.getItem("userRole");
   console.log("ALL ROUTE PARAMS:", route.params)
-  const staffId = route.params.id; // ✅ ตรงนี้พอแล้ว
+  const staffId = route.params.id;
 
   console.log("--- DEBUG HISTORY PAGE ---");
   console.log("Role (from localStorage):", role);
@@ -231,7 +256,7 @@ onMounted(async () => {
   try {
     const res = await axios.get("/api/history/historyall", {
       headers: { Authorization: `Bearer ${token}` },
-      params: { staffId: staffId } // ✅ ส่งตรง ๆ
+      params: { staffId: staffId }
     });
 
     history.value = res.data.historyItems;
@@ -249,6 +274,30 @@ const handleClickOutside = (e) => {
 onMounted(()=>document.addEventListener('click',handleClickOutside))
 onUnmounted(()=>document.removeEventListener('click',handleClickOutside))
 
+// 🔹 Pagination
+const currentPage = ref(1)
+const itemsPerPage = 7
+
+const totalPages = computed(() => Math.ceil(filteredByTab.value.length / itemsPerPage))
+
+// ✅ paginatedItems ใช้ filteredByTab
+const paginatedItems = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage
+  const end = start + itemsPerPage
+  return filteredByTab.value.slice(start, end)
+})
+
+const goToPage = (page) => {
+  if (page >= 1 && page <= totalPages.value) {
+    currentPage.value = page
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+}
+
+// ✅ รีเซ็ตหน้ากลับไป 1 เมื่อเปลี่ยนแท็บหรือกรอง
+watch([activeTab, statusFilter], () => {
+  currentPage.value = 1
+})
 </script>
 
 <style scoped>

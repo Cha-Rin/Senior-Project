@@ -224,7 +224,7 @@ onMounted(async () => {
       <p v-if="errorMessage" class="text-red-500 text-sm mt-4">{{ errorMessage }}</p>
 
       <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
-        กรุณาลงชื่อเข้าใช้ด้วยบัญชีมหาวิทยาลัย
+        Please sign in with your university account.
       </div>
 
     </div>
@@ -285,7 +285,6 @@ const handleGoogleCallback = async (response) => {
     localStorage.setItem("userRole", decoded.role);
     localStorage.setItem("userId", decoded.user_id);
     localStorage.setItem("email", decoded.email);
-
     // ✅ ถ้าเป็นเลขา (role 2) - ดึง category_id
     if (decoded.role === 2) {
       try {
