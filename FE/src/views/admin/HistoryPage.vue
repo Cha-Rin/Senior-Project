@@ -38,15 +38,22 @@
 
   <!-- RIGHT: STATUS FILTER -->
   <select
-    v-model="statusFilter"
-    class="px-4 py-2 bg-white border rounded-lg shadow-sm min-w-[150px]"
-  >
-    <option value="all">All Status</option>
-    <option value="0">Pending</option>
+  v-model="statusFilter"
+  class="px-4 py-2 bg-white border rounded-lg shadow-sm min-w-[150px]"
+>
+  <option value="all">All Status</option>
+  <option value="0">Pending</option>
+  <template v-if="activeTab === 'appointment'">
     <option value="1">Approve</option>
     <option value="2">Reject</option>
     <option value="3">Completed</option>
-  </select>
+  </template>
+  <template v-else>
+    <option value="1">In Progress</option>
+    <option value="2">Complete</option>
+    <option value="3">Reject</option>
+  </template>
+</select>
 
 </div>
 
@@ -138,34 +145,29 @@
           <div>{{ item.student_note }}</div>
 
           <div
-  class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
-  :class="{
-    'bg-orange-100 text-orange-800': item.status === 0, // Pending
-    'bg-emerald-100 text-emerald-800': item.status === 1, // Approve
-    'bg-rose-100 text-rose-800': item.status === 2, // Reject
-    'bg-blue-100 text-blue-800': item.status === 3 // Complete
-  }"
->
-  <!-- Icon ตาม status -->
-  <span v-if="item.status === 0">⏳</span>
-  <span v-else-if="item.status === 1">✅</span>
-  <span v-else-if="item.status === 2">❌</span>
-  <span v-else-if="item.status === 3">✔️</span>
+            class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
+            :class="{
+              'bg-rose-100 text-rose-800': (item.type === 'appointment' && item.status === 2) || (item.type === 'document' && item.status === 3),
+              'bg-emerald-100 text-emerald-800': item.status === 1,
+              'bg-orange-100 text-orange-800': item.status === 0,
+              'bg-blue-100 text-blue-800': (item.type === 'appointment' && item.status === 3) || (item.type === 'document' && item.status === 2)
+            }"
+          >
+            <span v-if="item.status === 0">⏳</span>
+            <span v-else-if="item.status === 1">✅</span>
+            <span v-else-if="item.type === 'appointment' && item.status === 2">❌</span>
+            <span v-else-if="item.type === 'appointment' && item.status === 3">✔️</span>
+            <span v-else-if="item.type === 'document' && item.status === 2">✔️</span>
+            <span v-else-if="item.type === 'document' && item.status === 3">❌</span>
 
-  <!-- ชื่อสถานะ -->
-  <span>
-    {{
-      item.status === 0
-        ? 'Pending'
-        : item.status === 1
-        ? 'Approve'
-        : item.status === 2
-        ? 'Reject'
-        : 'Complete'
-    }}
-  </span>
-</div>
-
+            <template v-if="item.type === 'document'">
+              {{ item.status === 0 ? 'Pending' : item.status === 1 ? 'In Progress' : item.status === 2 ? 'Complete' : 'Reject' }}
+            </template>
+            <template v-else>
+              {{ item.status === 0 ? 'Pending' : item.status === 1 ? 'Approve' : item.status === 2 ? 'Reject' : 'Completed' }}
+            </template>
+            
+          </div>
 
         </div>
 
