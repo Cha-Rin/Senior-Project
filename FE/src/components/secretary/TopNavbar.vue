@@ -11,7 +11,7 @@
     <div class="flex items-center space-x-4">
       
       <!-- ===================== 🔔 NOTIFICATION ===================== -->
-      <div class="relative">
+      <div class="relative"  v-if="showBell">
         <button
           @click="togglePopover"
           class="h-10 px-4 flex items-center justify-center rounded hover:bg-white hover:text-[#003366] transition"
@@ -113,6 +113,8 @@
 <script setup>
 import { ref, computed, onMounted } from "vue"
 import { useRouter } from "vue-router"
+import { useRoute } from "vue-router"
+const route = useRoute()
 import jwt_decode from "jwt-decode"
 import { useActiveNotificationStore } from "@/stores/useActiveNotificationStore.js"
 
@@ -120,6 +122,7 @@ const router = useRouter()
 const currentLang = ref("th")
 const activeStore = useActiveNotificationStore()
 const isPopoverOpen = ref(false)
+
 
 // =============== 👤 USER EMAIL ===============
 const userEmail = ref("Guest")
@@ -140,10 +143,22 @@ onMounted(() => {
   }
 })
 
+
+// ซ่อน bell ถ้าเป็นหน้า Document System
+const showBell = computed(() => {
+  const hideList = [
+    "RequestDocument",
+    "Status",
+    "HistoryDocument",
+    "RatingDocument"
+  ]
+  return !hideList.includes(route.name)
+})
+
 // ================= LANGUAGE =================
-function toggleLang() {
-  currentLang.value = currentLang.value === "th" ? "en" : "th"
-}
+// function toggleLang() {
+//   currentLang.value = currentLang.value === "th" ? "en" : "th"
+// }
 
 // ================= POPOVER =================
 const togglePopover = () => {
