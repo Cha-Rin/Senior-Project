@@ -127,6 +127,7 @@ const isPopoverOpen = ref(false)
 // =============== 👤 USER EMAIL ===============
 const userEmail = ref("Guest")
 
+
 onMounted(() => {
   const token = localStorage.getItem("authToken")
   if (!token) return
@@ -136,12 +137,44 @@ onMounted(() => {
     userEmail.value = decoded.email || "Unknown"
     const userId = decoded.user_id
 
+    // รายชื่อหน้า Document System
+    const documentPages = [
+      "RequestDocument",
+      "Status",
+      "HistoryDocument",
+      "RatingDocument"
+    ]
+    
+    // ❌ ถ้าอยู่ในหน้า Document -- หยุด ไม่ต้อง fetch appointment
+    if (documentPages.includes(route.name)) {
+      return
+    }
+
+    // ✔ ถ้าไม่ใช่หน้า Document -- ค่อย fetch appointment
     activeStore.fetchActiveAppointments(userId)
     setInterval(() => activeStore.fetchActiveAppointments(userId), 15000)
+
   } catch (err) {
     console.error("❌ Failed to decode token:", err)
   }
 })
+
+
+// onMounted(() => {
+//   const token = localStorage.getItem("authToken")
+//   if (!token) return
+
+//   try {
+//     const decoded = jwt_decode(token)
+//     userEmail.value = decoded.email || "Unknown"
+//     const userId = decoded.user_id
+
+//     activeStore.fetchActiveAppointments(userId)
+//     setInterval(() => activeStore.fetchActiveAppointments(userId), 15000)
+//   } catch (err) {
+//     console.error("❌ Failed to decode token:", err)
+//   }
+// })
 
 
 // ซ่อน bell ถ้าเป็นหน้า Document System
