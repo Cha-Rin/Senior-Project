@@ -21,7 +21,7 @@
                 class="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 min-w-[260px]"
               >
                 <span v-if="startDate && endDate">
-                  {{ formatDateDisplay(startDate) }} – {{ formatDateDisplay(endDate) }}
+                  {{ formatDateDisplay(startDate) }} - {{ formatDateDisplay(endDate) }}
                 </span>
                 <span v-else class="text-gray-500">Choose date range</span>
                 <svg

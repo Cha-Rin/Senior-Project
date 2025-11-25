@@ -137,12 +137,9 @@ module.exports = (db) => {
   // 🟢 4. เพิ่ม Staff ใหม่
   // ============================================================
   router.post('/staffs', upload.single('avatar'), (req, res) => {
-    console.log('📥 Add Staff Request:', req.body)
-    console.log('📦 Uploaded file:', req.file)
-
+   
     const { firstName, lastName, email, categoryIds } = req.body
     const avatarFile = req.file ? req.file.filename : 'default.png'
-    console.log('🖼 Avatar filename:', avatarFile)
 
     let categories = []
     try {
@@ -151,8 +148,7 @@ module.exports = (db) => {
       console.error('⚠️ JSON parse error:', err.message)
     }
 
-    console.log('🧩 Parsed categories:', categories)
-
+   
     const sqlUser = `
       INSERT INTO user (name, surname, email, role, profile_pic, status)
       VALUES (?, ?, ?, 2, ?, 1)
@@ -166,7 +162,7 @@ module.exports = (db) => {
       }
 
       const userId = result.insertId
-      console.log('✅ Added new staff with user_id:', userId)
+      
 
       if (Array.isArray(categories) && categories.length > 0) {
         const sqlUC = 'INSERT INTO user_category (user_id, category_id) VALUES ?'
@@ -176,11 +172,11 @@ module.exports = (db) => {
             console.error('⚠️ Error adding user_category:', err2)
             return res.status(500).json({ success: false, error: err2.message })
           }
-          console.log('✅ Added user_category:', values)
+          
           res.json({ success: true, message: 'Staff added successfully with responsibilities' })
         })
       } else {
-        console.log('ℹ️ No responsibilities assigned.')
+        
         res.json({ success: true, message: 'Staff added successfully (no categories)' })
       }
     })
@@ -194,11 +190,6 @@ module.exports = (db) => {
     const { firstName, lastName, email, categoryIds } = req.body
     const categories = JSON.parse(categoryIds || '[]')
     const avatarFile = req.file ? req.file.filename : null
-
-    console.log('🛠 Update Staff ID:', id)
-    console.log('📧 Email:', email)
-    console.log('📦 New avatar:', avatarFile)
-    console.log('🧩 Categories:', categories)
 
     const sqlUser = `
       UPDATE user 
@@ -230,11 +221,11 @@ module.exports = (db) => {
               return res.status(500).json({ success: false, error: err3.message })
             }
 
-            console.log('✅ Updated categories for user_id:', id, values)
+           
             return res.json({ success: true, message: 'Staff updated successfully with categories' })
           })
         } else {
-          console.log('ℹ️ No categories assigned after update.')
+          
           return res.json({ success: true, message: 'Staff updated successfully (no categories)' })
         }
       })
@@ -368,121 +359,133 @@ router.patch('/staffs/:id/status', (req, res) => {
   // ============================================================
   router.get('/staff/:id/rating', (req, res) => {
     const { id } = req.params
-    const { year, semester, type } = req.query
+    const { start_date, end_date, type } = req.query
 
-    if (!year || !semester || !type) {
-      return res.status(400).json({ success: false, message: 'Missing year, semester, or type' })
+    // Validate parameters
+    if (!start_date || !end_date || !type) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing start_date, end_date, or type'
+        })
     }
 
-    let sql = ''
+    let sql = ""
 
-    if (type === 'appointment') {
-      sql = `
-        SELECT 
-          AVG(fa.score_count1) AS service_provider,
-          AVG(fa.score_count2) AS service_process,
-          AVG(fa.score_count3) AS facilities
-        FROM feedback_appointment fa
-        JOIN appointment a ON fa.appointment_id = a.appointment_id
-        JOIN user_category uc ON a.category_id = uc.category_id
-        JOIN academic_period ap 
-          ON DATE(a.appointment_date) BETWEEN ap.start_date AND ap.end_date
-        WHERE 
-          uc.user_id = ?   
-          AND ap.academic_year = ? 
-          AND ap.semester = ?
-      `
-    } else if (type === 'document') {
-      sql = `
-        SELECT 
-          AVG(fd.score_count1) AS service_provider,
-          AVG(fd.score_count2) AS service_process,
-          AVG(fd.score_count3) AS facilities
-        FROM feedback_document_tracking fd
-        JOIN document_tracking d ON fd.document_id = d.document_id
-        JOIN user_category uc ON d.category_id = uc.category_id
-        JOIN academic_period ap 
-          ON DATE(d.submit_date) BETWEEN ap.start_date AND ap.end_date
-        WHERE 
-          uc.user_id = ?   
-          AND ap.academic_year = ? 
-          AND ap.semester = ?
-      `
+    if (type === "appointment") {
+        sql = `
+            SELECT 
+                AVG(fa.score_count1) AS service_provider,
+                AVG(fa.score_count2) AS service_process,
+                AVG(fa.score_count3) AS facilities
+            FROM feedback_appointment fa
+            JOIN appointment a ON fa.appointment_id = a.appointment_id
+            JOIN user_category uc ON a.category_id = uc.category_id
+            WHERE 
+                uc.user_id = ? 
+                AND DATE(a.appointment_date) BETWEEN ? AND ?
+        `
+    } else if (type === "document") {
+        sql = `
+            SELECT 
+                AVG(fd.score_count1) AS service_provider,
+                AVG(fd.score_count2) AS service_process,
+                AVG(fd.score_count3) AS facilities
+            FROM feedback_document_tracking fd
+            JOIN document_tracking d ON fd.document_id = d.document_id
+            JOIN user_category uc ON d.category_id = uc.category_id
+            WHERE 
+                uc.user_id = ? 
+                AND DATE(d.submit_date) BETWEEN ? AND ?
+        `
     } else {
-      return res.status(400).json({ success: false, message: 'Invalid type' })
+        return res.status(400).json({
+            success: false,
+            message: "Invalid type (must be 'appointment' or 'document')"
+        })
     }
 
-    db.query(sql, [id, year, semester], (err, results) => {
-      if (err) {
-        console.error('❌ Error fetching staff rating:', err)
-        return res.status(500).json({ success: false, error: err.message })
-      }
+    // Run SQL
+    db.query(sql, [id, start_date, end_date], (err, results) => {
+        if (err) {
+            console.error("❌ Error fetching staff rating:", err)
+            return res.status(500).json({
+                success: false,
+                error: err.message
+            })
+        }
 
-      console.log(`📊 Staff Rating Query Result (user_id=${id}, type=${type}, year=${year}, sem=${semester}):`)
-      console.table(results)
-
-      res.json({ success: true, data: results[0] || {} })
+        res.json({
+            success: true,
+            data: results[0] || {}
+        })
     })
-  })
+})
 
   // ============================================================
   // 💬 10. Staff Comments
   // ============================================================
   router.get('/staff/:id/comments', (req, res) => {
     const { id } = req.params
-    const { type, year, semester } = req.query
+    const { type, start_date, end_date } = req.query
 
-    if (!type || !year || !semester) {
-      return res.status(400).json({ success: false, message: 'Missing type, year, or semester' })
+    // Validate input
+    if (!type || !start_date || !end_date) {
+        return res.status(400).json({
+            success: false,
+            message: 'Missing type, start_date, or end_date'
+        })
     }
 
-    let sql = ''
-    if (type === 'appointment') {
-      sql = `
-        SELECT 
-          ROUND((fa.score_count1 + fa.score_count2 + fa.score_count3) / 3) AS avg_score,
-          fa.comment
-        FROM feedback_appointment fa
-        JOIN appointment a ON fa.appointment_id = a.appointment_id
-        JOIN user_category uc ON a.category_id = uc.category_id
-        JOIN academic_period ap 
-          ON DATE(a.appointment_date) BETWEEN ap.start_date AND ap.end_date
-        WHERE 
-          uc.user_id = ?   
-          AND ap.academic_year = ? 
-          AND ap.semester = ?
-          AND fa.comment IS NOT NULL 
-          AND fa.comment != ''
-      `
-    } else if (type === 'document') {
-      sql = `
-        SELECT 
-          ROUND((fd.score_count1 + fd.score_count2 + fd.score_count3) / 3) AS avg_score,
-          fd.comment
-        FROM feedback_document_tracking fd
-        JOIN document_tracking d ON fd.document_id = d.document_id
-        JOIN user_category uc ON d.category_id = uc.category_id
-        JOIN academic_period ap 
-          ON DATE(d.submit_date) BETWEEN ap.start_date AND ap.end_date
-        WHERE 
-          uc.user_id = ?   
-          AND ap.academic_year = ? 
-          AND ap.semester = ?
-          AND fd.comment IS NOT NULL 
-          AND fd.comment != ''
-      `
+    let sql = ""
+
+    if (type === "appointment") {
+        sql = `
+            SELECT 
+                ROUND((fa.score_count1 + fa.score_count2 + fa.score_count3) / 3) AS avg_score,
+                fa.comment
+            FROM feedback_appointment fa
+            JOIN appointment a ON fa.appointment_id = a.appointment_id
+            JOIN user_category uc ON a.category_id = uc.category_id
+            WHERE 
+                uc.user_id = ?
+                AND DATE(a.appointment_date) BETWEEN ? AND ?
+                AND fa.comment IS NOT NULL 
+                AND fa.comment != ''
+        `
+    } else if (type === "document") {
+        sql = `
+            SELECT 
+                ROUND((fd.score_count1 + fd.score_count2 + fd.score_count3) / 3) AS avg_score,
+                fd.comment
+            FROM feedback_document_tracking fd
+            JOIN document_tracking d ON fd.document_id = d.document_id
+            JOIN user_category uc ON d.category_id = uc.category_id
+            WHERE 
+                uc.user_id = ?
+                AND DATE(d.submit_date) BETWEEN ? AND ?
+                AND fd.comment IS NOT NULL 
+                AND fd.comment != ''
+        `
     } else {
-      return res.status(400).json({ success: false, message: 'Invalid type' })
+        return res.status(400).json({
+            success: false,
+            message: 'Invalid type (must be appointment or document)'
+        })
     }
 
-    db.query(sql, [id, year, semester], (err, results) => {
-      if (err) {
-        console.error('❌ Error fetching staff comments:', err)
-        return res.status(500).json({ success: false, error: err.message })
-      }
-      res.json({ success: true, data: results })
+    db.query(sql, [id, start_date, end_date], (err, results) => {
+        if (err) {
+            console.error('❌ Error fetching staff comments:', err)
+            return res.status(500).json({ success: false, error: err.message })
+        }
+
+        res.json({
+            success: true,
+            data: results
+        })
     })
-  })
+})
+
 
   return router
 }
