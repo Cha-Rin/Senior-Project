@@ -138,22 +138,34 @@
           <div>{{ item.student_note }}</div>
 
           <div
-            class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
-            :class="{
-              'bg-rose-100 text-rose-800': item.status === 2,
-              'bg-emerald-100 text-emerald-800': item.status === 1,
-              'bg-orange-100 text-orange-800': item.status === 0,
-              'bg-blue-100 text-blue-800': item.status === 3
-            }"
-          >
-            <span v-if="item.status === 1">✅</span>
-            <span v-else-if="item.status === 2">❌</span>
-            <span v-else-if="item.status === 0">⏳</span>
-            <span v-else-if="item.status === 3">✔️</span>
+  class="px-4 py-2 text-sm font-semibold rounded-full flex items-center gap-1.5"
+  :class="{
+    'bg-orange-100 text-orange-800': item.status === 0, // Pending
+    'bg-emerald-100 text-emerald-800': item.status === 1, // Approve
+    'bg-rose-100 text-rose-800': item.status === 2, // Reject
+    'bg-blue-100 text-blue-800': item.status === 3 // Complete
+  }"
+>
+  <!-- Icon ตาม status -->
+  <span v-if="item.status === 0">⏳</span>
+  <span v-else-if="item.status === 1">✅</span>
+  <span v-else-if="item.status === 2">❌</span>
+  <span v-else-if="item.status === 3">✔️</span>
 
-            {{ item.status === 1 ? 'Approve' : item.status === 2 ? 'Reject' : 'Pending' }}
-            
-          </div>
+  <!-- ชื่อสถานะ -->
+  <span>
+    {{
+      item.status === 0
+        ? 'Pending'
+        : item.status === 1
+        ? 'Approve'
+        : item.status === 2
+        ? 'Reject'
+        : 'Complete'
+    }}
+  </span>
+</div>
+
 
         </div>
 
