@@ -24,13 +24,7 @@
         Go do some feedback.
       </button>
 
-      <!-- Optional: ปุ่มกลับหน้าเลือก path -->
-      <button
-        class="mt-4 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-xl w-full transition"
-        @click="goBack"
-      >
-        Return to the route selection page
-      </button>
+      
 
       <!-- ✅ เพิ่มปุ่ม Logout -->
       <button
@@ -62,7 +56,7 @@ const goBack = () => {
 
 // ✅ Logout
 const handleLogout = () => {
-  if (confirm('คุณต้องการออกจากระบบ?')) {
+  if (confirm('Log out?')) {
     guard.logout();
     router.push({ name: 'Login' });
   }

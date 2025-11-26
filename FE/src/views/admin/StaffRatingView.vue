@@ -422,7 +422,16 @@ const selectTodayRange = () => {
   showCalendar.value = false
 }
 const today = new Date()
-startDate.value = today
+
+// end = วันนี้
 endDate.value = today
+
+// start = วันนี้ - 1 เดือน
+const start = new Date(today)
+start.setMonth(today.getMonth() - 1)
+
+startDate.value = start
+
+
 
 </script>

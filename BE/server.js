@@ -153,7 +153,7 @@ app.post('/api/auth/google', async (req, res) => {
     if (!email.endsWith('@lamduan.mfu.ac.th')) {
       return res.status(403).json({ 
         success: false, 
-        message: 'กรุณาใช้อีเมล @lamduan.mfu.ac.th เท่านั้น' 
+        message: 'Please use email @lamduan.mfu.ac.th only.' 
       });
     }
 
@@ -184,7 +184,7 @@ app.post('/api/auth/google', async (req, res) => {
         if (status !== 1) {
           return res.status(403).json({
             success: false,
-            message: 'บัญชีของคุณยังไม่ได้รับการอนุมัติ กรุณารอการอนุมัติจากเจ้าหน้าที่'
+            message: 'Your account has not been approved yet. Please wait for admin approval.'
           });
         }
       }

@@ -49,7 +49,7 @@ export const useActiveNotificationStore = defineStore("activeNotifications", {
 
     newItems.forEach((item) => {
       toast.info(
-        `⏰ It's time for the appointment. ${item.name} (${item.topic}) แล้ว!`,
+        `⏰ It's time for the appointment. ${item.name} (${item.topic}) !`,
         { position: "bottom-right", autoClose: 5000 }
       );
     });

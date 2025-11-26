@@ -173,7 +173,7 @@ const currentMonth = today.getMonth()
 
 const monthOptions = computed(() => {
   const opts = []
-  for (let i = -6; i <= 6; i++) {
+  for (let i = 0; i < 12; i++) {
     const date = new Date(currentYear, currentMonth + i, 1)
     const label = date.toLocaleString('default', {
       month: 'long',

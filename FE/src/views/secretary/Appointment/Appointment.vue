@@ -57,7 +57,7 @@
             </select>
 
             <!-- Week picker -->
-            <div class="flex gap-2 items-center">
+            <!-- <div class="flex gap-2 items-center">
               <span class="text-sm text-gray-700">Week:</span>
 
               <div class="flex flex-wrap gap-1 max-w-[300px]">
@@ -73,7 +73,26 @@
                   {{ formatDateShort(week.start) }} – {{ formatDateShort(week.end) }}
                 </button>
               </div>
-            </div>
+            </div> -->
+            <!-- Week dropdown -->
+<div class="flex items-center gap-2">
+  <span class="text-sm text-gray-700">Week:</span>
+
+  <select
+    v-model="selectedWeek"
+    class="px-3 py-2 border rounded-lg bg-white text-sm cursor-pointer"
+  >
+    <option
+      v-for="(week, i) in weeksInMonth"
+      :key="i"
+      :value="week"
+    >
+      {{ formatDateShort(week.start) }} – {{ formatDateShort(week.end) }}
+    </option>
+  </select>
+</div>
+
+
           </div>
         </div>
 
@@ -262,14 +281,17 @@ const currentMonth = today.getMonth()
 
 const monthOptions = computed(() => {
   const opts = []
-  for (let i=-6; i<=6; i++) {
-    const date = new Date(currentYear, currentMonth + i, 1)
-    const label = date.toLocaleString('default',{ month:'long', year:'numeric' })
-    const value = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`
+  const year = currentYear
+
+  for (let m = 0; m < 12; m++) {
+    const date = new Date(year, m, 1)
+    const label = date.toLocaleString('default', { month:'long', year:'numeric' })
+    const value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
     opts.push({ label, value })
   }
   return opts
 })
+
 
 const selectedMonthYear = ref(
   `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`

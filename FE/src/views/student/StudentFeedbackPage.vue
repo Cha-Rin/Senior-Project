@@ -14,7 +14,7 @@
 
     <!-- ⏳ Loading State -->
     <div v-if="!guard.loaded || guard.loading" class="text-center py-8">
-      <p class="text-gray-600">กำลังโหลด...</p>
+      <p class="text-gray-600">Loading...</p>
     </div>
 
     <!-- ✅ แสดง Feedback Component -->
@@ -27,12 +27,12 @@
 
     <!-- ⚠️ ไม่มีข้อมูล -->
     <div v-else class="text-center py-8">
-      <p class="text-gray-600">ไม่มีรายการที่ต้องทำ feedback</p>
+      <p class="text-gray-600">There is no feedback to do.</p>
       <button
         @click="router.push({ name: 'PathSelect' })"
         class="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded"
       >
-        กลับหน้าหลัก
+        Return to home page
       </button>
     </div>
   </div>
@@ -98,14 +98,14 @@ watch(
 async function handleSubmit(payload) {
   const token = localStorage.getItem('authToken')
   if (!token) {
-    alert('❌ ไม่พบ token กรุณา login ใหม่')
+    alert('❌ Token not found. Please log in again.')
     return
   }
 
   try {
     const item = pendingItems.value.find(i => i.id === payload.itemId)
     if (!item) {
-      alert('❌ ไม่พบรายการ')
+      alert('❌ No items found')
       return
     }
 
@@ -142,20 +142,20 @@ async function handleSubmit(payload) {
       updatePendingData()
 
       if (!guard.mustFeedback) {
-        alert('ทำ feedback ครบแล้ว! 🎉')
+        alert('Feedback has been completed.! 🎉')
         router.push({ name: 'PathSelect' })
       }
     } else {
-      alert(result.message || 'เกิดข้อผิดพลาด');
+      alert(result.message || 'An error occurred.');
     }
   } catch (e) {
     console.error('❌ handleSubmit error:', e);
-    alert('เกิดข้อผิดพลาดในการส่ง feedback');
+    alert('An error occurred while sending feedback.');
   }
 }
 
 function handleLogout() {
-  if (confirm('คุณต้องการออกจากระบบ?')) {
+  if (confirm('log out?')) {
     guard.logout()
     router.push({ name: 'Login' })
   }
