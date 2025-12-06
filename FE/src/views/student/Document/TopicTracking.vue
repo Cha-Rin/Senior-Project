@@ -31,7 +31,7 @@
       class="bg-white w-full max-w-2xl mx-auto p-4 shadow-md rounded-xl transition-all duration-300"
     >
       <p class="text-sm font-semibold mb-2">
-        Type your sub-topic
+        Type your document name:
         <!-- <span class="text-gray-400">(e.g., additional enrollment request)</span> -->
       </p>
 
@@ -165,7 +165,7 @@ const categoryNameMap = {
   "กิจกรรมนักศึกษา": { th: "กิจกรรมนักศึกษา", en: "Student Activities" },
   "สหกิจศึกษา": { th: "สหกิจศึกษา", en: "Cooperative Education" },
   "ผ่อนผัน": { th: "ผ่อนผัน", en: "Permission / Deferment" },
-  "งานทะเบียน": { th: "งานทะเบียน", en: "Registration Office" },
+  "งานทะเบียน": { th: "งานทะเบียน", en: "Registration" },
   "บัณฑิตศึกษา": { th: "บัณฑิตศึกษา", en: "Graduate Studies" }
 }
 
