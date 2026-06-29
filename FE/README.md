@@ -73,6 +73,259 @@
 
 ---
 
+# 🚀 เริ่มต้นใช้งานโปรเจค (Getting Started)
+
+หากเพิ่ง Clone โปรเจคมาใหม่ ให้ทำตามขั้นตอนดังต่อไปนี้
+
+## ขั้นตอนที่ 1 Clone Repository
+
+```bash
+git clone <repository-url>
+```
+
+เข้าไปยังโฟลเดอร์โปรเจค
+
+```bash
+cd Senior-Project
+```
+
+---
+
+## ขั้นตอนที่ 2 ตรวจสอบเครื่องมือที่จำเป็น
+
+ตรวจสอบว่าได้ติดตั้งโปรแกรมต่อไปนี้เรียบร้อยแล้ว
+
+| Software           | Version           |
+| ------------------ | ----------------- |
+| Node.js            | 20.x หรือใหม่กว่า |
+| npm                | มาพร้อม Node.js   |
+| MySQL              | 8.x               |
+| Git                | เวอร์ชันล่าสุด    |
+| Visual Studio Code | แนะนำ             |
+
+ตรวจสอบเวอร์ชัน
+
+```bash
+node -v
+npm -v
+git --version
+```
+
+---
+
+## ขั้นตอนที่ 3 ติดตั้ง Dependencies
+
+### Frontend
+
+```bash
+cd FE
+npm install
+```
+
+รอจนติดตั้งเสร็จ
+
+จากนั้นกลับมายังโฟลเดอร์หลัก
+
+```bash
+cd ..
+```
+
+---
+
+### Backend
+
+```bash
+cd BE
+npm install
+```
+
+เมื่อติดตั้งเสร็จ
+
+```bash
+cd ..
+```
+
+---
+
+## ขั้นตอนที่ 4 สร้างฐานข้อมูล
+
+เปิด MySQL
+
+สร้างฐานข้อมูลใหม่
+
+```sql
+CREATE DATABASE student_appointment;
+```
+
+จากนั้น Import ไฟล์ SQL ของโปรเจค
+
+เช่น
+
+```
+database.sql
+```
+
+---
+
+## ขั้นตอนที่ 5 ตั้งค่า Environment Variables
+
+ภายในโฟลเดอร์
+
+```
+BE/
+```
+
+สร้างไฟล์
+
+```
+.env
+```
+
+ตัวอย่าง
+
+```env
+PORT=3000
+
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=student_appointment
+
+JWT_SECRET=your_secret_key
+
+GOOGLE_CLIENT_ID=xxxxxxxx
+```
+
+---
+
+## ขั้นตอนที่ 6 ตรวจสอบการเชื่อมต่อฐานข้อมูล
+
+ตรวจสอบว่า
+
+* MySQL เปิดอยู่
+* Database ถูกสร้างแล้ว
+* Username และ Password ถูกต้อง
+* ค่าใน `.env` ตรงกับฐานข้อมูล
+
+---
+
+## ขั้นตอนที่ 7 เปิด Backend Server
+
+```bash
+cd BE
+npm run dev
+```
+
+หากทำงานปกติ จะเห็นข้อความลักษณะ
+
+```
+Server running on port 3000
+Connected to MySQL
+```
+
+---
+
+## ขั้นตอนที่ 8 เปิด Frontend
+
+เปิด Terminal ใหม่
+
+```bash
+cd FE
+npm run dev
+```
+
+เมื่อรันสำเร็จ จะปรากฏ
+
+```
+Local: http://localhost:5173
+```
+
+---
+
+## ขั้นตอนที่ 9 เข้าใช้งานระบบ
+
+เปิด Browser
+
+```
+http://localhost:5173
+```
+
+เข้าสู่ระบบด้วยบัญชีที่มีอยู่ในฐานข้อมูล
+
+---
+
+# ลำดับการเปิดระบบ
+
+```
+Clone Project
+        │
+        ▼
+Install FE Dependencies
+        │
+        ▼
+Install BE Dependencies
+        │
+        ▼
+Create Database
+        │
+        ▼
+Import SQL
+        │
+        ▼
+Create .env
+        │
+        ▼
+Start Backend
+        │
+        ▼
+Start Frontend
+        │
+        ▼
+Open Browser
+        │
+        ▼
+Login
+        │
+        ▼
+เริ่มใช้งานระบบ
+```
+
+---
+
+# โครงสร้างการเปิดโปรแกรม
+
+เปิด Terminal 2 หน้าต่าง
+
+### Terminal 1
+
+```
+BE
+```
+
+รัน
+
+```bash
+npm run dev
+```
+
+---
+
+### Terminal 2
+
+```
+FE
+```
+
+รัน
+
+```bash
+npm run dev
+```
+
+เมื่อทั้งสองส่วนทำงานเรียบร้อย ระบบจะสามารถใช้งานได้ทันที
+
+---
+
 # เครื่องมือที่ต้องติดตั้ง
 
 ก่อนเริ่มต้นใช้งาน ให้ติดตั้งโปรแกรมดังต่อไปนี้
